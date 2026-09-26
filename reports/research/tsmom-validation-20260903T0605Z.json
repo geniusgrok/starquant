@@ -1,0 +1,240 @@
+{
+  "best_params": {
+    "entry_threshold": 0.3,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      5,
+      20,
+      50
+    ],
+    "persistence_weight": 0.1,
+    "return_scale": 0.3,
+    "return_weight": 0.4,
+    "slope_scale": 0.01,
+    "slope_weight": 0.25,
+    "vol_window": 400
+  },
+  "cost_stress": {
+    "x1": 0.27168817361337044,
+    "x1.5": 0.13826026787717285,
+    "x2": 0.004913057853428135
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=100",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=100",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=100",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=100",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=100",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400"
+    ],
+    "fraction_negative": 0.3333333333333333,
+    "oos_sharpe_mean": 0.14671527306358206,
+    "oos_sharpe_min": -0.7274056128469533,
+    "oos_sharpe_q05": -0.5162465681562118,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 0.2716852130386398,
+    "annualized_sharpe_gross": 0.5725303055307998,
+    "average_absolute_exposure": 0.42588850749039775,
+    "bars": 45884,
+    "cost_share_of_gross": 0.5253181189860254,
+    "gross_return": 0.4429555404067096,
+    "hit_rate": 0.5040652178651612,
+    "max_drawdown": -0.14468165592952176,
+    "net_return": 0.15878913081845392,
+    "nonzero_target_bars": 45878,
+    "turnover_units": 277.9481866842519
+  },
+  "generated_at": "2026-09-03T06:05:55.756462+00:00",
+  "grid_size": 27,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 0.2716852130386398,
+    "degradation_slope": -0.9179436417112494,
+    "dsr": 0.16794654376039492,
+    "dsr_p_value": 0.8320534562396051,
+    "expected_max_sharpe_annual": 0.6921336421111016,
+    "n_trials": 27,
+    "pbo": 0.2124,
+    "pbo_combinations": 5000,
+    "prob_oos_loss": 0.4364
+  },
+  "range": {
+    "bars": 45884,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-06-09 09:00:00+00:00"
+  },
+  "reasons": [
+    "oos_sharpe 0.32 < 0.5",
+    "dsr_p_value 0.8320534562396051 > 0.1",
+    "fold_consistency 0.40 < 0.6"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 0.2716852130386398,
+      "neighbours": {
+        "entry_threshold": {
+          "down": -0.07014727465284275,
+          "up": 0.20008863791542866
+        },
+        "return_scale": {
+          "down": 0.09780709054601039,
+          "up": 0.05863111615093059
+        },
+        "vol_window": {
+          "down": 0.25077728525889253,
+          "up": 0.2731899659691649
+        }
+      },
+      "worst_degradation": 1.258193200389107,
+      "worst_neighbour": -0.07014727465284275
+    },
+    "time_split_sharpes": [
+      0.7636232724830943,
+      0.537269154825321,
+      0.2197081805064521,
+      -0.27375421215817103
+    ]
+  },
+  "strategy": "tsmom",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT"
+  ],
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          5,
+          20,
+          50
+        ],
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          5,
+          20,
+          50
+        ],
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          5,
+          20,
+          50
+        ],
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          5,
+          20,
+          50
+        ],
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          5,
+          20,
+          50
+        ],
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      }
+    ],
+    "fold_consistency": 0.4,
+    "fold_sharpes": [
+      1.134057177168197,
+      -0.1096186921780268,
+      0.7311342374019636,
+      -0.1510713317955177,
+      -0.11517528364404865
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.14412509909072957,
+    "oos_return": 0.16356071748835688,
+    "oos_sharpe": 0.32378088442904795
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "best_params": {
+    "cross_sectional": true,
+    "entry_threshold": 0.2,
+    "scale": 0.05,
+    "volume_window": 48,
+    "window": 168
+  },
+  "cost_stress": {
+    "x1": 1.1582356849316873,
+    "x1.5": 1.0988648542916826,
+    "x2": 1.0394876928057228
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|scale=0.05|volume_window=48|window=168"
+    ],
+    "fraction_negative": 0.0,
+    "oos_sharpe_mean": 1.1612652382221924,
+    "oos_sharpe_min": 0.1393289159785332,
+    "oos_sharpe_q05": 0.24175296773903157,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 1.15822291744673,
+    "annualized_sharpe_gross": 1.2994468632329637,
+    "average_absolute_exposure": 0.7844321188119309,
+    "bars": 45365,
+    "cost_share_of_gross": 0.1086175042815859,
+    "gross_return": 1.6643550991855696,
+    "hit_rate": 0.5061251664447404,
+    "max_drawdown": -0.26117337282930064,
+    "net_return": 1.3792128098321705,
+    "nonzero_target_bars": 45059,
+    "turnover_units": 135.88317021184028
+  },
+  "generated_at": "2026-09-03T06:27:08.203481+00:00",
+  "grid_size": 4,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 1.15822291744673,
+    "degradation_slope": -0.5511486363568778,
+    "dsr": 0.9520168802164838,
+    "dsr_p_value": 0.047983119783516215,
+    "expected_max_sharpe_annual": 0.4266471893765986,
+    "n_trials": 4,
+    "pbo": 0.273,
+    "pbo_combinations": 5000,
+    "prob_oos_loss": 0.0994
+  },
+  "range": {
+    "bars": 45365,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-07-01 00:00:00+00:00"
+  },
+  "reasons": [],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 1.15822291744673,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.0060040530875405,
+          "up": 1.4153748514157465
+        },
+        "scale": {
+          "down": 1.0010591954988135,
+          "up": 1.3463122296358376
+        },
+        "window": {
+          "down": 1.1083478634544073,
+          "up": 1.4012601025431888
+        }
+      },
+      "worst_degradation": 0.13569384578780355,
+      "worst_neighbour": 1.0010591954988135
+    },
+    "time_split_sharpes": [
+      1.0080246888984579,
+      1.753015254248337,
+      -1.0013618215810793,
+      2.545647843707445
+    ]
+  },
+  "strategy": "flow",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "verdict": "PASS",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "scale": 0.05,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "scale": 0.05,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "scale": 0.05,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "scale": 0.05,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "scale": 0.05,
+        "volume_window": 48,
+        "window": 168
+      }
+    ],
+    "fold_consistency": 0.8,
+    "fold_sharpes": [
+      0.6452021439764681,
+      2.3769247026378615,
+      -0.8128190589456709,
+      1.1518638006778137,
+      2.051629832406702
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.26117337282929853,
+    "oos_return": 0.92990409873027,
+    "oos_sharpe": 1.0684175998293617
+  }
+}

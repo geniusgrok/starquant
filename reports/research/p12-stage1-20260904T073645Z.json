@@ -1,0 +1,85 @@
+{
+  "delta_net": {
+    "m=2": 0.0005,
+    "m=4": -0.0013,
+    "m=8": 0.0
+  },
+  "delta_sharpe": {
+    "m=2": -0.0018,
+    "m=4": -0.0003,
+    "m=8": 0.0
+  },
+  "generated_at": "2026-09-04T07:36:45.972076+00:00",
+  "kind": "p12-stage1-liquidity-screen",
+  "membership_delta_vs_baseline": {
+    "m=2": {
+      "added": 18,
+      "differing_cells": 53,
+      "member_cells": 35899,
+      "refreshes_touched": 40,
+      "removed": 35
+    },
+    "m=4": {
+      "added": 0,
+      "differing_cells": 1,
+      "member_cells": 35899,
+      "refreshes_touched": 1,
+      "removed": 1
+    },
+    "m=8": {
+      "added": 0,
+      "differing_cells": 0,
+      "member_cells": 35899,
+      "refreshes_touched": 0,
+      "removed": 0
+    }
+  },
+  "no_ledger_entries": "research backtest does not write trials.jsonl; validate was never run, so 0 trials spent",
+  "rule_as_pre_registered": "exclude a candidate whose 30d Amihud ILLIQ > m x the MEDIAN OF THE CANDIDATE SET",
+  "runs": {
+    "baseline": {
+      "annualized_sharpe": 1.7054707818461474,
+      "annualized_sharpe_gross": 1.8811366020439098,
+      "cost_share_of_gross": 0.09332146971874038,
+      "gross_return": 4.16342504328084,
+      "hit_rate": 0.512996286775207,
+      "max_drawdown": -0.12112344502743322,
+      "net_return": 3.39936712727593,
+      "turnover_units": 225.61484932343225
+    },
+    "m=2": {
+      "annualized_sharpe": 1.703692910870971,
+      "annualized_sharpe_gross": 1.8797986938861482,
+      "cost_share_of_gross": 0.09363976585150396,
+      "gross_return": 4.167251949166992,
+      "hit_rate": 0.5130574937772882,
+      "max_drawdown": -0.12112344502743178,
+      "net_return": 3.3998543455217183,
+      "turnover_units": 226.62137096211222
+    },
+    "m=4": {
+      "annualized_sharpe": 1.7051208874233772,
+      "annualized_sharpe_gross": 1.8811313557481022,
+      "cost_share_of_gross": 0.09350520142861887,
+      "gross_return": 4.163548338303393,
+      "hit_rate": 0.5130370914432612,
+      "max_drawdown": -0.12112344502743322,
+      "net_return": 3.398074644324378,
+      "turnover_units": 225.61355111513396
+    },
+    "m=8": {
+      "annualized_sharpe": 1.7054707818461474,
+      "annualized_sharpe_gross": 1.8811366020439098,
+      "cost_share_of_gross": 0.09332146971874038,
+      "gross_return": 4.16342504328084,
+      "hit_rate": 0.512996286775207,
+      "max_drawdown": -0.12112344502743322,
+      "net_return": 3.39936712727593,
+      "turnover_units": 225.61484932343225
+    }
+  },
+  "stage0_correction": "scripts/p12_stage0.py normalised by the median of the SELECTED MEMBERS, not of the candidate set, so its 20.16%/7.55%/3.39% describe a different and much tighter screen than the one pre-registered.  Its PROCEED verdict does not apply to the pre-registered rule.  The member-relative screen has never been pre-registered and would need its own registration to be run.",
+  "universe_mode": "pit",
+  "verdict": "INERT - the pre-registered screen does not bind; no ledger trial spent",
+  "why": "The candidate pool is ~700 mostly tiny perpetuals, so its median ILLIQ sits about 81x above the median of the selected members.  Being top-15 by quote volume already places every member far below the candidate median - the worst member measures 0.18x it - so a 2x-of-candidate-median threshold can never reach them.  The volume ranking is itself an implicit liquidity screen relative to the pool it selects from, which is the pre-registration's original prior, now with a mechanism."
+}

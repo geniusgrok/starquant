@@ -1,0 +1,65 @@
+#!/bin/bash
+# StarQuant — 提交前密钥扫描
+#
+# 装法不是 `cp` 到 `.git/hooks/`：那份不进版本库，于是每个 clone、每个 `git worktree`
+# 都得有人记得再装一次，而「有人记得」正是这一层想替换掉的东西。改用
+# `git config core.hooksPath .githooks`（`deploy/install-hooks.sh` 做这件事），
+# 目录跟着仓库走，worktree 自动继承。
+#
+# 这一层挡的是**手滑**，不是恶意：`git commit --no-verify` 一个开关就能绕过它，
+# 任何本地 hook 都一样。所以它不是最后一道——最后一道在 GitHub 侧（push protection，
+# 2026-09-19 开启），那个不在本机，绕不过去。两层各自的位置写在 SECURITY.md 里。
+#
+# 只扫**暂存区**，不扫历史：历史每次提交都扫要 6 秒，而 6 秒的 hook 三天之内就会被
+# `--no-verify` 常态化绕过。暂存区扫描是毫秒级的。全历史扫描归 CI 和 `make secrets-audit`。
+
+set -uo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+    cat >&2 <<'MSG'
+pre-commit: 没找到 gitleaks，提交前的密钥扫描没有跑。
+
+  安装：brew install gitleaks
+
+这不是阻断——本地缺工具就挡住提交只会逼人绕过 hook。但要知道这次提交没有被扫过，
+而 GitHub 侧的 push protection 仍然会在 push 时拦截真密钥。
+MSG
+    exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+# `git` 子命令用 protect --staged：它只看 `git diff --cached`，即这次真要提交的内容。
+if gitleaks protect --staged \
+        --source "$repo_root" \
+        --config "$repo_root/.gitleaks.toml" \
+        --redact --no-banner 2>/dev/null; then
+    exit 0
+fi
+
+cat >&2 <<'MSG'
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  提交被拦下：暂存区里有疑似密钥                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+上面列出了命中的文件与行号（值已脱敏）。按这个顺序处理：
+
+  1. 先看它是不是真的密钥。本仓库的 construction fingerprint、sha256 摘要、
+     git object id 都是纯 hex，`.gitleaks.toml` 已经放行；还能红说明形态不同。
+
+  2. 真的是密钥：
+       - 把值从文件里删掉，改成从环境读
+         （`~/Library/Application Support/starquant/env.sh`，chmod 600）
+       - **去交易所把这个 key 作废重发**。写进过文件的密钥就当已经泄漏，
+         哪怕它一次都没被提交——本机可能有备份、编辑器可能有 swap、
+         Time Machine 可能已经存了一份。
+
+  3. 确认是误报：往 `.gitleaks.toml` 的 allowlist 加一条，**按它是什么写**
+     （形态或具体值），不要按目录整片放行，并写一句它为什么不可能是密钥。
+
+  4. 只有在 2 和 3 都不适用、而你确知在做什么时才用 `--no-verify`。
+     它绕过的只有本机这一层：GitHub 的 push protection 仍然会在 push 时拦住。
+
+MSG
+exit 1

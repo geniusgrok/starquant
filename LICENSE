@@ -1,0 +1,65 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright © 2026 geniusgrok. All rights reserved.
+
+---
+
+This repository ("StarQuant", including all source code, documentation, configuration,
+research reports, and data artifacts, collectively the "Software") is proprietary
+software. It is not open source.
+
+**Public visibility does not grant a license.** This repository is publicly readable
+on GitHub solely for the author's own reference, backup, and collaboration. No one
+acquires any right to use it merely by being able to read it.
+
+Without the prior written permission of the copyright holder, no person may:
+
+1. copy, download, or retain all or part of the Software for any purpose other
+   than reading it;
+2. modify the Software or create derivative works based on it;
+3. distribute, sublicense, sell, rent, or otherwise make the Software available
+   to third parties;
+4. use all or part of the Software for any commercial purpose, including but not
+   limited to live trading, managing funds for others, investment advisory, or
+   any form of service provided to others;
+5. use the Software to train machine learning models or to build datasets.
+
+Rights granted by the GitHub Terms of Service are unaffected: under those terms,
+the contents of a public repository may be viewed and may be copied within the
+GitHub platform via GitHub's fork feature. This exception is limited to
+functionality provided by the GitHub platform itself and does not waive any of
+the restrictions above.
+
+### Third-party components (not covered by this notice)
+
+The contents of the following directory are **not** subject to this notice.
+They are licensed under the terms of the license files within that directory:
+
+- `vendor/backtest-guard/` — a merge of two third-party MIT projects:
+  - `LICENSE.backtest-guard` (MIT, Copyright © 2026 paidaxing)
+  - `LICENSE.strategy-critique` (MIT, Copyright © 2026 Shaan Shaik)
+
+These components are licensed under the MIT License, and nothing in this notice
+shall be construed to limit the rights the MIT License grants to any person.
+Third-party Python packages this Software depends on are likewise governed by
+their own licenses and are not subject to this notice.
+
+**Disclaimer.** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+**Financial risk notice.** The Software is research into, and an implementation
+of, a quantitative trading system. The research reports, backtest results,
+parameters, and adjudication records in this repository are the author's own
+research notes. They do **not** constitute investment advice, financial advice,
+or an offer of any kind. Trading cryptocurrency derivatives carries a high risk
+of loss, up to and including the total loss of principal. Anyone who makes a
+trading decision on the basis of the Software or anything in it does so entirely
+at their own risk.
+
+Licensing enquiries: contact the copyright holder through this repository's
+private GitHub channels.

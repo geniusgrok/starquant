@@ -1,0 +1,50 @@
+{
+  "correlation": {
+    "flow": {
+      "flow": 1.0,
+      "tsmom": 0.2974
+    },
+    "tsmom": {
+      "flow": 0.2974,
+      "tsmom": 1.0
+    }
+  },
+  "equal_weight_sharpe": 2.134541977866573,
+  "generated_at": "2026-09-03T13:21:56.684469+00:00",
+  "individual_sharpe": {
+    "flow": 1.7082018218262462,
+    "tsmom": 1.732218386729193
+  },
+  "kind": "correlation",
+  "marginal_sharpe": {
+    "flow": 0.40232359113738014,
+    "tsmom": 0.4263401560403268
+  },
+  "range": {
+    "bars": 48996,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-01-31 00:00:00+00:00"
+  },
+  "strategies": [
+    "tsmom",
+    "flow"
+  ],
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "universe_mode": "static"
+}

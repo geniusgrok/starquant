@@ -1,0 +1,187 @@
+{
+  "best_params": {
+    "cross_sectional": true,
+    "entry_threshold": 0.7,
+    "min_symbols": 5,
+    "mode": "rank",
+    "scale": 0.0001,
+    "window_bars": 168,
+    "winsor_pct": 0.1
+  },
+  "cost_stress": {
+    "x1": 0.22659352644388084,
+    "x1.5": 0.14284271959964956,
+    "x2": 0.05910310681403417
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1",
+      "cross_sectional=True|entry_threshold=0.7|min_symbols=5|mode=rank|scale=0.0001|window_bars=168|winsor_pct=0.1"
+    ],
+    "fraction_negative": 0.4,
+    "oos_sharpe_mean": 0.23505392232017241,
+    "oos_sharpe_min": -1.0852988596251616,
+    "oos_sharpe_q05": -0.814629123523741,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 0.22857821369977568,
+    "annualized_sharpe_gross": 0.23511397802619674,
+    "average_absolute_exposure": 0.754289911888347,
+    "bars": 45365,
+    "cost_share_of_gross": 0.027644579896932458,
+    "gross_return": 0.13338317458551274,
+    "hit_rate": 0.5022374076931555,
+    "max_drawdown": -0.3467083948228248,
+    "net_return": 0.12758201375612543,
+    "nonzero_target_bars": 45365,
+    "turnover_units": 188.22597071301837
+  },
+  "generated_at": "2026-09-03T08:37:15.778464+00:00",
+  "grid_size": 1,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 0.22857821369977568,
+    "degradation_slope": null,
+    "dsr": 0.6985408845260018,
+    "dsr_p_value": 0.3014591154739982,
+    "expected_max_sharpe_annual": 0.0,
+    "n_trials": 1,
+    "pbo": null,
+    "pbo_combinations": null,
+    "prob_oos_loss": null
+  },
+  "range": {
+    "bars": 45365,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-07-01 00:00:00+00:00"
+  },
+  "reasons": [
+    "oos_sharpe 0.06 < 0.5",
+    "dsr_p_value 0.3014591154739982 > 0.1",
+    "fold_consistency 0.40 < 0.6"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 0.22857821369977568,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 0.1812984692824552,
+          "up": 0.3439214421704494
+        },
+        "window_bars": {
+          "down": 0.0416113692088304,
+          "up": 0.12903533688431232
+        }
+      },
+      "worst_degradation": 0.817955663685934,
+      "worst_neighbour": 0.0416113692088304
+    },
+    "time_split_sharpes": [
+      0.5401401667607605,
+      0.7877752590779804,
+      0.760740520146582,
+      -1.8580600090387343
+    ]
+  },
+  "strategy": "carry",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.7,
+        "min_symbols": 5,
+        "mode": "rank",
+        "scale": 0.0001,
+        "window_bars": 168,
+        "winsor_pct": 0.1
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.7,
+        "min_symbols": 5,
+        "mode": "rank",
+        "scale": 0.0001,
+        "window_bars": 168,
+        "winsor_pct": 0.1
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.7,
+        "min_symbols": 5,
+        "mode": "rank",
+        "scale": 0.0001,
+        "window_bars": 168,
+        "winsor_pct": 0.1
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.7,
+        "min_symbols": 5,
+        "mode": "rank",
+        "scale": 0.0001,
+        "window_bars": 168,
+        "winsor_pct": 0.1
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.7,
+        "min_symbols": 5,
+        "mode": "rank",
+        "scale": 0.0001,
+        "window_bars": 168,
+        "winsor_pct": 0.1
+      }
+    ],
+    "fold_consistency": 0.4,
+    "fold_sharpes": [
+      0.5580624386862099,
+      2.382355767268618,
+      -0.7971671924188978,
+      -0.06558002767319615,
+      -1.6190109366047098
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.34670839482281857,
+    "oos_return": -0.012417835826150858,
+    "oos_sharpe": 0.056511349113551414
+  }
+}

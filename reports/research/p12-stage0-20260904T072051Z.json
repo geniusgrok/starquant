@@ -1,0 +1,188 @@
+{
+  "binding_floor": 0.03,
+  "changed_share": {
+    "m=2": 0.20159335914649434,
+    "m=4": 0.07551742388367363,
+    "m=8": 0.0338728098275718
+  },
+  "changed_symbol_refreshes": {
+    "m=2": 7237,
+    "m=4": 2711,
+    "m=8": 1216
+  },
+  "gap_rule": {
+    "observations_dropped": 881,
+    "observations_total": 567889
+  },
+  "latest_refresh_multiples_of_median": {
+    "by_symbol": {
+      "1000PEPEUSDT": 1.066,
+      "ACEUSDT": 13.528,
+      "ADAUSDT": 1.12,
+      "BNBUSDT": 0.248,
+      "BTCUSDT": 0.008,
+      "CYSUSDT": 13.168,
+      "DOGEUSDT": 0.359,
+      "ENAUSDT": 1.946,
+      "ETHUSDT": 0.013,
+      "HYPEUSDT": 0.379,
+      "PUMPUSDT": 2.695,
+      "SOLUSDT": 0.087,
+      "SUIUSDT": 1.0,
+      "TRUMPUSDT": 2.491,
+      "TUTUSDT": 14.339,
+      "XRPUSDT": 0.187,
+      "ZECUSDT": 0.303
+    },
+    "median_illiq": 1.4312835154159838e-10,
+    "refresh": "2026-09-03"
+  },
+  "log_illiq_iqr_mean": 1.3504102802178937,
+  "log_illiq_iqr_median": 1.273561199855406,
+  "most_excluded": {
+    "m=2": [
+      [
+        "ENAUSDT",
+        203
+      ],
+      [
+        "FARTCOINUSDT",
+        170
+      ],
+      [
+        "XLMUSDT",
+        149
+      ],
+      [
+        "WIFUSDT",
+        149
+      ],
+      [
+        "DYDXUSDT",
+        131
+      ],
+      [
+        "WLDUSDT",
+        129
+      ],
+      [
+        "1000BONKUSDT",
+        125
+      ],
+      [
+        "GALAUSDT",
+        123
+      ],
+      [
+        "PIPPINUSDT",
+        121
+      ],
+      [
+        "FTMUSDT",
+        118
+      ]
+    ],
+    "m=4": [
+      [
+        "PIPPINUSDT",
+        78
+      ],
+      [
+        "FARTCOINUSDT",
+        77
+      ],
+      [
+        "MYXUSDT",
+        71
+      ],
+      [
+        "LABUSDT",
+        65
+      ],
+      [
+        "BEATUSDT",
+        63
+      ],
+      [
+        "SIRENUSDT",
+        59
+      ],
+      [
+        "AXSUSDT",
+        51
+      ],
+      [
+        "PEOPLEUSDT",
+        44
+      ],
+      [
+        "AKEUSDT",
+        43
+      ],
+      [
+        "RAVEUSDT",
+        40
+      ]
+    ],
+    "m=8": [
+      [
+        "MYXUSDT",
+        60
+      ],
+      [
+        "BSBUSDT",
+        33
+      ],
+      [
+        "RAVEUSDT",
+        32
+      ],
+      [
+        "BEATUSDT",
+        31
+      ],
+      [
+        "VELVETUSDT",
+        31
+      ],
+      [
+        "HUSDT",
+        30
+      ],
+      [
+        "STOUSDT",
+        30
+      ],
+      [
+        "AXSUSDT",
+        28
+      ],
+      [
+        "LPTUSDT",
+        28
+      ],
+      [
+        "LABUSDT",
+        28
+      ]
+    ]
+  },
+  "multiples": [
+    2.0,
+    4.0,
+    8.0
+  ],
+  "refreshes": 2042,
+  "refreshes_touched": {
+    "m=2": 2001,
+    "m=4": 1314,
+    "m=8": 723
+  },
+  "run_at": "2026-09-04T07:20:51.443230+00:00",
+  "stage": 0,
+  "symbol_refreshes": 35899,
+  "symbol_refreshes_without_illiq": 31,
+  "verdict": "PROCEED_TO_STAGE_1",
+  "verdict_basis": "tightest multiple m=2 changes 20.1593% of symbol-refreshes",
+  "window_days": 30
+}
