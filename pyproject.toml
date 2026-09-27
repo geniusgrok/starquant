@@ -75,6 +75,8 @@ ignore = ["RUF001", "RUF002", "RUF003", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["B011", "DTZ"]
+# OHLC arrays in the account path engine use the same letters as the tape.
+"scripts/frontier.py" = ["E741", "SIM108", "SIM114", "SIM117", "C408", "B905", "UP017"]
 
 [tool.ruff.format]
 quote-style = "double"

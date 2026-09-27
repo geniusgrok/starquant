@@ -1,3 +1,23 @@
+# BTCUSDT account
+
+One Binance USD-M BTCUSDT account. Isolated, one-way, leverage fixed at 20x.
+Starting capital 10,000 CNY, no deposits. The model may be long or short.
+A person starts a session (default 5 minutes). The session re-reads the market
+and the account every 5 seconds, then exits. After a fill, the exchange holds a
+stop and a take-profit for the filled quantity, including a partial fill, and
+those orders stay up after the process exits. If funds, orders, or protection
+are unclear, the session does not open new risk.
+
+The full-sample replay is `python -m btc_perp --measure`. It walks
+2020-01-01 through 2026-09-20 (the end date is exclusive) on the 1-minute tape,
+with taker fees, slippage, bar-range impact, funding, liquidation capped at
+isolated margin, and CNY/USD conversion. Live orders stay off
+(`config/btc_account.yaml`) until that replay and the execution checks both pass.
+There is no API key in this tree, and the Binance adapter refuses to send orders.
+
+The older StarQuant packages are still in the tree. This account is the system
+the measurement refers to.
+
 # StarQuant — Alpha-First
 
 A quantitative trading system for crypto perpetual futures on **Binance USDⓈ-M**,

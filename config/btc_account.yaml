@@ -1,0 +1,33 @@
+# One BTCUSDT USDT-M account. Numbers are the measured configuration.
+# Live orders stay off until the full-sample replay and the execution checks both pass.
+symbol: BTCUSDT
+margin_mode: isolated
+position_mode: one_way
+leverage: 20
+start_cny: 10000
+session_seconds: 300
+poll_seconds: 5
+
+# Donchian on completed hours. Stops are live on every 1-minute OHLC path point.
+entry_hours: 1008
+exit_hours: 192
+stop: 0.032
+trail: 0.16
+add_step: 0.05
+max_units: 3
+risk: 0.048
+dd_flat: 0.47
+iso_frac: 0.28
+cooldown_hours: 6
+ratchet_gain: 0.35
+ratchet_trail: 0.07
+heat: 0.6
+# Resting take-profit is far enough that the trailing stop is the exit that binds.
+take_profit_multiple: 10.0
+
+taker: 0.0004
+slip_base: 0.0001
+impact_y: 0.5
+fx_fee: 0.0035
+long_and_short: true
+live_orders: false

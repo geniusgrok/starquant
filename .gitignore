@@ -1,3 +1,6 @@
+# local market tapes (large; the measurement reads them when present)
+data/
+
 # environments
 .venv/
 __pycache__/
