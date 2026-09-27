@@ -1,0 +1,258 @@
+{
+  "best_params": {
+    "cross_sectional": true,
+    "entry_threshold": 0.2,
+    "gate_horizons": [
+      168,
+      336,
+      720
+    ],
+    "gate_return_scale": 0.2,
+    "gate_vol_window": 400,
+    "gate_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "scale": 0.05,
+    "short_gate": 0.3,
+    "volume_window": 48,
+    "window": 168
+  },
+  "cost_stress": {
+    "x1": 1.757031473632095,
+    "x1.5": 1.6779648435978467,
+    "x2": 1.598872247815372
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168"
+    ],
+    "fraction_negative": 0.0,
+    "oos_sharpe_mean": 1.7520315414426475,
+    "oos_sharpe_min": 1.4053785658205402,
+    "oos_sharpe_q05": 1.4190160867982087,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 1.7563434098397,
+    "annualized_sharpe_gross": 1.9607602459788471,
+    "average_absolute_exposure": 0.526437424525372,
+    "bars": 48996,
+    "cost_share_of_gross": 0.10416961078981903,
+    "gross_return": 3.3662995646873304,
+    "hit_rate": 0.5116559157344656,
+    "max_drawdown": -0.11986365602627147,
+    "net_return": 2.7236869012952014,
+    "nonzero_target_bars": 48995,
+    "turnover_units": 176.01960011690517
+  },
+  "generated_at": "2026-09-03T12:58:20.073894+00:00",
+  "grid_size": 1,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 1.7563434098397,
+    "degradation_slope": null,
+    "dsr": 0.9964443583562046,
+    "dsr_p_value": 0.003555641643795404,
+    "expected_max_sharpe_annual": 0.6189957313210819,
+    "grid_trials": 1,
+    "ledger_trials": 3,
+    "n_trials": 43,
+    "pbo": null,
+    "pbo_combinations": null,
+    "prior_trials": 39,
+    "prob_oos_loss": null,
+    "sharpe_variance_period": 8.891647820758356e-06
+  },
+  "range": {
+    "bars": 48996,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-01-31 00:00:00+00:00"
+  },
+  "reasons": [],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 1.7563434098397,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.5272479624481332,
+          "up": 2.0596941196272964
+        },
+        "scale": {
+          "down": 1.6063565559623638,
+          "up": 2.0373093556414665
+        },
+        "window": {
+          "down": 1.5559941247393785,
+          "up": 1.9025645187567133
+        }
+      },
+      "worst_degradation": 0.13043886867914747,
+      "worst_neighbour": 1.5272479624481332
+    },
+    "time_split_sharpes": [
+      1.7042316939653974,
+      2.1228456813839696,
+      0.8728231725946628,
+      2.443989728256638
+    ]
+  },
+  "strategy": "flow",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "universe_mode": "static",
+  "verdict": "PASS",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      }
+    ],
+    "fold_consistency": 1.0,
+    "fold_sharpes": [
+      2.1589976750970714,
+      1.2302434195220806,
+      2.0628765569229426,
+      0.6475289783058882,
+      2.733315902571218
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.11986365602627314,
+    "oos_return": 2.4501167443011664,
+    "oos_sharpe": 1.7993040498311024
+  }
+}

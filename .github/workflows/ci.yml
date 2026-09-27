@@ -1,0 +1,143 @@
+# StarQuant — CI
+#
+# 这个文件在 2026-09-09 至 2026-09-13 之间教了一件事，写在这里免得下次重学：
+#
+#   连续 23 次推送 failure、4 天，每次 35–45s。这个时长说明它挂在 `mypy` 那一步，
+#   `pytest` 那一步**一次都没跑过**。同期本地 `pytest -m "not network"` 是全绿的，
+#   所以这 4 天里 CI 并没有藏住一个真实的测试失败——它藏住的是**"改动被机械检查过"这件事本身**。
+#   这个仓库的整条治理线（预登记 → 证据 → registry 启动门）都建立在这上面。
+#
+# 由此，这个文件有两条不能再退的性质：
+#
+#   1. 依赖按 `requirements.lock` 安装，不每次重新解析。
+#      事故的根因是 `pyproject.toml` 写 `mypy>=1.10`，CI 每次解析到当天最新，解析到了 mypy 2.x，
+#      收窄规则变严（`all(isinstance(...) for ...)` 不再收窄），30 个错误一次冒出来。
+#      同一个缺口下一次会以别的形式再来（`pandas>=2.2` 现在解析到 3.0.x，语义已经变过）。
+#      版本的改变从此必须是一次显式提交。锚的时间边界与适用范围见 `requirements.lock` 的头注。
+#
+#   2. 四道门（Format / Lint / Types / Tests）**互不遮挡**：每一步都带
+#      `if: !cancelled() && install 成功`，所以一次运行能同时告诉你这四件事各自的状态，
+#      而不是"第一个红的挡住后面全部"。
+#      注意这**不是把门变松**：GitHub Actions 里一个失败的步骤照样让整个 job failure
+#      （`continue-on-error` 才是变松，这里没有用）。只是不让它失明。
+#      唯一的例外是 Install 失败——那时后面四步没有可跑的环境，跳过比跑出四条无意义的红更清楚。
+
+name: ci
+
+# 2026-09-16：`push` 限定到 main。此前 `push:` 不带 `branches`，于是一个开着 PR 的分支每推一次跑两遍
+# ——`push` 一遍、`pull_request` 一遍——同一个 commit、同样的四道门、一遍约六分钟。private repo 在
+# Free 方案下每月 2000 分钟 Actions，那一半是白烧的。
+#
+# 但配额只是顺带。真正的理由是这两个事件测的根本不是同一个东西：`push` 跑分支 HEAD，`pull_request`
+# 跑 GitHub 为这个 PR 造的 merge commit（`refs/pull/N/merge`），也就是**合并之后的样子**。要回答
+# 「合进 main 会不会红」，后者才是那个问题本身，前者只是它的近似。剩下的两条覆盖了全部：分支上的
+# 改动由 PR 的 merge commit 判，main 自己的每次提交由 push 判。
+#
+# 代价写清楚：没开 PR 的分支不再跑 CI。这是有意的——它把「要机械检查」和「开一个 PR」绑成同一件事，
+# 而不是让分支在无人读的绿灯上累积。
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # 2026-09-16 升级：checkout v4 -> v7、setup-python v5 -> v7。起因是 GitHub 在每次运行上挂了
+      # 一条注记——这两个 action 都还指向 Node.js 20，runner 已在强制用 Node 24 跑它们。那是**警告不是
+      # 失败**，所以它可以这样挂很久：这个仓库上一次让"没人看着的机械"自己坏掉，代价是 23 次推送、
+      # 4 天的红 CI（见文件开头）。
+      #
+      # 逐个大版本核过它对**这个** workflow 的影响，而不是照着 latest 升：
+      #   checkout      v5 = Node 24；v6 = 凭据改存单独文件；v7 = 对 `pull_request_target` /
+      #                 `workflow_run` 触发的 fork PR 拒绝检出。本文件只在 `push` 与 `pull_request`
+      #                 上触发，且不带任何 `with:`，三条都不绑。
+      #   setup-python  v6 = Node 24（破坏性，要求 runner >= v2.327.1；`ubuntu-latest` 满足）；
+      #                 v7 = 移除 `pip-install` 入参，本文件没用过。下面三个入参 v7 全部仍然支持。
+      #
+      # 注意 v6 起 setup-python 会更积极地读 `.python-version`（仓库里那份是 3.12）。这里仍然显式写
+      # `python-version`，它优先；两者今天一致，**保持一致**——上界不要动：`pyproject` 的
+      # `requires-python` 是 `>=3.12,<3.14`，这个仓库有过"3.14 静默掩盖了本该暴露的真实失败"的教训。
+      #
+      # 留在浮动的大版本标签上（`@v7` 而不是 SHA），与本文件既有约定一致。值得记一句的张力：下面
+      # "依赖按 requirements.lock 安装、不每次重新解析"那条规矩，理由正是"解析到当天最新"会静默变。
+      # `@v7` 在 v7.x 内部同样会自己变。两者风险不同量级（action 是 GitHub 自己维护的少数几个），
+      # 要不要改成 SHA 钉住是一次单独的决定，不在这次升级里顺手做。
+      # `fetch-depth: 0` 是给下面那道 Secrets 门用的，它要全部历史。默认的浅检出只有
+      # 一个 commit，在它上面跑历史扫描会安静地通过——而「安静地通过」正是这个仓库
+      # 反复付过学费的那种失败（见文件开头的 23 次红 CI）。代价是检出慢几秒，
+      # 72 MB 的仓库量过：浅检出 ~2s，完整 ~8s。
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # ↓ 第五道门：Secrets。2026-09-19 加，起因是发现本仓库**从 2026-08-05 创建起
+      #   就是公开的**——而仓库文档里一直写着「Free plan 的 private repo」，这个
+      #   认知差持续了 45 天。当天全历史扫描的结论是干净的（1,637 commits、72 MB、
+      #   零真实泄漏），这道门是为了让它**保持**干净。
+      #
+      #   为什么扫全历史而不是只扫这次改动：密钥一旦进了历史，把文件删掉不会让它消失。
+      #   只扫工作树的检查会对着一个仍然公开可读的密钥报平安。
+      #
+      #   为什么钉版本而不用 `gitleaks/gitleaks-action@v2`：与「依赖按 requirements.lock
+      #   安装、不每次重新解析」同一条理由。扫描规则集会随版本变，一次规则更新让这道门
+      #   在没人改过代码的情况下变红或者变哑，都不是这里想要的。升级版本是一次显式提交，
+      #   升级时要重跑 `.gitleaks.toml` 的自检（见 deploy/install-hooks.sh 末尾那段）。
+      #
+      #   这道门与其它四道一样带 `if: !cancelled()`，红了不遮挡后面的步骤。
+      - name: Secrets（全历史扫描）
+        if: ${{ !cancelled() }}
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+          /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.lock
+
+      - name: Install（按锁安装，不重新解析）
+        id: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e . --no-deps
+
+      # 让这次运行能自我说明它是在什么上面跑出来的——与 registry 指纹、
+      # construction_fingerprint 同一条理由。日志里留一份，日后对不上时有据可查。
+      - name: Environment（版本存档）
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          python -VV
+          python -c "import numpy, pandas, pyarrow; print('numpy', numpy.__version__, '| pandas', pandas.__version__, '| pyarrow', pyarrow.__version__)"
+          ruff --version
+          mypy --version
+          pytest --version
+
+      # ↓ 以下四步顺序保持 Format → Lint → Types → Tests（读日志的习惯顺序），
+      #   但靠 `if` 让它们各自独立成败，任何一步红都不会让后面的步骤不跑。
+      - name: Format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff format --check .
+
+      - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff check .
+
+      - name: Types
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: mypy
+
+      # 不要给这一步加 `--cov`：那会改变所有人（包括本地和其它并行工作）跑测试时的行为。
+      # 覆盖率是按需跑的，命令写在 `pyproject.toml` 的 dev extras 注释里。
+      - name: Tests (offline)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pytest -m "not network"

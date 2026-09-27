@@ -1,0 +1,572 @@
+# CANDIDATE registry for the L4 canary soak (AC-G5 / DL-G5 / M-G03).  NOT read by the armed loop.
+#
+# 2026-09-12.  This candidate is byte-different from `alpha_registry.yaml` by this comment block and
+# NOTHING ELSE, and that is deliberate rather than a placeholder.  The canary is a DEPLOYMENT health
+# check, not an alpha filter (KILL-AR-04), and it had never run once - so the first thing it owes is a
+# POSITIVE CONTROL: a registry that should pass, passing.  Without that, a future canary failure could
+# not be told from an instrument that never passes.
+#
+# A semantically different candidate was considered and rejected on the evidence: the only legal shapes
+# available today either need a book report that does not exist (`books.flow_short.fraction` 1/3 -> 1/6,
+# which §3 names and which the startup gate refuses without a matching report) or need a strategy with a
+# PASS/WEAK_PASS evidence report that is currently disabled - and there is none (the five disabled
+# strategies all carry FAIL evidence).  Inventing one would be asking the canary to bless a candidate the
+# gates are correctly refusing.
+#
+# The negative control is DRILL-G4, run separately: inject a startup-gate rejection mid-soak and check
+# the candidate goes back to the queue with the armed loop untouched.  The pair is what proves the
+# instrument; neither half alone does.
+#
+# Replace this file with the first real promotion candidate when one exists.
+#
+# ----------------------------------------------------------------------------------------------------
+# 2026-09-16 CORRECTION.  The paragraph above was TRUE on 2026-09-12 and had stopped being true by
+# 2026-09-15, which is the one thing a positive control may not do quietly.  This file was last touched
+# at `6e87e7ed` (09-12); `alpha_registry.yaml` moved three times after it, and the two had drifted apart
+# on exactly the two fields that decide what a soak is soaking:
+#
+#   universe          18 pinned symbols here, `[]` in armed - the operator UNPINNED the population on
+#                     09-15 (`081f57da`) because a frozen list is not what any cited report traded.
+#                     So this candidate was soaking a population the armed loop had abandoned.
+#   evidence.report   `tsmom-validation-20260908T182204Z` here, `...20260913T182325Z` in armed.
+#
+# The soak running when this was found (PID 802, started 09-15T04:24Z, 90/168 cycles) was therefore not
+# the positive control this file's own first paragraph describes: "a registry that should pass" had
+# silently become "a registry nobody would deploy".  It was regenerated from the armed registry as of
+# `71863e9e` and the soak restarted; the 90-cycle record was moved to `.starquant/live-shadow-dry-run.20260916`
+# rather than appended to, because one `cycles.jsonl` may only describe one candidate.
+#
+# The GENERAL lesson, which is why this is recorded here rather than fixed silently: a file whose
+# correctness is "identical to that other file" has no instrument watching it.  Every other identity in
+# this repository is checked by something - the registry digest, the construction fingerprint, the
+# evidence sha256 - and this one was checked by a sentence.  `tests/cli/test_the_shadow_cannot_touch_the_armed_loop.py`
+# now holds the identity itself: the candidate must differ from the armed registry by comments alone.
+# ----------------------------------------------------------------------------------------------------
+#
+# 2026-09-19,又一次按上面那句承诺同步,而这一次同步过来的东西要说清楚。armed registry 的
+# tsmom 指针换到了 `tsmom-validation-20260919T081914Z.json`,verdict **FAIL**(理由写在 armed
+# 那份文件的 evidence 块旁边:两个可用指针都过不了 armed 启动,只是挡在不同的门上,而这一个
+# 至少 dataset 是对的、verdict 是诚实的)。
+#
+# **后果,写给读 canary 结果的人。** 这个 POSITIVE CONTROL 从今天起也带着一条
+# `tsmom: evidence verdict FAIL does not allow live use`,直到 `deploy/run_live.sh` 的 D-041
+# bridge 在 2026-10-13 过期。canary 是 DEPLOYMENT 健康检查不是 alpha 过滤器(KILL-AR-04),
+# 它问的是「这套部署起不起得来、跑不跑得动」,不是「这份证据过不过门」——所以它仍然是有效的
+# 控制。但「一个应该通过的 registry,通过了」这句话在这段时间里要读成:**在同一条被明示豁免
+# 的 evidence 问题之下**通过。豁免只此一条、按字符串精确匹配,定义在
+# `tests/shipped_evidence.py`,到期自动失效。
+#
+# 不这么同步的另一条路是删掉上面的 NOTHING ELSE 声称,把本文件变成一个真正的 promotion
+# candidate。那不是今天发生的事——指针换了,构造一个字节没动(`registry_digest` 逐位不变,
+# 核过),所以它仍然是 armed 的副本,而不是一个候选。
+# Strategies the live loop is allowed to run.  A strategy may only be enabled
+# when `evidence` points at a validation report produced by `starquant research validate`
+# and its sha256 matches; `starquant live run` verifies this at startup (KILL-015).
+version: 1
+
+# 2026-09-09「选 3」：交易总体钉在这里，重排成为一次受治理的事务。
+# 在此之前 universe.json 是决定，而循环每天约 01:00Z 重写它——于是每一份引用的证据都在那一刻
+# 停止描述被交易的总体，数据集闸拒绝下一次 armed 启动。可干净重启每天到期一次，直到 09-08 一次
+# canary 把它提前七小时触发，才有人看见。
+# 钉在 registry 而不是把刷新节奏做成构造参数：M-010 的 30 天窗口只按 construction_fingerprint
+# 清零，而这条窗口自 2026-09-04T15:02Z 起未断，是整条治理线在等的那个时钟。
+# 循环仍然每天重排、仍然把结果记进 cycles.jsonl 的 universe_update，只是不再采纳它。
+#
+# 这份名单读自 .starquant/live/state.json——armed 循环此刻真正持有的那套。第一版读的是
+# .starquant/data/universe.json，而 09-08 18:00Z 一次裸 --paper 重排把那个文件里的 CYSUSDT
+# 换成了 PUMPUSDT；照那份钉，钉的是循环从来没持有过的币。文件是观察，而且不止一个进程在写它。
+# 2026-09-13T21:13Z（操作者指示）：TRUMPUSDT 移出。它的模型目标已缩到权益的 0.044%
+# （4.75 USDT），而 `no_trade_band: 0.005` 要求一笔调仓至少 0.5% 权益（当时 53.94 USDT），
+# 于是它从 2026-09-13T19:00Z 起每根周期都被记成 BAND_BLOCKS_ENTRY：占着一个名额、永远
+# 建不了仓。18:00Z 那根它自己把空头平掉之后就再没有过敞口，所以移除不平任何仓位。
+# 先测后改，三项都是量出来的而不是推的：
+#   构造指纹 46b8d731530a 删前删后一致 —— M-010 的 30 天窗口**不清零**（universe 名单
+#     不在 construction_fingerprint 里；在里面的是 min_history_bars）；
+#   启动证据门 registry_evidence_problems / registry_dataset_problems 删前删后都是 0；
+#   registry_digest e204447bef68 -> 9e1bf73c3691，重启后心跳应读到后者。
+# 池子每日仍照常重排、照常记进 cycles.jsonl 的 universe_update，但 universe_pinned 下它
+# 不决定任何事，所以 TRUMPUSDT 不会自己回来。
+# 2026-09-14T19:42Z（操作者指示）：ENAUSDT 移出，与上一条同形、同理由、同证据形状。
+# 它的模型目标已缩到权益的 0.016%（1.78 USDT），而 `no_trade_band: 0.005` 要求一笔调仓至少
+# 0.5% 权益（当时 54.76 USDT），于是它从 2026-09-14T17:00Z 起每根周期都被记成
+# BAND_BLOCKS_ENTRY：占着一个名额、永远建不了仓。
+# 到这一步的路径与 TRUMPUSDT 不同，值得记下来，因为它是带宽的另一侧：ENAUSDT 先被带宽
+# 困在**有仓位**的那一面——09-14T10:00Z 一笔 reduce-only 把它留在 −11.19 USDT（5x 下保证金
+# 2.24 USDT），而带宽 54.32 USDT，目标归零能要求的最大缺口就是 11.19，撞不动，止损也打不出
+# 订单（退出层只把权重改成 0，改完照样过带宽）。操作者 17:00Z 前手工平掉它之后，它才落到
+# BAND_BLOCKS_ENTRY 这一侧。判据与旋钮见 f44016a9 / ad70e81a，读数见 RESEARCH_LOG 同日条目。
+# 移除时无敞口：17:00Z 与 18:00Z 两根都记 BAND_BLOCKS_ENTRY，而该标签只在 current_qty == 0
+# 时发出，是循环自己从 positionRisk 读的——所以移除不平任何仓位。
+# 先测后改，四项都是量出来的而不是推的：
+#   构造指纹 ccd7bb9764b5（别名解析为 46b8d731530a）删前删后一致 —— M-010 的 30 天窗口
+#     **不清零**；`test_the_universe_list_is_not_what_this_pins` 正是把这件事钉住的那条；
+#   启动证据门 registry_evidence_problems 删前删后都是 0（dataset 那 2 条是当日已有的
+#     advisory，blocking 为 none，与本次无关）；
+#   registry_digest 9e1bf73c3691 -> 1db80a06f281，重启后心跳应读到后者。
+# 与 TRUMPUSDT 一样：池子每日仍重排、仍记 universe_update，但 universe_pinned 下不决定
+# 任何事，所以 ENAUSDT 不会自己回来。改 registry 不等于改循环——引擎只在启动时建模，
+# 这条移除要到下次重启才生效。
+# 2026-09-15（操作者裁定）：钉住取消，`universe: []`。上面整段保留不删——那是 TRUMPUSDT 与
+# ENAUSDT 两次移除的审计线，且它记录的机制仍然成立，只是不再被使用。
+#
+# 取消的理由不是"钉住太麻烦"，是钉住偏离了证据。循环引用的那份报告
+# （reports/research/tsmom-validation-20260913T182325Z.json，verdict PASS）记着
+# `universe_mode: "pit"`，其 dataset.membership 是 refreshes 2042 / median_gap_hours 24.0 /
+# mean_size 17.58 / union 211：**让这本书上线的回测交易的就是一个每 24 小时按同一条 15/20
+# 滞回重排的池子**，五年里进出过 211 个币，从来不是一份冻结的名单。所以冻结的 16 币池子才是
+# 证据没有描述过的那本书，而且漂移单调变大——2026-09-15T01:00Z 的重排提案与实持已差 7 个名字。
+#
+# 钉住当初要挡的那件事（每日重排改写 universe.json → 数据集闸阻塞 → 可干净重启每天到期）是
+# 真的，但处置选错了层：`research_cmd._resolve_symbols` 只在 static 下读 universe.json，pit
+# 报告的总体是 membership.parquet（那一项无条件阻塞）。该冻的是闸的判据，不是交易池。闸已在
+# 同一分支改对。
+#
+# TRUMPUSDT / ENAUSDT 会随第一次重排回来，操作者裁定不加排除：它们"永久占名额"的性质本身是
+# 钉住造成的，池子每天换手时低权重的币会随排名自然出池。可证伪判据：若任一标的连续 5 天记
+# BAND_BLOCKS_ENTRY 且没被重排踢出池子，这条说法即被证伪，届时重议。
+#
+# 生效同样要重启——引擎只在启动时建模。取消后 registry_digest 不再含 universe 键（条件化的），
+# 所以 digest 会变一次；重启后心跳应读到新值。
+# 设计：docs/analysis/2026-09-15-universe-unpin-and-dataset-gate-design.md
+universe: []
+ensemble:
+  method: mean                 # weighted mean of per-strategy targets (alternative: rolling_zscore)
+  turnover_penalty: 0.0
+books:                         # independent sleeves next to the main book (D-018/D-019): each book is vol-targeted
+  flow_short:                  # on its own, scaled by `fraction`, summed with the main book; the main caps/band then apply
+    fraction: 0.333333         # must equal the `fraction` of the cited book report (checked at startup)
+strategies:
+  - id: tsmom
+    enabled: true
+    weight: 1.0
+    # Weekly-scale horizons: validated 2026-09-03 on 15 symbols, 2021-07 -> 2026-09
+    # (walk-forward OOS Sharpe 1.38, CPCV q05 1.20, DSR p 0.045, PBO 0.04, cost x2 Sharpe 1.29).
+    # The legacy 5/20/50-hour horizons FAILED validation (see docs/RESEARCH_LOG.md).
+    # 2026-09-03 round 4 enabled a funding-crowding modifier (crowding_window 72 / cut 0.7 / penalty 0.5) on the
+    # static-universe evidence (OOS 1.61 vs 1.38).  Round 6 (2026-09-04) DISABLED it (KILL-027 / E-040 / E-041):
+    # the live path never had funding history, so the modifier was silently inactive while the registry evidence
+    # claimed it, and on the point-in-time universe the modifier is a negative contribution (full-sample Sharpe
+    # 1.64 with vs 1.72 without).  What runs is now exactly what is validated; re-open only with funding wired into
+    # the live panel AND a pre-registered point-in-time walk-forward against this control.
+    # 2026-09-05 RE-ENABLED, and the reason the round-6 rejection did not survive re-examination.  That
+    # rejection cited "on this evidence the modifier is a small negative (OOS 1.53 with vs 1.65 without)",
+    # which is tsmom-validation-20260903T181803Z, run 09-03 18:18.  D-034 (b0cc08a) landed 09-04 20:44:
+    # `fundingTime` lands one to forty-seven milliseconds past the hour and unevenly by year, so matching a
+    # settlement to a bar open by equality had dropped 43.7% of the 441,678-row archive onto a silent zero,
+    # "and the share missing differed from fold to fold".  This modifier reads exactly one thing - the trailing
+    # CROSS-SECTIONAL rank of funding - so 181803Z ranked a panel missing 43.7% of its settlements.  552ca9a
+    # re-ran the evidence under the corrected funding the same evening but added ONE ledger row
+    # (crowding_window=0): only the control arm was re-scored, so the comparison itself was never redone.
+    # Redone 2026-09-05 as a registered two-arm run, 193707Z.  That run is itself superseded: the evidence
+    # block below points at 093705Z (2026-09-06), which re-ran the same protocol under the corrected
+    # cross-sectional reference population; the P1-01 paragraph further down carries that run's numbers,
+    # and PBO is the figure below that moves most under it - 0.136 -> 0.219, informational at N=2 either way.
+    # 193707Z's numbers are kept here because what they are for is the argument against 181803Z, which is
+    # this paragraph's subject: all five folds select the modifier, OOS 1.7647 / NW t 4.0266, consistency
+    # 1.00, CPCV 1.795 / q05 1.338 / 0% negative, cost x2 1.68, PBO 0.136 - against 181803Z's PBO 0.5484,
+    # which fails D-020's own hard gate.  The PBO collapse is the tell: a corrupted input destabilises
+    # per-fold selection, and PBO is what measures that.
+    # Recorded honestly: this is a 2-point grid, so PBO at N=2 stays informational by our own convention, and
+    # D-020's two PASS conditions are not independent over a 5-year window (RESEARCH_LOG:344) - the verdict
+    # rests on one Sharpe gate plus three hard gates, not on two independent tests.
+    # Found by the external audit in docs/analysis/2026-09-05-backtest-guard-external-audit.md; the ledger-free
+    # recomputation that first caught it is scratchpad/verify_crowding_arms.py and agrees to the digit.
+    params:
+      horizons: [168, 336, 720]
+      horizon_weights: [0.2, 0.3, 0.5]
+      return_scale: 0.20
+      slope_scale: 0.01
+      entry_threshold: 0.20
+      # Measured inert under conviction_mode sign: 400 / 100 / expanding give the SAME sign on every one of
+      # 4,668,384 symbol-bars, because the clip against return_scale always binds (E-043).  Kept rather than
+      # deleted: omitting it falls back to the dataclass default of 200, which would no longer equal the cited
+      # evidence and the startup params gate would refuse to start.
+      vol_window: 400
+      conviction_mode: sign     # H-001: trade the direction of the weekly signal, not its magnitude (adopted 2026-09-04)
+      crowding_window: 72       # modifier ON (re-enabled 2026-09-05; see the RE-ENABLED paragraph above).
+                                # It consumes funding, so `SignalSpec.needs_funding` is now true for tsmom: a live
+                                # panel without `funding_history` makes `AlphaModel.targets` raise and
+                                # `starquant live run` refuse to start, rather than running the modifier silently
+                                # inactive as it did before D-023 (that failure mode is E-040 / KILL-027).
+                                # A RUNNING LOOP ONLY PICKS THIS UP AFTER A RESTART; see docs/RUNBOOK.md.
+      crowding_cut: 0.7
+      crowding_penalty: 0.5
+    # 2026-09-03 round 5: re-validated on the point-in-time universe (146 symbols that were ever top-15 by 30-day
+    # volume, monthly re-selection with the live hysteresis; D-013).  Survivorship-free result is unchanged:
+    # walk-forward OOS Sharpe 1.53 (static 1.52), folds [1.22, 0.78, 2.04, 1.65, 1.94], CPCV q05 1.18, DSR p 0.0002
+    # at 49 trials, cost x2 Sharpe 1.35, full-sample 1.64 / MDD -12.6%.
+    # 2026-09-04 D-020 (operator decision; docs/RESEARCH_LOG.md): the verdict is OOS-first and the DSR is informational.
+    # Evidence re-run as the crowding-off vs crowding-on control experiment on the point-in-time universe (same numbers
+    # as starquant-45's 175236Z): full-sample Sharpe 1.72 / MDD -13.5%, walk-forward OOS Sharpe 1.55 with Newey-West t 3.5
+    # over 44,995 OOS bars, folds [1.22, 0.49, 2.04, 1.65, 2.31], CPCV 1.65 / q05 1.26 / 0% negative, cost x2 1.43;
+    # The headline 1.55 is the fold-selected mixture (per-fold crowding_window [72, 0, 72, 72, 0]); the configuration
+    # that actually runs here (crowding off) has its own OOS Sharpe 1.65, t 3.73, folds [1.47, 0.49, 2.24, 1.71, 2.31]
+    # - the mixture is the conservative number, and best_params still equal these params.
+    # DSR p 0.26 at 69 trials (reported, not a veto), PBO 0.55 at N=2 (informational).  The 133239Z report (crowding
+    # 0.5, DSR p 0.0002 from a degenerate pooled variance) is superseded; the modifier never ran live (E-040).
+    # 2026-09-04 H-001 (operator decision): `conviction_mode: sign` adopted.  Pre-registered rule, fixed before the
+    # run: adopt only if OOS Sharpe >= baseline - 0.05 AND OOS max drawdown improves AND turnover falls.  All three
+    # hold (OOS 1.6450 -> 1.6026, MDD -13.53% -> -11.75%, turnover 357.4 -> 263.8, cost share 14.57% -> 11.69%).
+    # The honest reading is not "better" but "magnitude carries no return information": the two OOS net-return
+    # streams correlate 0.966 and their per-bar difference has a Newey-West t of -0.047 (p 0.96); a weekly block
+    # bootstrap puts the Sharpe difference at [-0.238, +0.151].  What is bought is lower turnover and a shallower
+    # drawdown; what is paid is a coarser position grain (average absolute exposure 0.383 -> 0.445).
+    # Evidence below is the single-configuration report (grid 1) because `validate` picks best_params by full-sample
+    # Sharpe, which the baseline wins; under D-020 the sign arm passes on its own: OOS 1.6026, Newey-West t 3.686,
+    # five folds positive, CPCV q05 1.23, 0% negative paths, cost x2 1.47.  Live arbiter: M-010 income attribution
+    # over 30 days, plus a turnover check - if turnover does not fall by roughly a quarter, live and backtest
+    # execution semantics have diverged again (that is how KILL-027 was found).
+    # 2026-09-04 05:22Z: re-validated again after the research membership moved from MONTHLY to DAILY
+    # re-selection (operator decision), which is the cadence the live pool has always used - the backtest now
+    # trades the universe the loop would actually have held.  The rebuild replaced membership.parquet, so every
+    # earlier `--universe pit` number became unreproducible; 041838Z below is kept for the band comparison but
+    # is no longer the evidence.  Same single-configuration protocol: OOS Sharpe 1.6436 against 1.7140 on the
+    # monthly table, Newey-West t 3.77, folds [1.47, 0.78, 2.32, 1.05, 2.58], consistency 1.00, CPCV 1.72
+    # / q05 1.41 / 0% negative, cost x2 1.54, full sample 1.7160 / MDD -12.1%,
+    # turnover 226.  204 symbols ever in the pool against 146 monthly, 0.36 membership changes
+    # per daily refresh against 6.68 per monthly one.  The strategy survives the higher-churn, more honest
+    # universe at a cost of 0.07 OOS Sharpe, which is the size of the survivorship-adjacent bias the
+    # monthly cadence was carrying.  DSR p 0.26 reported, not a veto (D-020).
+    # 2026-09-04 04:18Z: re-validated under the ADOPTED construction (no_trade_rel_band 0.40, P10 cell B).  The
+    # previous pointer (020459Z) was measured at band 0.25, so after the adoption the strategy-layer evidence no
+    # longer described the construction that runs - the D-026 gap, closed by re-running rather than by noting it.
+    # Same protocol as 020459Z (single configuration, point-in-time universe, 30 declared pre-ledger trials), so the
+    # two are like for like: walk-forward OOS Sharpe 1.7140 against 1.6026 at band 0.25, Newey-West t
+    # 3.95 over 44,995 OOS bars, folds [1.29, 0.63, 2.7, 1.58, 2.35], consistency 1.00,
+    # CPCV 1.80 / q05 1.37 / 0% negative, cost x2 1.62, full sample 1.7949
+    # / MDD -12.1%.  Turnover 233 against 264 and cost share 9.7% against 11.7%: the
+    # adoption's effect shows up in the evidence pipeline, not only in the paired test that justified it.
+    # DSR p 0.19 is reported, not a veto (D-020).
+    # The harder test also passes: the default 16-point grid at this band (040252Z, n=87 trials) gives OOS 1.376 with
+    # t 3.13 and PBO 0.015, and its full-sample best_params equal the params above.  Its headline is lower because
+    # folds 0-2 select entry_threshold/return_scale 0.3 there; a fold-selected mixture is not this configuration.
+    # 2026-09-04 13:14Z: RE-RUN under the corrected funding alignment (D-034).  The 052215Z report cited here
+    # before was computed while 43.7% of settled funding was being dropped by an exact-timestamp match, so it
+    # under-charged the funding this book pays.  Same protocol, so the two are like for like: pit universe,
+    # single configuration, 5 folds, min_train 4000, purge 50, cpcv 6, 30 declared pre-ledger trials.
+    # Verdict is unchanged - PASS with no failing gate - and the strategy-layer numbers move as follows:
+    # walk-forward OOS Sharpe 1.6436 -> 1.6496 with Newey-West t 3.78 over 45,014 OOS bars, folds
+    # [1.42, 0.79, 2.33, 1.07, 2.63], consistency 1.00, CPCV 1.6984 / q05 1.3889 / 0% negative,
+    # cost x2 1.5234, full sample 1.6972 / MDD -11.90%, turnover 225.6, cost share of gross 9.28% -> 9.78%.
+    # DSR p 0.2852 at 91 trials, reported not a veto (D-020); OOS clears the D-028 deflated threshold 1.0972.
+    # The full-sample move of -0.0188 is decomposed rather than asserted (2x2 diagnostic, no trials spent,
+    # `research validate` run once): funding fix -0.0083, CYSUSDT entering the pit universe -0.0096, two
+    # extra bars -0.0010.  The control cell reproduces the superseded report to 0.0010, which is what makes
+    # the decomposition trustworthy.  CYSUSDT is the name the pool comment already flagged as traded live
+    # while research had no klines for it; `starquant data sync` has since filled it in, so the pit universe is
+    # 205 symbols against 204.  Note the ledger charged the superseded run as a distinct trial (90 -> 91)
+    # because its range end differs by two bars, so the open question of whether a re-run after a data
+    # correction is the same trial did not have to be answered here - it was charged the conservative way.
+    # 2026-09-04 14:53Z: re-validated under the ADOPTED construction (P13, `vol_target` 0.15 -> 0.30).  The
+    # 131421Z pointer was measured at 0.15, so after the adoption the strategy-layer evidence no longer
+    # described the construction that runs - the same D-026 situation as the P10 band above, closed the same
+    # way, by re-running rather than by noting it.  The startup gate would have refused to start otherwise,
+    # which is `construction_problems` doing exactly its job; it caught this before the restart did.
+    # Same protocol, so the two are like for like: pit universe, single configuration (`conviction_mode: sign`),
+    # 5 folds, min_train 4000, purge 50, cpcv 6, 30 declared pre-ledger trials.  Verdict unchanged - PASS with
+    # no failing gate - and the numbers barely move, which is the point rather than a surprise: the vol target
+    # is a scalar on the weights, so it cancels out of a Sharpe except through the caps and the two guards.
+    # Walk-forward OOS Sharpe 1.6496 -> 1.66 with consistency 1.00, CPCV 1.71 / q05 1.35 / 0% negative,
+    # cost x2 1.55.  DSR p 0.28 at 91 trials, reported not a veto (D-020); OOS clears the D-028 threshold 1.10.
+    # The ledger was charged one trial for this run.  What DID move is what the report now records: its
+    # `portfolio` block reads vol_target 0.30, so from here the gate compares a construction that is real.
+    # 2026-09-08 audit - what the stress testing covers, declared rather than left to be assumed.
+    # The hourly archive starts 2021-01-01 and the first scored decision bar is 2021-01-31 01:00Z, so the
+    # book has been replayed through 2021-05 (leverage flush), 2022-05 (LUNA/UST), 2022-06 (3AC/Celsius),
+    # 2022-11 (FTX) and 2024-08 (yen carry unwind) - four positive, one small negative (FTX -3.3%), every
+    # one of them far better than the equal-weight long benchmark, which is the crisis-alpha shape the
+    # edge statement in signals/tsmom.py predicts.  It has NOT been replayed through 2020-03: that data
+    # does not exist for this universe and the 2020 perpetual roster barely overlaps today's, so the gap
+    # is declared rather than filled.  It matters because 2020-03 is the one event whose timescale was
+    # minutes, and all three of this book's protections are per-bar - `daily_loss_pause` acts on the next
+    # cycle, `max_participation` shrinks with the same volume curve that dries up, and the exit overlay
+    # only evaluates at a close.  Measurements: scratchpad/audit20260908_stress_windows.py.
+    # Return shape over the whole sample, for the "is this short volatility wearing a hat" question:
+    # hourly skew +1.08 / daily +0.83 (positive, i.e. the opposite sign), hit rate 51%/53%, payoff ratio
+    # 1.02/1.16, worst UTC day -6.22%.  The hypothesis is refuted by measurement, not by argument.
+    # 2026-09-06 P1-01/DL-Q1: re-validated under the corrected CROSS-SECTIONAL REFERENCE POPULATION.
+    # The crowding modifier ranks trailing funding across symbols, and until now "across symbols" meant
+    # whichever columns the caller had loaded: research ranked a name against the whole point-in-time
+    # panel (118.8 names on an average bar), the loop against the 15-18 it manages.  Measured on the
+    # shipped configuration, that is not a rounding difference - on member symbol-bars the long-crowding
+    # flag fires on 10.60% of them under the panel-wide population and 17.28% under the members-only one,
+    # and only 52% of the new flags are bars the old population also flagged.  So 193707Z described a
+    # signal the loop was not running; this report describes the one it is.
+    # Same protocol as 193707Z, so the two are like for like: pit universe, two-arm grid
+    # {crowding_window: [0, 72]}, 5 folds, min_train 4000, purge 50, cpcv 6.  Verdict unchanged - PASS,
+    # no failing gate - and all five folds still select the modifier:
+    #   walk-forward OOS 1.7647 -> 1.7662, NW t 4.03 -> 4.06, consistency 1.00, folds
+    #   [1.63, 0.90, 2.59, 1.10, 2.56] -> [1.74, 0.60, 2.56, 1.32, 2.56]
+    #   full sample 1.8261 -> 1.8177, MDD -22.19% -> -23.68%, turnover 384 -> 375
+    #   CPCV 1.795 -> 1.794, q05 1.338 -> 1.418, 0% negative;  cost x2 1.676 -> 1.672
+    #   arms: cw 0 1.7035 -> 1.7097, cw 72 1.8261 -> 1.8177 (the modifier's edge survives the correction)
+    #   PBO 0.136 -> 0.219 (informational at N=2 by our own convention)
+    # The D-028 threshold moves 1.0981 @ 93 trials -> 1.1446 @ 125, because --prior-trials went 30 -> 60:
+    # 30 as before, +14 for D-039's hand-declared band cells, +16 for the 2026-09-06 grid run recorded in
+    # docs/analysis/2026-09-05-system-quality-deep-analysis.md.  Declared rather than left to be noticed.
+    #
+    # 2026-09-06 DL-R4: what this report is NOT.  Its walk-forward OOS of 1.7662 comes from a two-arm
+    # grid whose five folds all chose the same arm, so no fold ever had a choice to make and that
+    # number is the tail of one full-sample series, not a walk-forward result.  The honest walk-forward
+    # number for this construction is the 16-point default grid run the same day:
+    #   reports/research/scratch/tsmom-validation-20260906T030942Z.json - OOS 1.4852, folds
+    #   [1.19, 0.06, 2.30, 1.25, 2.57], three distinct per-fold choices, null annual SD 0.4428.
+    # That report is scratch: it was written to a scratch ledger (`ledger_trials` 0) and is not evidence.
+    # Its 16 cells ARE charged here - they are the +16 in the 30 -> 60 above, so nothing is owed.
+    # Against the quantile gate at this report's own N=125 the honest number clears by 0.003 (null SD
+    # 0.4430, threshold 1.4822) to 0.017 (null SD 0.4389, threshold 1.4685).  A margin thinner than the
+    # gap between two equally defensible null SDs is not a margin; the crossing to WEAK_PASS sits at
+    # N=128 or N=144 depending on which SD is used, and the ledger is at 125.  The operator ruled on
+    # 2026-09-06 that this is enough to keep running under controlled execution (deep-analysis report
+    # 12.6 / appendix B); real money is unaffected and stays HOLD.
+    # 2026-09-08 重出（操作者裁定）：Phase 7 对抗审查（KILL-AR-01）指出 093705Z 早于 09-08 加入的
+    # `oos_selection.gate` 字段，现行 `decide()` 对它判 "must be re-derived"。同一协议重跑——两臂网格
+    # {crowding_window: [0, 72]}、pit、5 折、min_train 4000、purge 50、cpcv 6、--prior-trials 60——但这次
+    # guards + exits 按默认开，所以它描述的是循环持有的四层书（09-08 审计高危 #1 的关闭动作）。
+    # 走前 OOS 1.81（093705Z 为 1.77）、门 1.49 @ N=146（按策略桶：84 账本 + 60 申报 + 2）、p_family 0.00、
+    # CPCV 1.86 / q05 1.36 / 0% 负、成本 x2 1.69、DSR p 0.31（只报不判）、PBO 0.09。VERDICT PASS。
+    # DL-R4 的标注仍在：两臂全折同选，这个 OOS 是一条全样本序列的尾巴，不是一次选择的样本外记录。
+    # 全库 unique 试验 677（重出后 +4 行）下的分位数门约 1.67，此数亦过；诚实 16 点网格（030942Z，1.485）在该门下不过。
+    # 2026-09-09 重出（操作者裁定「选 2」）：09-08T18:00Z 一次 canary 的池子重排把 universe 指纹从
+    # d47dbc7c127cfef7 换成 788ade109abd2238，成员真的变了，于是 `registry_dataset_problems` 阻塞、
+    # `live run --armed` 被拒绝启动。同一协议重跑（两臂 {crowding_window: [0, 72]}、pit、5 折、
+    # min_train 4000、purge 50、cpcv 6、guards + exits 开），只有一处变：--prior-trials 60 -> 95，
+    # 因为 P26 按 D-039 先例申报的 35 个手工补的格子第一次被喂进 DSR 分母。
+    # 后果是门变严而不是变宽：1.487 @ N=146 -> 1.51 @ N=183，而走前 OOS 1.81 仍然过。
+    # CPCV 1.86 / q05 1.31 / 0% 负、成本 x2 1.69、DSR p 0.36（只报不判）、PBO 0.09。VERDICT PASS。
+    # DL-R4 的标注仍在：两臂全折同选，这个 OOS 是一条全样本序列的尾巴，不是一次选择的样本外记录。
+    # 不重启：换证据指针不动 construction_fingerprint 也不动 registry_digest，所以 M-010 那段自
+    # 2026-09-04T15:02Z 起未断的窗口不清零。
+    # 这条指针的有效期到下一次 universe 日常重排（约每日 01:00Z）——见 RESEARCH_LOG 同日条目。
+    # 2026-09-14 (P32)：指针移到 182325Z。以上每一段都在描述 182204Z，它是在 `vol_target 0.30` 下
+    # 产出的；操作者把 k 裁定为 0.60，那份证据就不再描述被交易的构造，`registry_evidence_problems`
+    # 会说 `portfolio vol_target is 0.6 live but 0.3 in the cited evidence`，armed 启动被拒。上面那句
+    # 「不重启：换证据指针不动 construction_fingerprint」描述的是那一次换指针，**不适用于这一次**：
+    # 这一次同时改了 `vol_target`，是构造改动，M-010 与 M-G06 的窗口都清零。
+    #
+    # 新证据与旧证据逐项对照，把变差的也列出来，因为它们是这次加注的价钱：
+    #   OOS Sharpe      1.8087 -> 1.5919      门 1.5136 @183 -> 1.5493 @242
+    #   余量            +0.2951 -> +0.0426    <-- 薄了将近一个数量级，这是本次最该被记住的数
+    #   CPCV mean/q05   1.86/1.31 -> 1.61/1.19       PBO 0.0856 -> 0.2082
+    #   成本 x2         1.69 -> 1.56          全样本 MDD -21.5% -> -40.3%
+    #   平均毛敞口       0.849 -> 1.345        换手 415 -> 540
+    #   guards          封顶 bar 390 -> 4070、暂停 bar -> 491；liquidation_touches 仍是 0，
+    #                   min_margin_buffer 97.17 —— 限制的不是爆仓，只是回撤，这一条没有变。
+    # VERDICT PASS 成立，但它是**擦边过**：OOS 比门只高 0.0426。下一次任何抬高 N 的动作（申报新格子、
+    # 账本新增行）都可能把它推到门下，所以在 k=0.60 下再做 tsmom 的搜索之前必须先算门，不能先跑。
+    #
+    # 全库口径下这次**不过**：whole-library 门 1.8184 对 OOS 1.5919。按 R0 那是报告项不是门
+    # （`gate_scope: per_strategy_bucket`），而且同一口径今天也会否掉 k=0.30 的在位者（1.8087 对
+    # 1.8184）——这正是 R0 注记里 KILL-AR-01 说的那件事。记在这里，不是拿它当通过的理由。
+    #
+    # DL-R4 的标注同样仍在：两臂全折同选，这个 OOS 是一条全样本序列的尾巴。
+    # 预登记物证：`--prereg 96d659ae`（commit 时间写进了报告的 preregistration 块）。但那条预登记
+    # 本身是**补记**的，日志同日条目第一句就写了这件事；下游不得援引「预登记的选择规则」。
+    # 2026-09-17（D-043）：PASS -> WEAK_PASS。判定规则没有放松，是补上了一个一直算得出、一直印
+    # 得出、却没有任何判定代码读过的字段：这份报告的 `oos_is_full_sample_tail` 是 true。
+    # 上面第 301 行三天前就把这件事写成中文了——「两臂全折同选，这个 OOS 是一条全样本序列的尾巴」。
+    # 人知道，报告知道，`research validate` 还把这句话打到终端上；只有 `decide` 看不见，于是
+    # registry 可以写一个报告自己已经限定过的 PASS。补的是那一条读取路径，不是一条新门槛。
+    #
+    # 三件事没有变，写在这里免得下一个读者把降级当成降配置：
+    #   * 循环照常跑。`registry.evidence_problems` 允许 WEAK_PASS 上线，启动门读这个字符串、不重算。
+    #   * 权重、参数、构造一个都没动；`registry_digest` 不含 evidence 块，指纹不变。
+    #   * 数字一个都没变。变的是这个数字被允许支撑多强的结论。
+    #
+    # 摘掉这个上限只有一条路：在一个**真的有选择**的 grid 上重跑 validate——多个参数点，各折可以
+    # 选出不同的赢家。那才是 walk-forward 声称在测量的东西。在那之前 WEAK_PASS 是实话。
+    #
+    # **2026-09-19：那条路走完了,指针换到它的结果。** 上面那段写「摘掉这个上限只有一条路——
+    # 在一个真的有选择的 grid 上重跑」。16 格跑了(PR #84,预登记 73f3599e,`--charge 16`,
+    # ledger 22,183 -> 22,199),`oos_is_full_sample_tail` 确实转了 False:fold 1-3 选
+    # `horizons [24,72,168] / return_scale 0.20`,fold 4-5 选 `[168,336,720] / 0.30`。
+    #
+    # 拿到的答案不在那个字段上,在它的大小:同一次运行、同一 ledger scope 下,全样本 argmax
+    # 那个配置(**就是下面 params 里跑的这个**)自己的 walk-forward OOS 是 **1.5292**,而各折
+    # 自己选的混合是 **1.2306**。差 **0.2986**,这是「真做一次选择」的代价。1.53 不是可实现的
+    # 样本外读数——它是事后知道谁会赢之后回头读的;1.23 才是一个选择程序能交付的。
+    #
+    # **换指针换掉的是哪道门,不是能不能启动。** 实测(2026-09-19)两个指针都过不了 armed 启动,
+    # 只是挡在不同的门上:
+    #   09-13 (WEAK_PASS)  evidence 通过,`registry_dataset_problems` 挡——membership 表已重建
+    #                      (union 211 -> 212、refreshes 2042 -> 2056),那份证据不再描述磁盘上的数据
+    #   09-19 (FAIL)       dataset 通过——它就是在今天这张表上跑的;evidence 挡在诚实的 FAIL 上
+    # `live_cmd.py:312` 是 `if problems or dataset.blocking:`,两道门任一响都进同一个 `raise`,
+    # 所以「要不要 `--allow-unvalidated`」这件事不变。`deploy/run_live.sh` 的 D-041 bridge 到
+    # 2026-10-13 为止无条件加它,launchd 的循环因此照跑;手动 `live run --armed` 没有 bridge,
+    # 换之前就已经起不来了,换之后还是。
+    #
+    # 那为什么还要换:**记账记准**。指着 09-19,dataset 是对的、verdict 是诚实的;指着 09-13,
+    # 是一份「从没做过选择」的证据配一张已经不存在的数据表。两边都不能 armed 启动的前提下,
+    # 选后者没有任何东西可换。
+    #
+    # **2026-10-13 之后**:bridge 过期,strict gate 回来,而两个指针都不通(`run_live.sh` 在
+    # 09-18 就写下了这个结论)。要过,得有一份 dataset 和 evidence 同时成立的证据——16 格那次
+    # 给它标了距离:真做选择的 OOS 1.23,门 1.51,差的不是 0.01 是 0.28。
+    #
+    # 构造未变:`evidence` 块不进 `registry_digest`,指纹逐位不动(改动前后都核过),所以
+    # M-010 的 30 天窗口不重置,`realised_vol` 的单构造窗口也不断。
+    evidence:
+      report: reports/research/tsmom-validation-20260919T081914Z.json
+      sha256: fd655856b5891a0bfd7e3138052166caf78b69e46f9b4ddda58894d1264c5c34
+      verdict: FAIL
+    # 2026-09-09，操作者裁定「主账本必须要有止损」。在此之前主账本**连算都没算**：
+    # `probes_from_registry` 无条件排除 main（无注释、无测试），于是承载全部 fraction 的那本书，
+    # 它的 30 天滚动归因盈亏既没有被约束，也从来没有被计算过。规则看不见的东西，规则就管不住。
+    #
+    # 语义按 §3，不是按引擎的既有 stop：§3 给两条转移的通道不同——`probe -> retired` 写的是
+    # 「快：stopped_books」，`main -> probe` 没写。探针是未经证明的 sleeve，停掉它就是控制本身；
+    # 主账本 fraction 1.0，停掉它等于把策略关了，而 §3 说触发的 main 是**降级重新计窗口**，
+    # 从没说它停止交易。所以这条 stop 每周期计算、记录、告警并推动生命周期，但不清空账本。
+    # 要把它变成硬停，是 `stop.halts: true` 一个字段，由人走一次治理事务——那才是这个尺寸的决定该有的形状。
+    #
+    # 阈值 6% 的来历（预登记，路线 B：按 D-019 自己的规模换算，不是我拿 6 天样本外推）：
+    # flow 是 1/3 预算、预登记 max_loss 2%；tsmom 是 1.0 预算，3 倍 -> 6%。D-019 记过一次同形调整
+    # ——书翻倍时 0.01 -> 0.02，「阈值是权益的比例，而归因 P&L 随书的大小翻倍，不动它等于把 D-019
+    # 悄悄改严一倍」。分母是总权益（2026-09-08 审计三问③ 的裁定）。
+    #
+    # 路线 A（实测 −2σ，与规则读的是同一个量：已实现归因）给 −1.64%，与本值差 3.7 倍。没有采用，
+    # 因为样本只有 5.8 天、区间内还有一次 +5000 TRANSFER，是 5 倍外推——本项目已经在小样本外推上
+    # 错过三次。`review_after_days: 30` 就是为了拿满 30 天已实现归因后按 D-019 的 −2σ 重新定阈。
+    # 实测当下：trailing 归因 −0.1364% 权益，0.5%～5% 任何一档都不触发；装上它今天不改变任何行为。
+    probe:
+      accepted_by: operator
+      accepted_on: '2026-09-03'
+      reason: >-
+        grandfathered main book (KILL-AR-06).  The stop was added 2026-09-09 because §3 says main
+        keeps one and nothing computed it; the threshold is D-019's rescaled by fraction, and it is
+        due for re-derivation on 30 days of realised attribution.
+      review_after_days: 30
+      stop:
+        window_days: 30
+        max_loss: 0.06
+        halts: false
+  - id: xsmom
+    enabled: false
+    weight: 1.0
+    # Best honest configuration so far (raw returns, no skip): WFO OOS Sharpe 0.72, CPCV 0.70/-0.01, PBO 0.05,
+    # but DSR p 0.12 with 4 trials and far worse once the ~26 cumulative xsmom trials are charged. Stays disabled.
+    # Risk-adjusted / skip-24 variants validated worse in the full pipeline (OOS 0.20 / 0.51). See docs/RESEARCH_LOG.md.
+    params: {horizons: [168, 336, 720], horizon_weights: [0.2, 0.3, 0.5], skip_bars: 0, risk_adjusted: false, score_scale: 0.15, entry_threshold: 0.30}
+    evidence: null
+  - id: carry
+    enabled: false
+    weight: 1.0
+    params: {window_bars: 72, mode: rank, entry_threshold: 0.20}
+    evidence: null
+  - id: meanrev
+    enabled: false
+    weight: 1.0
+    params: {window: 48, z_entry: 1.5, z_exit: 0.5, z_max: 5.0, trend_gate_z: 2.0, entry_threshold: 0.20}
+    evidence: null
+  - id: breakout
+    enabled: false
+    weight: 1.0
+    params: {window: 48, atr_window: 14, distance_scale: 2.0, entry_threshold: 0.20}
+    evidence: null
+  - id: flow
+    # ENABLED AS A PROBE BOOK 2026-09-03 (D-019, operator decision: docs/RESEARCH_LOG.md round 5, path (b)).
+    # The short-only sleeve runs at a 1/3 risk budget next to tsmom.  The pre-registered book rule (D-018) says
+    # ACCEPT (total OOS Sharpe 1.53 -> 1.68, 4/5 folds, OOS MDD +0.7pp) while the sleeve's own validation verdict is
+    # FAIL (DSR p 0.81 at 48 trials), it is worth nothing on the static universe and 91% of its positions stack on
+    # tsmom's shorts.  So this is a bounded demo experiment that exists to earn out-of-sample evidence, not a
+    # validated strategy: `probe.stop` closes the book automatically when its trailing 30-day attributed P&L is
+    # <= -1% of equity (about -2 sigma of the sleeve's 30-day P&L; a literal "negative P&L stops" rule would stop a
+    # Sharpe-1 sleeve ~37% of the time in its first month), `review_after_days` flags the review date (2026-12-02)
+    # in the daily report, and `starquant live run` refuses an ACCEPT verdict without this probe block (KILL-015).
+    enabled: true
+    book: flow_short
+    weight: 1.0
+    # History.  Round 5 (KILL-025): on the point-in-time universe (D-013) flow FAILS - walk-forward OOS
+    # Sharpe 0.58, folds [-0.40, -0.04, 1.50, 1.13, 0.79], CPCV q05 -0.55, DSR p 0.56 (44 trials).  The static-universe
+    # PASS below (OOS 1.40 / 1.75) was survivorship: the long leg earned +148% on the 15 survivors and +20% (Sharpe
+    # 0.26) on the names that were actually top-15 at the time; the ranking IC is identical in both universes.  Three
+    # pre-registered rescues all FAIL on pit: short-only (OOS 1.09, DSR p 0.26 at 46 trials), tenure >= 12 refreshes
+    # (0.31), short-only + tenure (0.08).  Re-open only with new evidence on the pit universe.
+    # 2026-09-03 14:36Z (D-018, `research book`): short-only flow as a 1/3-budget sleeve next to tsmom on pit lifts the
+    # total book's OOS Sharpe 1.53 -> 1.68 (4/5 folds, MDD +0.7pp) and the pre-registered book rule says ACCEPT, but the
+    # sleeve itself FAILS (DSR p 0.81 at 48 trials), is worth nothing on the static universe (Sharpe 0.23) and 91% of its
+    # positions are names tsmom is already short (a short-side tilt, not an independent book).  Stays disabled.
+    # Round 2 (2026-09-03 06:27Z): 4-point prior grid, walk-forward OOS Sharpe 1.07 with one negative fold.
+    # Round 5 (2026-09-03 09:27Z): the losing stretch (2024-10 -> 2025-09, -8.6% in 2024-11 alone) was the SHORT leg
+    # being squeezed in spot-led rallies (XRP/ADA/SUI); perp taker selling into a strong uptrend is hedging, not
+    # information.  `short_gate` drops shorts while weekly momentum >= 0.3 (longs are never gated: the symmetric gate
+    # destroyed the 2022 bear folds).  Grid {short_gate: [0, 0.3, 0.5]} with 39 pre-ledger flow trials charged
+    # (28 earlier rounds + 11 round-5 diagnostics): walk-forward OOS Sharpe 1.40, every fold positive and no fold chose
+    # the un-gated control, CPCV mean 1.66 / q05 1.29 / 0% negative, DSR p 0.007 at 42 trials, cost x2 Sharpe 1.58,
+    # full-sample MDD -12% (was -26%).  PBO 0.57 is informational at N=3.  See docs/RESEARCH_LOG.md round 5.
+    params:
+      window: 168
+      scale: 0.05
+      volume_window: 48
+      cross_sectional: true
+      entry_threshold: 0.20
+      short_gate: 0.3
+      long_side: false          # short-only: the long leg's static-universe evidence was survivorship (KILL-025)
+      gate_horizons: [168, 336, 720]
+      gate_weights: [0.2, 0.3, 0.5]
+      gate_return_scale: 0.20
+      gate_vol_window: 400
+    # 2026-09-04 05:27Z: re-run on the daily-cadence universe with the robustness leg, and the book verdict is
+    # now REJECT.  Four of five checks still pass - the sleeve lifts the total book OOS 1.6436 -> 1.7715 and wins
+    # 4 of 5 folds - and the sleeve's own verdict improved from FAIL to WEAK_PASS (OOS 0.92).  The robustness leg
+    # is what fails: on the static universe the sleeve is -0.0513 at this fraction.
+    # Why that flipped, checked leg by leg rather than assumed: the static universe is a fixed symbol list and
+    # does not depend on the membership cadence.  The sleeve there went +0.0097 -> -0.0513 because the MAIN book
+    # improved (conviction_mode sign and the wider band lifted static main-only OOS 1.4063 -> 1.5715).  The sleeve
+    # was always ~zero on static; the bar rose.  And it cannot be otherwise: round 5 established this sleeve's
+    # edge comes from names that later dropped out of the pool, and the static universe by construction keeps
+    # only the survivors - the check asks whether a short-side edge shows up in a universe that excludes what it
+    # shorts.
+    # Operator decision (D-029): keep the probe running against the current, reproducible REJECT rather than
+    # against a stale ACCEPT whose universe no longer exists on disk, and say so here.  The probe was never
+    # running on the strength of the book verdict; D-019 made it a bounded experiment whose control is the P&L
+    # stop.  Tightened at the same time: review in 30 days, not 90, because the sleeve's marginal value did
+    # shrink as the main book improved and that is real information.
+    # 2026-09-06 P1-01/DL-Q1: re-run under the corrected reference population, and this sleeve is where
+    # the correction actually bit.  `cross_sectional: true` demeans taker-buy imbalance across symbols;
+    # research demeaned against ~119 names, the loop against its 15-18.  Four arms separate the causes,
+    # because 052732Z differed from today on three axes at once (code, data vintage, main-book crowding):
+    #   arm                          main pit OOS   sleeve delta   sleeve standalone
+    #   old code, cw0, 09-04 data        1.6436        +0.1264       WEAK_PASS   <- 052732Z
+    #   old code, cw0, today             1.6588        +0.0897       WEAK_PASS   (two more days of data)
+    #   NEW code, cw0, today             1.6588        +0.0420       FAIL        <- P1-01 alone
+    #   NEW code, cw72, today            1.7662        +0.0046       FAIL        <- and the bar rose
+    # So roughly 0.048 of the sleeve's apparent +0.126 marginal OOS Sharpe was an artefact of demeaning
+    # against a population the loop does not have, and the sleeve's OWN verdict was WEAK_PASS only
+    # because of it.  Note the main book's number is identical (1.6588) with and without the fix at
+    # crowding 0 - a signal with no cross-sectional operator cannot move, which is the internal check
+    # that this really is the population and not something else.
+    # The book verdict is REJECT before and after, so D-029 stands unchanged: the probe was never running
+    # on the strength of the book verdict, its control is the P&L stop, and this is now a reproducible
+    # REJECT against evidence that describes the sleeve the loop runs.  What the operator should weigh at
+    # the 2026-12-02 review is that the sleeve's case is weaker than the file used to say.
+    # 2026-09-08 重出（同一协议：--main tsmom --sleeve flow、fraction 1/3、pit + robustness static、5 折、
+    # min_train 4000、purge 50、cpcv 6、--prior-trials 39）：REJECT 不变，仍是同四项；且更弱——总书 delta
+    # 0.00（094008Z 为 +0.0046）、sleeve 单独 WEAK_PASS 0.59（DSR p 0.99 @ 71）、static 上 -0.08。
+    # 2026-10-03 复审时该权衡的就是这条趋势：探针的理由每重出一次就薄一层。
+    evidence:
+      report: reports/research/book-tsmom-flow-20260908T105322Z.json
+      sha256: 385b2239cd5096856f7fb7cec2961a1971be16b99ae5af9d6cd085beb7b235cc
+      verdict: REJECT           # book-level on the daily universe; runs only under the acknowledgement below
+    probe:
+      accepted_by: operator
+      accepted_on: "2026-09-03"
+      accepted_despite: REJECT  # D-029: the exception is stated here, not implied by a stale pointer
+      reason: >-
+        bounded demo experiment to earn out-of-sample evidence for the short-only flow sleeve (D-019).  The
+        book rule's robustness leg cannot validate this sleeve - its edge is in names that left the pool and
+        the static universe keeps only survivors - and the leg failed because the main book got better, not
+        because the sleeve got worse.  The control is the P&L stop, not the backtest verdict.
+      # 2026-09-04: 0.01 -> 0.02, moved with `vol_target` 0.15 -> 0.30 to PRESERVE this rule, not to relax
+      # it.  The threshold is a fraction of equity, but the probe's attributed P&L scales with the book's
+      # size, so doubling the vol target would have halved the effective distance to this stop and quietly
+      # made D-019 stricter than the operator registered.  Scaling it keeps the sleeve's stop where it was
+      # in the units that matter.  Recorded as a decision because a pre-registered rule was touched.
+      stop: {window_days: 30, max_loss: 0.02}
+      review_after_days: 30
+  - id: residual
+    enabled: false
+    weight: 1.0
+    params: {horizons: [24, 72, 168], beta_window: 336, scale: 0.05, benchmark: BTCUSDT, entry_threshold: 0.20}
+    evidence: null

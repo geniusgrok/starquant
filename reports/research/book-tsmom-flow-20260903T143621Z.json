@@ -1,0 +1,905 @@
+{
+  "book_verdict": "ACCEPT",
+  "checks": {
+    "cost_x2_sharpe": true,
+    "cpcv_negative": true,
+    "delta_oos_sharpe": true,
+    "fold_win_rate": true,
+    "oos_mdd_worsening": true,
+    "robustness_delta": true
+  },
+  "combination": {
+    "max_gross": 2.0,
+    "max_weight": 0.15,
+    "no_trade_band": 0.005,
+    "no_trade_rel_band": 0.25,
+    "rule": "total = main + fraction x sleeve (each book vol-targeted on its own), then the main book's per-symbol cap, gross cap and no-trade band on the total"
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "folds": 5,
+  "fraction": 0.3333333333333333,
+  "generated_at": "2026-09-03T14:36:21.321305+00:00",
+  "interval": "1h",
+  "kind": "book",
+  "main": {
+    "params": {
+      "crowding_cut": 0.7,
+      "crowding_penalty": 0.5,
+      "crowding_window": 72,
+      "entry_threshold": 0.2,
+      "horizon_weights": [
+        0.2,
+        0.3,
+        0.5
+      ],
+      "horizons": [
+        168,
+        336,
+        720
+      ],
+      "persistence_weight": 0.1,
+      "return_scale": 0.2,
+      "return_weight": 0.4,
+      "slope_scale": 0.01,
+      "slope_weight": 0.25,
+      "vol_window": 400
+    },
+    "strategy": "tsmom"
+  },
+  "min_train": 4000,
+  "notes": [],
+  "prior_trials": 39,
+  "purge": 50,
+  "reasons": [],
+  "robustness_universe": "static",
+  "rule": {
+    "max_cpcv_negative": 0.1,
+    "max_oos_mdd_worsening": 0.01,
+    "min_cost_x2_sharpe": 0.5,
+    "min_delta_oos_sharpe": 0.1,
+    "min_fold_win_rate": 0.6,
+    "min_robustness_delta": 0.0
+  },
+  "sensitivity_fractions": [
+    0.2,
+    0.5
+  ],
+  "sleeve": {
+    "params": {
+      "cross_sectional": true,
+      "entry_threshold": 0.2,
+      "gate_horizons": [
+        168,
+        336,
+        720
+      ],
+      "gate_return_scale": 0.2,
+      "gate_vol_window": 400,
+      "gate_weights": [
+        0.2,
+        0.3,
+        0.5
+      ],
+      "long_side": false,
+      "scale": 0.05,
+      "short_gate": 0.3,
+      "volume_window": 48,
+      "window": 168
+    },
+    "strategy": "flow"
+  },
+  "sleeve_standalone_verdict": "FAIL",
+  "universe_mode": "pit",
+  "universes": {
+    "pit": {
+      "by_fraction": {
+        "0.2000": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.00014713575725869735
+          },
+          "fraction": 0.2,
+          "marginal": {
+            "delta_full_sharpe": 0.09913875729394794,
+            "delta_oos_return": 0.49090148059143424,
+            "delta_oos_sharpe": 0.10828586275645136,
+            "fold_deltas": [
+              0.23751701237955536,
+              0.05603993512987604,
+              0.10486271820860038,
+              -0.04244438866397293,
+              0.19331098654172507
+            ],
+            "fold_win_rate": 0.8,
+            "oos_mdd_worsening": 0.004116064546478282
+          },
+          "total": {
+            "fold_sharpes": [
+              1.4608943966814611,
+              0.8354874919953306,
+              2.1494496837964245,
+              1.6124221663722076,
+              2.1375663323332112
+            ],
+            "full_mdd": -0.1301874779487694,
+            "full_sharpe": 1.7402873768755007,
+            "oos_mdd": -0.13018747794876884,
+            "oos_return": 2.6831054416592703,
+            "oos_sharpe": 1.6373718367549162,
+            "summary": {
+              "annualized_sharpe": 1.7402873768755007,
+              "annualized_sharpe_gross": 2.016941379119023,
+              "average_absolute_exposure": 0.4097205609114957,
+              "bars": 48995,
+              "cost_share_of_gross": 0.13716580717951612,
+              "gross_return": 4.846545787483857,
+              "hit_rate": 0.507990611286866,
+              "max_drawdown": -0.1301874779487694,
+              "net_return": 3.542345990886047,
+              "nonzero_target_bars": 48995,
+              "turnover_units": 377.3874487546234
+            }
+          }
+        },
+        "0.3333": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.0018473711744703112
+          },
+          "fraction": 0.3333333333333333,
+          "marginal": {
+            "delta_full_sharpe": 0.14710233688630026,
+            "delta_oos_return": 0.8368481541083197,
+            "delta_oos_sharpe": 0.1553543049138486,
+            "fold_deltas": [
+              0.39031709516370516,
+              0.09554153766778684,
+              0.1375599643439709,
+              -0.12033859022617421,
+              0.2760084731653163
+            ],
+            "fold_win_rate": 0.8,
+            "oos_mdd_worsening": 0.006836306313381502
+          },
+          "total": {
+            "fold_sharpes": [
+              1.613694479465611,
+              0.8749890945332414,
+              2.182146929931795,
+              1.5345279648100063,
+              2.2202638189568025
+            ],
+            "full_mdd": -0.13290771971567128,
+            "full_sharpe": 1.788250956467853,
+            "oos_mdd": -0.13290771971567206,
+            "oos_return": 3.029052115176156,
+            "oos_sharpe": 1.6844402789123134,
+            "summary": {
+              "annualized_sharpe": 1.788250956467853,
+              "annualized_sharpe_gross": 2.0580292941340677,
+              "average_absolute_exposure": 0.42186804389569244,
+              "bars": 48995,
+              "cost_share_of_gross": 0.13109012193674308,
+              "gross_return": 5.49669004888631,
+              "hit_rate": 0.5081947137463007,
+              "max_drawdown": -0.13290771971567128,
+              "net_return": 4.030227687869276,
+              "nonzero_target_bars": 48995,
+              "turnover_units": 385.9057600029914
+            }
+          }
+        },
+        "0.5000": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.009285901124771121
+          },
+          "fraction": 0.5,
+          "marginal": {
+            "delta_full_sharpe": 0.16200448587237526,
+            "delta_oos_return": 1.2103808889738596,
+            "delta_oos_sharpe": 0.17364584346707956,
+            "fold_deltas": [
+              0.40025292660718126,
+              0.13237569593100829,
+              0.12120314368467877,
+              -0.15360617781024666,
+              0.3668599834407291
+            ],
+            "fold_win_rate": 0.8,
+            "oos_mdd_worsening": 0.017025697274409723
+          },
+          "total": {
+            "fold_sharpes": [
+              1.623630310909087,
+              0.9118232527964628,
+              2.165790109272503,
+              1.5012603772259339,
+              2.3111153292322153
+            ],
+            "full_mdd": -0.1430971106767014,
+            "full_sharpe": 1.803153105453928,
+            "oos_mdd": -0.14309711067670028,
+            "oos_return": 3.4025848500416958,
+            "oos_sharpe": 1.7027318174655444,
+            "summary": {
+              "annualized_sharpe": 1.803153105453928,
+              "annualized_sharpe_gross": 2.065056525925056,
+              "average_absolute_exposure": 0.4370089434774879,
+              "bars": 48995,
+              "cost_share_of_gross": 0.12683355697260065,
+              "gross_return": 6.20332557997337,
+              "hit_rate": 0.5083171752219614,
+              "max_drawdown": -0.1430971106767014,
+              "net_return": 4.544492299975811,
+              "nonzero_target_bars": 48995,
+              "turnover_units": 398.41490314899346
+            }
+          }
+        }
+      },
+      "correlation": {
+        "full": 0.2849369674184302,
+        "oos": 0.29189340903764077
+      },
+      "main_only": {
+        "fold_sharpes": [
+          1.2233773843019058,
+          0.7794475568654545,
+          2.044586965587824,
+          1.6548665550361805,
+          1.9442553457914862
+        ],
+        "full_mdd": -0.12607141340228933,
+        "full_sharpe": 1.6411486195815528,
+        "oos_mdd": -0.12607141340229056,
+        "oos_return": 2.192203961067836,
+        "oos_sharpe": 1.5290859739984648,
+        "summary": {
+          "annualized_sharpe": 1.6411486195815528,
+          "annualized_sharpe_gross": 1.9268756127071982,
+          "average_absolute_exposure": 0.3937642794387754,
+          "bars": 48995,
+          "cost_share_of_gross": 0.14828940788781836,
+          "gross_return": 4.011574712243628,
+          "hit_rate": 0.5092356362894173,
+          "max_drawdown": -0.12607141340228933,
+          "net_return": 2.906655162343457,
+          "nonzero_target_bars": 48995,
+          "turnover_units": 367.34438284998646
+        }
+      },
+      "netting": {
+        "cancelled_gross_share": 0.10986538713570264,
+        "main_flat_share": 0.003318728747057298,
+        "opposing_main_share": 0.08913157206382422,
+        "same_direction_share": 0.9075496991891185,
+        "sleeve_symbol_bars": 61168.0
+      },
+      "range": {
+        "bars": 48995,
+        "end": "2026-09-03 11:00:00+00:00",
+        "oos_start": "2021-07-16 17:00:00+00:00",
+        "start": "2021-01-31 01:00:00+00:00"
+      },
+      "sleeve_scaled_summary": {
+        "annualized_sharpe": 1.1254688203626206,
+        "annualized_sharpe_gross": 1.2006727453545898,
+        "average_absolute_exposure": 0.031079889498484888,
+        "bars": 48995,
+        "cost_share_of_gross": 0.06256767663387675,
+        "gross_return": 0.26982356284082165,
+        "hit_rate": 0.49883015049955737,
+        "max_drawdown": -0.03628142321131611,
+        "net_return": 0.25069996088928814,
+        "nonzero_target_bars": 31619,
+        "turnover_units": 29.796134219555178
+      },
+      "sleeve_standalone": {
+        "cost_stress": {
+          "x1": 1.107820578334339,
+          "x1.5": 1.0533874530570544,
+          "x2": 0.9989408817403876
+        },
+        "cpcv": {
+          "fraction_negative": 0.0,
+          "oos_sharpe_mean": 1.0872969662628995,
+          "oos_sharpe_min": 0.14167817182447648,
+          "oos_sharpe_q05": 0.4714623376016172,
+          "paths": 15
+        },
+        "full_sample": {
+          "annualized_sharpe": 1.107820578334339,
+          "annualized_sharpe_gross": 1.187372030278862,
+          "average_absolute_exposure": 0.09355833445463914,
+          "bars": 48995,
+          "cost_share_of_gross": 0.06693496870125988,
+          "gross_return": 0.9840237325341881,
+          "hit_rate": 0.4987352978373593,
+          "max_drawdown": -0.1101119787601712,
+          "net_return": 0.8909527464285021,
+          "nonzero_target_bars": 31619,
+          "turnover_units": 93.97743675414429
+        },
+        "multiple_testing": {
+          "candidate_sharpe_annual": 1.107820578334339,
+          "degradation_slope": null,
+          "dsr": 0.19325880390773903,
+          "dsr_p_value": 0.806741196092261,
+          "expected_max_sharpe_annual": 1.4698823740521252,
+          "grid_trials": 1,
+          "ledger_trials": 8,
+          "n_trials": 48,
+          "pbo": null,
+          "pbo_combinations": null,
+          "prior_trials": 39,
+          "prob_oos_loss": null,
+          "replayed_trial": true,
+          "sharpe_variance_period": 4.8262196676716044e-05
+        },
+        "params": {
+          "cross_sectional": true,
+          "entry_threshold": 0.2,
+          "gate_horizons": [
+            168,
+            336,
+            720
+          ],
+          "gate_return_scale": 0.2,
+          "gate_vol_window": 400,
+          "gate_weights": [
+            0.2,
+            0.3,
+            0.5
+          ],
+          "long_side": false,
+          "scale": 0.05,
+          "short_gate": 0.3,
+          "volume_window": 48,
+          "window": 168
+        },
+        "reasons": [
+          "dsr_p_value 0.806741196092261 > 0.1"
+        ],
+        "verdict": "FAIL",
+        "walk_forward": {
+          "fold_consistency": 0.8,
+          "fold_sharpes": [
+            1.6347573808205096,
+            0.9055488313791799,
+            0.7936094324355392,
+            -0.6274983953496455,
+            2.13305545656197
+          ],
+          "folds": 5,
+          "oos_max_drawdown": -0.11011197876017376,
+          "oos_return": 0.779457279043116,
+          "oos_sharpe": 1.093283808819741
+        }
+      },
+      "symbols": [
+        "1000BONKUSDT",
+        "1000FLOKIUSDT",
+        "1000LUNCUSDT",
+        "1000PEPEUSDT",
+        "1000SATSUSDT",
+        "1000SHIBUSDT",
+        "AAVEUSDT",
+        "ACEUSDT",
+        "ADAUSDT",
+        "AKEUSDT",
+        "ALICEUSDT",
+        "ALPACAUSDT",
+        "APEUSDT",
+        "APTUSDT",
+        "ARBUSDT",
+        "ARKUSDT",
+        "ARPAUSDT",
+        "ASTERUSDT",
+        "ATOMUSDT",
+        "AUCTIONUSDT",
+        "AVAXUSDT",
+        "AXSUSDT",
+        "BANDUSDT",
+        "BANKUSDT",
+        "BCHUSDT",
+        "BEATUSDT",
+        "BELUSDT",
+        "BIOUSDT",
+        "BLURUSDT",
+        "BLZUSDT",
+        "BNBUSDT",
+        "BNTUSDT",
+        "BOMEUSDT",
+        "BSBUSDT",
+        "BTCUSDT",
+        "CFXUSDT",
+        "CHZUSDT",
+        "COAIUSDT",
+        "COMPUSDT",
+        "CYBERUSDT",
+        "DASHUSDT",
+        "DEXEUSDT",
+        "DOGEUSDT",
+        "DOGSUSDT",
+        "DOTUSDT",
+        "DYDXUSDT",
+        "EDUUSDT",
+        "ENAUSDT",
+        "ENJUSDT",
+        "EOSUSDT",
+        "ETCUSDT",
+        "ETHUSDT",
+        "EVAAUSDT",
+        "FARTCOINUSDT",
+        "FETUSDT",
+        "FILUSDT",
+        "FLMUSDT",
+        "FTMUSDT",
+        "FTTUSDT",
+        "FUNUSDT",
+        "GALAUSDT",
+        "GASUSDT",
+        "GIGGLEUSDT",
+        "GMTUSDT",
+        "HBARUSDT",
+        "HIGHUSDT",
+        "HUSDT",
+        "HYPEUSDT",
+        "IDUSDT",
+        "INJUSDT",
+        "JASMYUSDT",
+        "KNCUSDT",
+        "LABUSDT",
+        "LIGHTUSDT",
+        "LINAUSDT",
+        "LINKUSDT",
+        "LPTUSDT",
+        "LRCUSDT",
+        "LTCUSDT",
+        "LUNAUSDT",
+        "MANAUSDT",
+        "MASKUSDT",
+        "MATICUSDT",
+        "MKRUSDT",
+        "MOODENGUSDT",
+        "MTLUSDT",
+        "MYXUSDT",
+        "NEARUSDT",
+        "NEIROETHUSDT",
+        "NEIROUSDT",
+        "NOTUSDT",
+        "OMUSDT",
+        "OPUSDT",
+        "ORDIUSDT",
+        "PAXGUSDT",
+        "PENGUUSDT",
+        "PEOPLEUSDT",
+        "PERPUSDT",
+        "PIPPINUSDT",
+        "PNUTUSDT",
+        "POWERUSDT",
+        "PUMPUSDT",
+        "RAVEUSDT",
+        "REEFUSDT",
+        "RIVERUSDT",
+        "RNDRUSDT",
+        "RUNEUSDT",
+        "RVNUSDT",
+        "SANDUSDT",
+        "SEIUSDT",
+        "SIRENUSDT",
+        "SOLUSDT",
+        "STORJUSDT",
+        "STOUSDT",
+        "STXUSDT",
+        "SUIUSDT",
+        "SUSHIUSDT",
+        "SXPUSDT",
+        "TAOUSDT",
+        "THETAUSDT",
+        "TIAUSDT",
+        "TOMOUSDT",
+        "TONUSDT",
+        "TRBUSDT",
+        "TRUMPUSDT",
+        "TRXUSDT",
+        "TURBOUSDT",
+        "TUTUSDT",
+        "UNFIUSDT",
+        "UNIUSDT",
+        "UXLINKUSDT",
+        "VELVETUSDT",
+        "VETUSDT",
+        "VIRTUALUSDT",
+        "WAVESUSDT",
+        "WIFUSDT",
+        "WLDUSDT",
+        "WLFIUSDT",
+        "XLMUSDT",
+        "XPLUSDT",
+        "XRPUSDT",
+        "YFIUSDT",
+        "ZECUSDT",
+        "ZILUSDT",
+        "ZROUSDT",
+        "\u5e01\u5b89\u4eba\u751fUSDT"
+      ],
+      "universe_mode": "pit",
+      "yearly_marginal": {
+        "2021": {
+          "main": 0.30635800751504494,
+          "sleeve_alone": 0.027645420938040566,
+          "total": 0.3539846516181324
+        },
+        "2022": {
+          "main": 0.21197196588365275,
+          "sleeve_alone": 0.06680929691248805,
+          "total": 0.30219315858559237
+        },
+        "2023": {
+          "main": 0.37477123341501795,
+          "sleeve_alone": 0.044317484947028474,
+          "total": 0.4442039260427224
+        },
+        "2024": {
+          "main": 0.1776600880842698,
+          "sleeve_alone": 0.0056701670212253585,
+          "total": 0.19689906048652284
+        },
+        "2025": {
+          "main": 0.2504675334950739,
+          "sleeve_alone": 0.05482345671348776,
+          "total": 0.3130623895766851
+        },
+        "2026": {
+          "main": 0.2187860616470354,
+          "sleeve_alone": 0.02559449737419306,
+          "total": 0.25697628324453037
+        }
+      }
+    },
+    "static": {
+      "by_fraction": {
+        "0.2000": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.03678319269846737
+          },
+          "fraction": 0.2,
+          "marginal": {
+            "delta_full_sharpe": -0.011478765683057723,
+            "delta_oos_return": 0.15616882191102555,
+            "delta_oos_sharpe": 0.004377798556426393,
+            "fold_deltas": [
+              0.16124755341545693,
+              -0.04471764371303133,
+              -0.06289519782463371,
+              -0.05938559913947539,
+              0.032315245671179715
+            ],
+            "fold_win_rate": 0.4,
+            "oos_mdd_worsening": 0.005379289233660933
+          },
+          "total": {
+            "fold_sharpes": [
+              1.5478680256444022,
+              0.7759571340414562,
+              2.3038996670785243,
+              0.837952331687952,
+              1.5271129015469869
+            ],
+            "full_mdd": -0.1294274429700043,
+            "full_sharpe": 1.620406697604965,
+            "oos_mdd": -0.12942744297000486,
+            "oos_return": 2.0872445434207973,
+            "oos_sharpe": 1.4107194357549566,
+            "summary": {
+              "annualized_sharpe": 1.6202903645181166,
+              "annualized_sharpe_gross": 1.9108856570811774,
+              "average_absolute_exposure": 0.42545165860725853,
+              "bars": 48996,
+              "cost_share_of_gross": 0.1520709556380486,
+              "gross_return": 4.3628671143070905,
+              "hit_rate": 0.510939668544371,
+              "max_drawdown": -0.12942744297000153,
+              "net_return": 3.1068089331439968,
+              "nonzero_target_bars": 48996,
+              "turnover_units": 343.25826870061064
+            }
+          }
+        },
+        "0.3333": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.05758567246426726
+          },
+          "fraction": 0.3333333333333333,
+          "marginal": {
+            "delta_full_sharpe": -0.015779376090426567,
+            "delta_oos_return": 0.3055245016797281,
+            "delta_oos_sharpe": 0.009725104990114586,
+            "fold_deltas": [
+              0.2204035335090666,
+              -0.04203719415125107,
+              -0.13954704168583465,
+              -0.07907078603361128,
+              0.0922706715444277
+            ],
+            "fold_win_rate": 0.4,
+            "oos_mdd_worsening": 0.009742522670626586
+          },
+          "total": {
+            "fold_sharpes": [
+              1.6070240057380119,
+              0.7786375836032364,
+              2.2272478232173234,
+              0.8182671447938161,
+              1.5870683274202348
+            ],
+            "full_mdd": -0.13379067640696918,
+            "full_sharpe": 1.616106087197596,
+            "oos_mdd": -0.1337906764069705,
+            "oos_return": 2.2366002231895,
+            "oos_sharpe": 1.4160667421886448,
+            "summary": {
+              "annualized_sharpe": 1.6159292613038974,
+              "annualized_sharpe_gross": 1.8999164224689988,
+              "average_absolute_exposure": 0.43811696300604835,
+              "bars": 48996,
+              "cost_share_of_gross": 0.14945210465435912,
+              "gross_return": 4.636889721656678,
+              "hit_rate": 0.5110825373499878,
+              "max_drawdown": -0.13379067640696907,
+              "net_return": 3.300650500729266,
+              "nonzero_target_bars": 48996,
+              "turnover_units": 352.3167867579174
+            }
+          }
+        },
+        "0.5000": {
+          "cap_binding": {
+            "gross_cap_share": 0.0,
+            "symbol_cap_share": 0.09931117616669537
+          },
+          "fraction": 0.5,
+          "marginal": {
+            "delta_full_sharpe": -0.07571291471308061,
+            "delta_oos_return": 0.35174762711306995,
+            "delta_oos_sharpe": -0.03543367626615823,
+            "fold_deltas": [
+              0.24692702493887553,
+              -0.049099225641356936,
+              -0.1987190502866798,
+              -0.2219087595288629,
+              0.038271698181223
+            ],
+            "fold_win_rate": 0.4,
+            "oos_mdd_worsening": 0.020288014298149193
+          },
+          "total": {
+            "fold_sharpes": [
+              1.6335474971678208,
+              0.7715755521131306,
+              2.1680758146164782,
+              0.6754291712985645,
+              1.5330693540570302
+            ],
+            "full_mdd": -0.14433616803449212,
+            "full_sharpe": 1.556172548574942,
+            "oos_mdd": -0.14433616803449312,
+            "oos_return": 2.2828233486228418,
+            "oos_sharpe": 1.370907960932372,
+            "summary": {
+              "annualized_sharpe": 1.5559271749550434,
+              "annualized_sharpe_gross": 1.8322880070434775,
+              "average_absolute_exposure": 0.4542642962954803,
+              "bars": 48996,
+              "cost_share_of_gross": 0.15081845689005005,
+              "gross_return": 4.7037385521438,
+              "hit_rate": 0.5095926198056985,
+              "max_drawdown": -0.14433616803449123,
+              "net_return": 3.3279886819318376,
+              "nonzero_target_bars": 48996,
+              "turnover_units": 364.5671483737723
+            }
+          }
+        }
+      },
+      "correlation": {
+        "full": 0.24999283938609046,
+        "oos": 0.2695505081505728
+      },
+      "main_only": {
+        "fold_sharpes": [
+          1.3866204722289452,
+          0.8206747777544875,
+          2.366794864903158,
+          0.8973379308274274,
+          1.4947976558758072
+        ],
+        "full_mdd": -0.1240481537363487,
+        "full_sharpe": 1.6318854632880226,
+        "oos_mdd": -0.12404815373634392,
+        "oos_return": 1.9310757215097718,
+        "oos_sharpe": 1.4063416371985302,
+        "summary": {
+          "annualized_sharpe": 1.6318854632880226,
+          "annualized_sharpe_gross": 1.9332271238131318,
+          "average_absolute_exposure": 0.40905540788399153,
+          "bars": 48995,
+          "cost_share_of_gross": 0.15587299197802615,
+          "gross_return": 4.109184461856014,
+          "hit_rate": 0.511072558424329,
+          "max_drawdown": -0.1240481537363487,
+          "net_return": 2.919788393051587,
+          "nonzero_target_bars": 48995,
+          "turnover_units": 334.7726926637238
+        }
+      },
+      "netting": {
+        "cancelled_gross_share": 0.20870441354677022,
+        "main_flat_share": 0.0005510590666436554,
+        "opposing_main_share": 0.15474427415188566,
+        "same_direction_share": 0.8447046667814706,
+        "sleeve_symbol_bars": 58070.0
+      },
+      "range": {
+        "bars": 48995,
+        "end": "2026-09-03 11:00:00+00:00",
+        "oos_start": "2021-07-16 17:00:00+00:00",
+        "start": "2021-01-31 01:00:00+00:00"
+      },
+      "sleeve_scaled_summary": {
+        "annualized_sharpe": 0.2564145639579418,
+        "annualized_sharpe_gross": 0.34283177146372873,
+        "average_absolute_exposure": 0.03903404261317446,
+        "bars": 48996,
+        "cost_share_of_gross": 0.25200714987553313,
+        "gross_return": 0.06952227989361859,
+        "hit_rate": 0.4906937394247039,
+        "max_drawdown": -0.05300446592937069,
+        "net_return": 0.05054193583711286,
+        "nonzero_target_bars": 34962,
+        "turnover_units": 35.478907878274725
+      },
+      "sleeve_standalone": {
+        "cost_stress": {
+          "x1": 0.2301938383795363,
+          "x1.5": 0.16981264752198846,
+          "x2": 0.10943591428990157
+        },
+        "cpcv": {
+          "fraction_negative": 0.3333333333333333,
+          "oos_sharpe_mean": 0.22079894640946765,
+          "oos_sharpe_min": -0.29734627211455084,
+          "oos_sharpe_q05": -0.16040712085683545,
+          "paths": 15
+        },
+        "full_sample": {
+          "annualized_sharpe": 0.2301938383795363,
+          "annualized_sharpe_gross": 0.317344411592057,
+          "average_absolute_exposure": 0.11711061529660464,
+          "bars": 48996,
+          "cost_share_of_gross": 0.2745621425325724,
+          "gross_return": 0.17665563020695751,
+          "hit_rate": 0.49063638188648945,
+          "max_drawdown": -0.1653414104065546,
+          "net_return": 0.11464727768006289,
+          "nonzero_target_bars": 34962,
+          "turnover_units": 107.1736863694959
+        },
+        "multiple_testing": {
+          "candidate_sharpe_annual": 0.2301938383795363,
+          "degradation_slope": null,
+          "dsr": 0.0010128666186826063,
+          "dsr_p_value": 0.9989871333813174,
+          "expected_max_sharpe_annual": 1.5339315457706102,
+          "grid_trials": 1,
+          "ledger_trials": 9,
+          "n_trials": 49,
+          "pbo": null,
+          "pbo_combinations": null,
+          "prior_trials": 39,
+          "prob_oos_loss": null,
+          "replayed_trial": false,
+          "sharpe_variance_period": 5.219282721511916e-05
+        },
+        "params": {
+          "cross_sectional": true,
+          "entry_threshold": 0.2,
+          "gate_horizons": [
+            168,
+            336,
+            720
+          ],
+          "gate_return_scale": 0.2,
+          "gate_vol_window": 400,
+          "gate_weights": [
+            0.2,
+            0.3,
+            0.5
+          ],
+          "long_side": false,
+          "scale": 0.05,
+          "short_gate": 0.3,
+          "volume_window": 48,
+          "window": 168
+        },
+        "reasons": [
+          "oos_sharpe 0.30 < 0.5",
+          "dsr_p_value 0.9989871333813174 > 0.1",
+          "fold_consistency 0.40 < 0.6"
+        ],
+        "verdict": "FAIL",
+        "walk_forward": {
+          "fold_consistency": 0.4,
+          "fold_sharpes": [
+            1.5173565072757136,
+            -0.21968040965838054,
+            -0.16209644534408518,
+            -0.6732166910754671,
+            0.7107350613401826
+          ],
+          "folds": 5,
+          "oos_max_drawdown": -0.16534141040656702,
+          "oos_return": 0.1554734462955727,
+          "oos_sharpe": 0.3039485590649219
+        }
+      },
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "XRPUSDT",
+        "ZECUSDT",
+        "HYPEUSDT",
+        "DOGEUSDT",
+        "TRUMPUSDT",
+        "BNBUSDT",
+        "ENAUSDT",
+        "1000PEPEUSDT",
+        "SUIUSDT",
+        "AKEUSDT",
+        "ADAUSDT"
+      ],
+      "universe_mode": "static",
+      "yearly_marginal": {
+        "2021": {
+          "main": 0.4746452033345303,
+          "sleeve_alone": 0.00040621324304446205,
+          "total": 0.4811929279092144
+        },
+        "2022": {
+          "main": 0.23567072636133957,
+          "sleeve_alone": 0.05616416640119404,
+          "total": 0.311278957675601
+        },
+        "2023": {
+          "main": 0.22678676790798558,
+          "sleeve_alone": -0.028231745473833336,
+          "total": 0.21037589223469189
+        },
+        "2024": {
+          "main": 0.27767608484695017,
+          "sleeve_alone": -0.013885883371323238,
+          "total": 0.26206102762368055
+        },
+        "2025": {
+          "main": 0.2880143252090086,
+          "sleeve_alone": 0.05195489803872455,
+          "total": 0.36338769705802987
+        },
+        "2026": {
+          "main": 0.0655204265168976,
+          "sleeve_alone": -0.018903482906779567,
+          "total": 0.06334385471939741
+        }
+      }
+    }
+  }
+}

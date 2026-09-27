@@ -1,0 +1,487 @@
+profile: demo
+venue:
+  rest_url: https://demo-fapi.binance.com          # allow-listed demo host; mainnet is refused by starquant_exchange.guard
+  # Names of the environment variables holding the credentials (values never live in this repo).
+  # These are the operator's existing exports; verified 2026-09-03 against demo-fapi
+  # (canTrade=true, one-way mode, flat account).
+  api_key_env: STARQUANT_BINANCE_API_KEY
+  api_secret_env: STARQUANT_BINANCE_API_SECRET
+  recv_window_ms: 10000
+  # DL-X1 / KILL-R19: what the account's collateral mode IS, verified against demo-fapi 2026-09-07
+  # (multiAssetsMargin true; all 18 open positions on `cross`, spelled lowercase).  Startup asserts
+  # this and refuses to run when it differs - it never sets it, because changing an account's margin
+  # mode under an open book has consequences the loop cannot evaluate.  This is a record of the state
+  # the live evidence was produced in, not a preference: equity that floats with collateral prices is
+  # a different book from the one the backtest describes, and the backtest models no collateral at all.
+  multi_assets_margin: true
+market_data:
+  rest_url: https://fapi.binance.com               # public, unauthenticated reads only (D-002)
+  interval: 1h
+  # Lower bound only: the loop requests max(history_bars, min_history_bars + model warmup) closed bars, i.e. 1,442
+  # for the weekly tsmom, and refuses to start if that exceeds the 1,500-bar request limit (E-042).
+  history_bars: 400
+universe: config/universe.yaml
+registry: config/alpha_registry.yaml
+costs: config/costs.yaml
+portfolio:
+  leverage: auto              # per-symbol exchange leverage = min(max_leverage, bracket max, ceil(max_gross / margin_cap)) (D-016)
+  margin_cap: 0.40            # initial margin at the gross cap stays below 40% of equity (was 100% at a fixed 2x)
+  max_leverage: 5
+  margin_buffer: 0.10         # keep 10% of the available balance free when scaling risk-adding orders (T-S02)
+  max_participation: 0.02     # any order but a full close <= 2% of the symbol's average hourly quote volume (T-S03)
+  # 2026-09-04 (operator decision): 0.15 -> 0.30.  Read this as a risk-budget decision, not a research
+  # finding, because that is what it is.  `vol_target` was never chosen against a stated budget - it is
+  # `PortfolioParams`' default and appears in no D-decision, no pre-registration and no trials ledger -
+  # and the operator has now declared a maximum drawdown budget of 50%.  At 0.15 the construction runs at
+  # roughly a 12% budget, so the mismatch was about four-fold and would have been carried into real capital.
+  #
+  # It carries no alpha, and that is measured rather than argued: scaling the shipped weights by any k and
+  # re-pricing them leaves net Sharpe EXACTLY unchanged at every k tested (1.6972 on the point-in-time
+  # universe, 1.5760 on the static one, k in {1, 1.5, 2, 2.5, 3, 4, 5}).  That identity is an arithmetic
+  # property of the backtest - gross P&L, turnover cost and funding are all linear in the weights - so it
+  # proves the dial is pure risk appetite HERE and proves nothing about a world with market impact.  The
+  # cost model charges a flat 7 bps at any order size and `max_participation` is not in the backtest at all.
+  # At demo notionals (40-800 USDT a clip) that is a good approximation; before real capital it is not, and
+  # k must be re-derived under an impact-aware cost model.  That is recorded as out of scope, not as done.
+  #
+  # 2026-09-08 audit: the trigger for that re-derivation is now a number rather than a phrase, and the
+  # curve behind it was re-measured on the book that actually trades (registry + sleeve + exits + guards;
+  # `scratchpad/participation_capacity_sweep.py`, no ledger cost, net Sharpe asserted unchanged per row):
+  #       capital     refused target turnover     bars the cap binds
+  #         1,000                      0.00%                      0
+  #        10,000                      0.15%                      5
+  #       100,000                      5.41%                    202   <- re-derive k at or above here
+  #     1,000,000                     33.07%                  1,640
+  #    10,000,000                     67.78%                  4,154
+  # The earlier reading (4.25% / 28.60% at the same two capitals) was taken on tsmom alone at turnover
+  # 225.6; today's book turns over 472.9, so the knee sits left of where that curve put it - the bars the
+  # cap binds roughly doubled at 100k and at 1M.  It is still a LOWER bound on capacity decay: it counts
+  # only what the cap refuses outright, never the impact paid on what does fill.
+  #
+  # The value comes from a pre-registered rule, written before the numbers: take the largest k whose
+  # bootstrapped q95 drawdown stays inside the declared budget, on BOTH universes.  Weekly block bootstrap
+  # (168h blocks, 2,000 draws, seed 20260904; `scratchpad/vol_target_drawdown_bootstrap.py`) over
+  # 2021-01-01 -> 2026-09-04:
+  #   0.300  q95 -43.7% (pit) / -49.5% (static),  P(breach -50%) 1.2% / 4.8%   <- adopted
+  #   0.375  q95 -51.8%       / -56.8%,           P(breach)      7.1% / 14.0%  <- fails both
+  # In-sample drawdown is NOT the number to size on: at 0.15 it reads -11.9% while the bootstrap median is
+  # -16.5%, i.e. the historical figure sits near the 25th percentile of its own distribution.  And the
+  # bootstrap is still optimistic - resampling weekly blocks preserves within-week autocorrelation but
+  # destroys the multi-month regime structure real bear markets have - which is the second reason this
+  # stops at 0.30 rather than reaching for the budget, and why the live de-escalation line is -35%.
+  #
+  # What changes besides size.  Turnover rises 74.8% (pit) / 44.9% (static) - less than the 100% a pure
+  # doubling would give, because the caps flatten the weight path - and cost as a share of gross P&L FALLS,
+  # 9.8% -> 8.8% and 13.5% -> 12.0%.  Peak initial margin at 5x goes 33% -> 40%, exactly the `margin_cap`,
+  # so there is now zero headroom there (the new startup check makes a future breach loud).  Two guards that
+  # were unreachable become reachable: `daily_loss_pause` fires about once a year (0 times in 5.6 years at
+  # 0.15; 5 and 4 times at 0.30) and `GROSS_CAPPED` on 0.72% of pit bars.  Both are now replayed in the
+  # backtest - without that this change would have been scored on a book the loop would not hold, which is
+  # KILL-027's shape - and with them the OOS Sharpe moves +0.005 on both universes, i.e. they cost nothing.
+  # Reports (all with the guards replayed): pit 20260904T134831Z (0.15) -> 20260904T134847Z (0.30);
+  # static 20260904T134849Z (0.15) -> 20260904T134851Z (0.30).
+  #
+  # Two consequences to state plainly.  P10 cell B's live falsifier ("turnover must fall by roughly 12%")
+  # can no longer be checked, because this change raises turnover; it is abandoned, not quietly failed.
+  # And every report produced at 0.15 is no longer horizontally comparable - only verdicts carry over.
+  # Reverting is this one line.  Live de-escalation is pre-registered: -35% drawdown -> back to 0.225,
+  # -50% -> back to 0.15, automatic, not a discussion.
+  # 2026-09-14 (operator decision, P32): 0.30 -> 0.60, against a declared drawdown budget of -70%.
+  # Like P13 below, this is a risk-budget decision and not a research finding, and the criterion behind
+  # it CHANGED: P13 sized k against a 50% budget; the operator has now ruled the criterion is absolute
+  # RETURN and that the budget is re-negotiable.  Under that criterion the ladder was measured on the
+  # registry book (main + flow_short + exits + book guards), both universes, k grid reused verbatim from
+  # `scratchpad/vol_target_drawdown_bootstrap.py` (scripts: `scratchpad/p32_k_ladder_under_return_criterion.py`,
+  # `-p32b_r8_ladder_replay.py`, `-p32c_rescaled_ladder.py`):
+  #       k      CAGR pit/static     q95 MDD pit/static    P(breach -50%)     avg gross     liq touches
+  #     0.30       77.3% / 56.7%       -44.1% / -50.3%       1.2% / 5.3%          0.89               0
+  #     0.45      108.3% / 87.2%       -59.0% / -63.1%      20.1% / 30.3%         1.17               0
+  #     0.60      126.5% / 119.1%      -68.8% / -69.7%      53.4% / 58.6%         1.38               0
+  #     0.75      141.1% / 134.8%      -78.1% / -76.1%      81.7% / 79.2%         1.53               0
+  # CAGR rises monotonically in k on BOTH universes, so the return criterion has a cross-universe answer
+  # where Sharpe does not: Sharpe's argmax is 0.15 on pit and 0.60 on static, a complete sign flip, which
+  # is also why P26's published "argmax k = 0.15 at every capital" is WITHDRAWN as stated - that run hard-codes
+  # `pit` at `p26_vol_target_under_impact.py:52` and was never checked on static.  Withdrawn, not replaced:
+  # the static curve spans 0.106 with no error bars, so the honest reading is that Sharpe does not determine k.
+  #
+  # WHAT THE OPERATOR IS ACCEPTING, in the corrected wording rather than the one first put to them.  q95
+  # -69.9% was originally offered with "0.13pp of headroom under the budget"; that headroom is NOT
+  # measurable.  The same net series bootstrapped twice, same block/draws/seed, differs by up to 1.03pp
+  # (pit k=0.60: -68.85% vs -69.87%) purely from RNG stream position, so the margin is ~8x smaller than
+  # the estimator's own reproducibility.  And the bootstrap's bias SIGN is not known: weekly blocks destroy
+  # multi-month regime structure (optimistic) but also concatenate bad blocks history never ran together
+  # (pessimistic) - on pit the q95 is 1.7x the in-sample MDD.  The accepted statement is therefore:
+  # P(a >50% drawdown) is somewhere around a coin flip, and -70% is a declared appetite, not a bound.
+  # Re-confirmed by the operator on this wording 2026-09-14 after the first wording was retracted.
+  #
+  # WHAT IS DELIBERATELY NOT CHANGED, and it is the whole reason this is one line.  A proposal to rescale
+  # R8's ladder (`starquant_governance/policy.py:173`) proportionally to the new budget was WITHDRAWN under
+  # adversarial review.  Three findings killed it, all reproduced independently:
+  #   1. R8 applies its rung as a scalar on the weights, and the resulting REDUCTION still has to clear
+  #      `no_trade_rel_band` - `rebalancer.py:104`'s `same_direction_resize` does not exempt reductions.
+  #      A rung only trades when scalar <= 0.60.  The rescaled first rung was 0.45/0.60 = 0.75: dead.
+  #      The rungs kept here are 0.225/0.60 = 0.375 and 0.15/0.60 = 0.25, so BOTH still place orders.
+  #      That is the reason this configuration was chosen over the rescaled one.
+  #   2. The "16.3pp cost of not rescaling" rested on bootstrapping an already-throttled series, which
+  #      decouples the throttle pattern from the resampled path's own drawdowns; and on using the
+  #      backtest's mark-to-market series in place of `attributed_drawdown_state`, which counts only
+  #      REALISED P&L over a frozen total-equity base and therefore fires later and less.  Both biases
+  #      run the same way: 16.3pp is an upper bound and the true figure may be near zero.
+  #      2026-09-14 UPDATE - it is worse than "unreliable", the SIGN is wrong.  Replaying the ladder
+  #      INSIDE each bootstrap draw (starquant-7a's independent audit; RESEARCH_LOG same day) gives, for
+  #      the shipped rungs, q95 -52.6% and P(breach -50%) ~12% on BOTH universes, against the rescaled
+  #      arm's -66.5%/-66.7% and ~55%.  So the configuration this file ships is the more conservative
+  #      one in the tail, and "O-3 strictly dominates O-2" is WITHDRAWN.  Rescaling would buy a median
+  #      +21.3pp of CAGR for P(breach -50%) ~12% -> ~55%; both stay inside the declared -70% budget, so
+  #      it remains an available ruling - but only under that description.
+  #      READ THE NEXT SENTENCE WITH IT, or the paragraph above becomes "the tail is actually safe".
+  #      Those shipped-arm numbers assume the ladder REALLY FIRES in a deep drawdown.  R8's ruler is
+  #      `attributed_drawdown_state`: `base + cumsum(REALISED attributed P&L)` where `base` is total
+  #      equity INCLUDING the 52.65% that is BTC collateral.  Unrealised losses never enter it, so a
+  #      momentum book holding losers barely moves it.  The live tail therefore depends on something
+  #      NOT YET MEASURED (income-row attributed drawdown vs mark-to-market, being measured separately).
+  #   3. `policy.py`'s own 0.3.0 note gives two conditions for moving a governance constant (provenance
+  #      is E5; it is a rate limit rather than the control itself).  R8 satisfies neither.
+  # SUPERSEDED THE SAME DAY - kept because the reasoning above is a true record of why the rescale was
+  # withdrawn at that hour, and deleting it would hide that the decision was taken twice.  What it said:
+  # "the loop still de-escalates to vol_target 0.225 at -35% attributed drawdown and to 0.15 at -50%,
+  # WELL INSIDE the -70% budget just declared", the circuit-breaker deliberately tighter than the
+  # appetite.  That stopped being true later on 2026-09-14, when the ladder and R8's ruler were moved
+  # TOGETHER (rungs rescaled to the declared budget, ruler changed to `attributed_pnl+unrealized`,
+  # because fixing either alone silently adopts an arm nobody chose - the argument is at
+  # `starquant_governance/policy.py` above `drawdown_ladder`).
+  #
+  # WHAT IS SHIPPED, 2026-09-15, re-read from the code rather than from this comment (operator ruling:
+  # make the comment match reality):
+  #     `Policy.drawdown_ladder` = ((-0.49, 0.45), (-0.70, 0.30))   <- what ACTS
+  #     `risk_budget` below      = deescalate_at 0.49 / rollback_at 0.70   <- the reporting copy
+  # The two agree, which is the property this paragraph originally existed to protect.  The -35%/-50%
+  # numbers survive nowhere in the code and must not be quoted from here as current behaviour; three
+  # readers of this file (2026-09-15) each had to go to `policy.py` to find that out.
+  #
+  # KNOWN, UNFIXED, AND NOT CREATED BY THIS CHANGE: R8's first rung is ALREADY dead at vol_target 0.30
+  # (0.225/0.30 = 0.75, swallowed by the same band), so the shipped ladder has been running one rung
+  # instead of two.  At 0.60 both rungs work, so this change incidentally repairs that - but the defect
+  # is real at any k where a rung lands above 0.60 and is being fixed separately.
+  #
+  # PROVENANCE OF THE EVIDENCE, stated because it is weaker than this repository's norm: P32 was NOT
+  # pre-registered.  The grid and the reading were written before the run but only in a session
+  # transcript, not committed, and there is no RESEARCH_LOG entry - unlike P30/P31.  The -70% budget was
+  # also declared AFTER the q95 column was visible, so "the largest k whose q95 is inside the budget" is
+  # NOT a pre-registered selection rule here and must not be cited as one.  Trials debt: 44 new cells
+  # (P32 7 k x 2 universes x 2 capitals = 28, on P26's precedent of counting the capital axis; P32b's
+  # ladder replay 5 k x 2 universes = 10; P32c's rescaled arms 3 k x 2 universes = 6).  An earlier draft
+  # of this block said 38 and forgot P32c's six.
+  #
+  # THE GATE SEES THIS, and the sentence twenty lines up in this file saying it cannot is STALE.  That
+  # note ("the startup gate compares registry params only, so it cannot see this - a known gap") was
+  # written about `no_trade_rel_band`; since then `registry_evidence_problems` grew a portfolio-level
+  # comparison, and on the first paper run after this edit it said exactly what it should:
+  #     evidence: tsmom: portfolio vol_target is 0.6 live but 0.3 in the cited evidence
+  # `starquant_cli/live_cmd.py:301` turns that into a refusal for any run that is neither --dry-run nor
+  # --paper, so an ARMED loop will not start on this file until the registry cites evidence produced at
+  # 0.60.  That is the gate working, not an obstacle: the cited tsmom report was produced at 0.30 and
+  # genuinely no longer describes this construction.  `--allow-unvalidated` would silence it and must
+  # not be used for this - it is the whole KILL-015 mechanism.  What is owed is a `research validate`
+  # run at vol_target 0.60 whose verdict passes, and a registry `evidence` pointer (plus sha256) moved
+  # to it.  Until that exists this line is written but NOT in force; the loop keeps running whatever it
+  # loaded at startup (0.30), because the engine only builds the model once.
+  #
+  # 2026-09-17 更正：上面那句「循环还在跑启动时加载的 0.30」已经不成立，而且欠的那笔账也已经还了。
+  # 证据重出在 09-13（`tsmom-validation-20260913T182325Z.json`，其 `portfolio.vol_target` 就是 0.6），
+  # registry 的 evidence 指针也移到了它；循环 09-15 重启，`cycles.jsonl` 最近一次 `construction_full`
+  # 是 `vol_target: 0.6`，digest `ccd7bb9764b5` 与心跳一致，`live status --check` 报 registry 与治理
+  # 规则都与运行中的循环一致。所以这一行现在是 in force 的。
+  # 留着原句不删：它记录的是当时的真实状态，而「一句话在两天内过期」正是这个仓库反复量到的那种失败
+  # ——D-043 的那条也是同一形状（一个字段算得出、印得出、没有判定代码读过）。
+  #
+  # 2026-09-14 补声明（并行会话 starquant-41 量到，本会话复核一致）：k=0.60 下 `max_weight 0.15` 开始绑定，
+  # 111/293 个实盘周期（37.9%）至少截断一个名字，而且**只截 BTCUSDT**（σ 0.304 对全书中位 0.736——逆波动率
+  # 定价必然把最大权重给最平静的名字）；不截时峰值 0.1651，需削 9.1%。P32 的收益数字没有因此错，stage 3 本来
+  # 就先 clip 再算 gross；错的是先前把它描述成「不会截断」。M-015 的 compression 会因此升高，`risk_adaptation`
+  # 的 docstring 已把这列为合法升高的原因之一——越过 0.76 要先按这条读，不要当成 stage 1 失效。
+  #
+  # 2026-09-17（D-046）更正一处并把这条接上仪器：**不是只截 BTCUSDT。** 上面那句是对的那一半——
+  # 逆波动率定价确实把最大权重给最平静的名字——但名单不止一个。`report daily` 现在直接读
+  # `book_weights`（那一列 2026-09-12 就为探针的盯市 P&L 记着了，没人读过），全记录上的读数是
+  # **49/95 个带 `book_weights` 的周期截断至少一个名字，BTCUSDT 49 次、BNBUSDT 27 次**。
+  # 37.9% 与 51.6% 的差别是样本不同（293 个周期 vs 95 个带 `book_weights` 的），不是矛盾。
+  # 这个读数在 `GROSS_CAPPED` 出现过的窗口里是**下界**——那时整行被缩放，被截的名字就不在 0.15 上了；
+  # 全记录 376 个周期里 GROSS_CAPPED 出现 0 次，所以今天它是精确值，日报会在不精确时自己说明。
+  # 也就是说：这一条从此不必靠重放脚本去量，改 k 或改 `max_weight` 之后下一份日报就会说话。
+  # Reverting is this one line (and `vol_band` below).
+  vol_target: 0.60            # annualised portfolio volatility target
+  max_gross: 2.0              # sum |weight| <= 2.0 (x equity)
+  max_weight: 0.15            # |weight| per symbol
+  no_trade_band: 0.005        # skip rebalances smaller than 0.5% of equity
+  # 2026-09-04 (operator decision, P10 cell B): widened 0.25 -> 0.40.  Two pre-registered rules disagreed on this
+  # cell - it passes round 7's R3 rule (OOS >= baseline + 0.05, drawdown worsening <= 1pp, turnover lower) and
+  # fails the later P10 rule only on its turnover threshold (-11.8% against -15% required).  The paired test,
+  # the same instrument that judged conviction_mode, says this one is not noise: all five walk-forward folds
+  # improve, the per-bar OOS return difference has a Newey-West t of 4.18, and a weekly block bootstrap puts the
+  # Sharpe difference at +0.142 with a 5-95% interval of [+0.064, +0.218].  Point estimates on the point-in-time
+  # universe with the shipped book: OOS Sharpe 1.7347 -> 1.8764, OOS drawdown -12.79% -> -12.90%, turnover
+  # 287 -> 253.  Evidence: reports/research/paired-p10-band-20260904T030015Z.json.  Live falsifier: turnover must
+  # fall by roughly 12%; if it does not, live and backtest execution semantics have diverged (KILL-027's pattern).
+  # Two further checks (this session, reports/research/p10-portfolio-smoothing-20260904.json): the static
+  # 14-symbol universe agrees in direction, 1.3771 -> 1.4793 with the same -11.8% turnover and a better
+  # drawdown, so this is not one universe's artefact (the check P5 taught us to run); and only 9% of the
+  # gain is the saved turnover cost - re-pricing the same weights at zero cost still leaves +0.108 of the
+  # +0.142 Sharpe - so this is a timing change from holding through a wider band, not an efficiency saving.
+  # That makes it the portfolio-layer twin of conviction_mode sign (D-024: the edge is direction, not
+  # magnitude) and, for the same reason, a real behaviour change carrying real selection pressure.
+  # Note the layer: tsmom's cited evidence (181803Z) was validated at band 0.25, so the strategy-layer
+  # evidence pointer no longer describes the construction; the portfolio-layer evidence is the P10 index
+  # above.  The startup gate compares registry params only, so it cannot see this - a known gap.
+  no_trade_rel_band: 0.40     # ...or smaller than 40% of the current position (same-direction resizes only)
+  # 2026-09-17（操作者裁定，选项 D：现在改，不等冻结到期）。三个键一起翻，因为它们是同一条不变式的
+  # 三个半边：**永远不持有一笔小于绝对臂的仓位，并且永远平得掉已经存在的那笔。**
+  #
+  # 触发它的是 LSKUSDT。完整链条在 `.starquant/live/cycles.jsonl` 里，40 根周期：
+  #   09-16T02:00Z  BUY 139 @0.3766，目标 52.40 对 band 52.12——过线 0.28 USDT
+  #   09-16T17:00Z  SELL 76 reduce_only，113.50 → 51.27——减仓落进 band（ENAUSDT 那条路径）
+  #   09-16T21:00Z  BUY 74 @0.7287，目标 54.08 对 band 53.66——过线 0.42 USDT
+  #   09-16T22:00Z  价格 −8%，|current| 49.53 < band 53.74  →  BAND_BLOCKS_EXIT，此后每根周期都是
+  #   09-17T14:00Z  |current| 35.45，止损 6σ 对天花板 2.21σ（`exit_reachability` 每天在报）
+  # 一小时，从一个 D2 批准的目标，到一笔谁也平不掉的仓位。
+  #
+  # 为什么三个都要开，每一个单独都不够——2026-09-17 用当天真值重放 `plan_rebalance` 量的：
+  #   都关（当时）            无单，BAND_BLOCKS_EXIT
+  #   只开 exempt_crossings   无单——模型目标 58.66 不是恰好 0，够不着豁免条件
+  #   只开 flat_inside_band   无单——58.66 在 band 之外，D2 没有意见
+  #   D1 + D2                 **仍然无单**，同样的理由：D2 判的是目标，而目标在 band 外
+  #   D1 + D2 + D3(2.0)       58.66 < 110.66 → 目标归零 → D1 让它穿过 band → SELL 74 reduce_only
+  # 前四行是 `docs/RESEARCH_LOG.md` 2026-09-14 那节没覆盖的：它记了两条造零头的路径，都是问目标落在
+  # 哪；这一条问的是仓位漂到哪，所以 D2 在入口批准它，之后再不过问。
+  #
+  # 代价，明说。D3 把目标小于 2×band 的名字剪掉，剪的是模型的真实意图——一个 0.53% 的 conviction
+  # 被当作 0。今天这本书上它只动 LSKUSDT（0.53%）与 TRUMPUSDT（0.003%），第三小的 LINKUSDT 是
+  # 202 USDT 对 55.33，有 3.65 倍余量。A/B 的定价见 RESEARCH_LOG 同日那节。
+  #
+  # 这次改动**结束 2026-09-14 的构造冻结**，M-010 的 30 天窗口、`realised_vol` 的单构造条件与 L3 的
+  # 7 天条件一起从重启那一刻重新起算。操作者知道自己在买什么：冻结买的是三个监控，而这三个监控
+  # 正在看着一本每小时都可能再造一笔平不掉仓位的账。
+  exempt_crossings: true      # D1：目标恰为 0 时豁免绝对臂——回测一直是这样，实盘的 false 才是偏离
+  flat_inside_band: true      # D2：目标落进绝对臂就当作平
+  band_entry_multiple: 2.0    # D3：目标要清 band 这么多倍才算数（1.0 = D2 本身）
+  min_history_bars: 720       # a symbol needs 30 days of bars before it can be traded
+pool:
+  # Re-rank once per UTC day with the hysteresis in universe.yaml (D-014); never = static.
+  # The research membership table now matches this cadence: rebuilt 2026-09-04 13:20 as DAILY - 2,042 refreshes
+  # from 2021-01-31 to 2026-09-03, mean size 17.58, union 211 symbols, 0.36 changes per refresh.  This comment
+  # previously said the table was still monthly (69 refreshes, 146 members), which is no longer true; it is
+  # corrected rather than deleted, because the audit's finding was a comment that had run ahead of the data, and
+  # the same mistake in reverse would be just as misleading.  What is NOT yet closed is the hourly half: 205 of
+  # the 211 union members have 1h bars, and six do not (ALLOUSDT, BLESSUSDT, ENSOUSDT, REUSDT, SKYAIUSDT,
+  # SYNUSDT), so an hourly panel still drops six names that were members at some point.  Evidence produced
+  # before the rebuild used the monthly table and does not become comparable just because the table changed.
+  refresh: daily
+  candidates: 45              # mainnet 24h-volume shortlist that is re-scored on 30-day volume
+  liquidity_window: 24        # bars averaged for the participation cap
+  # D-031: a symbol rejected on this many consecutive cycles - while the venue was accepting orders for
+  # other symbols in the same cycle - leaves the universe and exits reduce-only, returning only when the
+  # daily refresh selects it again.  This is the delisting/precision/max-position case the pool had no
+  # answer for: before it, a symbol the venue refuses to trade kept its slot indefinitely.  It can only
+  # reduce exposure, never add, so it carries no directional prior; the pre-registered falsifier is that
+  # more than two firings in 30 days without a venue incident means the threshold, not the symbol, is wrong.
+  # `starquant report daily` counts firings under `pool_quarantined`.
+  quarantine_after: 3
+exits:                        # bar-close exit overlay in daily-vol units (D-012); 0 disables a rule.
+  # 2026-09-04 (P11, operator instruction: the live book must carry a price stop).  Re-run of the
+  # pre-registered D-017 grid on the CURRENT construction - the previous overlay evidence (02:34Z) was
+  # computed at no_trade_rel_band 0.25 and P10 cell B has since widened it to 0.40, which changes the
+  # weight path an exit overlay is evaluated on.  Evidence: overlay-20260904T063333Z (pit, 205 symbols),
+  # -20260904T063348Z (static, 15), and the widened stop grid -20260904T063855Z / -20260904T063901Z.
+  #
+  # Nothing in the original grid's stop family qualified: stop_loss 4 + take_profit 6 fails on pit (MDD
+  # -12.21% -> -12.32%, i.e. it does not improve) and on static (Sharpe loss 0.138 > 0.10).  Widening the
+  # stop found the setting that does.  stop_loss 6 + take_profit 6 passes D-017 UNCHANGED on both:
+  #   pit    baseline 1.7601 / -12.21%  ->  1.7509 / -11.63%   (Sharpe loss 0.0092, MDD +0.58pp)
+  #   static baseline 1.5212 / -13.64%  ->  1.4320 / -12.79%   (Sharpe loss 0.0892, MDD +0.85pp)
+  # Against the setting that was actually live (take_profit 6 alone) the stop costs 0.0034 OOS Sharpe on
+  # pit and 0.0012 on static, and gives pit the best OOS drawdown in the whole grid.  It fires 18 times
+  # in 49,735 bars on top of the take-profit's 544.
+  #
+  # State the limit plainly, because it is the reason this is an operator decision and not an inference.
+  # A supplementary tail check written for this question (worst cumulative loss a single symbol inflicts
+  # inside one holding episode - the thing a per-symbol stop is FOR, and the thing portfolio OOS MDD
+  # cannot see) finds NO improvement at any distance: worst name -2.125% (pit) / -3.758% (static) with and
+  # without the stop, identical to three decimals for stop_loss 4, 6 and 8.  This book's losses are slow
+  # accumulations measured from a deliberately stale entry anchor (E-047), not gaps from entry, so a
+  # from-entry stop cannot bound them.  The stop is adopted because the operator asked for one and this
+  # distance is free, NOT because it is shown to protect anything.  Reverting is one line.
+  #
+  # trailing_stop stays 0 and that is not an oversight - but the reason stated here until 2026-09-08 was
+  # wrong in both halves, and is corrected rather than deleted because what it was wrong ABOUT matters.
+  # It read: "every trailing setting loses 0.15-0.22 OOS Sharpe AND worsens OOS drawdown by 0.9-2.8pp, on
+  # both universes, in every round that has tested it."  Re-measured off the same two reports
+  # (overlay-20260904T063333Z / -063348Z) by pairing each cell against the SAME sl/tp without trailing:
+  #   marginal dSharpe of adding trailing=4:  pit -0.0156 .. -0.1438,  static -0.0293 .. -0.1463
+  #   marginal dMDD:                          pit +0.13pp (sl2.5/tp6 IMPROVES) .. -2.67pp,  static -0.84 .. -1.81pp
+  # The best cell on each universe is well inside the quoted band, and one of them improves drawdown.
+  # Read against baseline instead of marginally, the spread is -0.0606 .. -0.2223 - which also does not
+  # start at 0.15.  So "reliably destroys value" is not what the evidence says; "costs Sharpe in every
+  # cell measured, by between 0.02 and 0.15" is.
+  #
+  # And name the grid, per K-EX01: `trailing_stop` has only ever taken TWO values in this repository's
+  # entire report history - 0.0 and 4.0 (structured scan of all 194 exits candidates, 2026-09-08).  k=6,
+  # 9, 12 have never been backtested; they exist only as reachability counts in exit_reachability.py.
+  # A future trailing experiment must take k_tr > 6: `retrace` is measured from `extreme`, which `_enter`
+  # initialises to the entry price, so retrace >= adverse always holds and k_tr <= k_sl makes `stop_loss`
+  # DEAD CODE - measured: pit sl0/tr4/tp0 and sl4/tr4/tp0 give an identical 1.6132 over an identical 904
+  # exits, with 31 bars merely relabelled STOP_LOSS.  Anything at k_tr <= 6 scores a book whose stop is
+  # silently off.
+  #
+  # 2026-09-08 audit - RE-PRICED AT vol_target 0.30, which is the treatment `drawdown_throttle` below
+  # got and this block did not.  Everything above was measured on `overlay-20260904T063333Z`, whose
+  # `portfolio.vol_target` reads 0.15; P13 moved it to 0.30 at 14:53Z the same day, eight hours later.
+  # The overlay's k is in daily-sigma units so the trigger distance did not move, but the weight path it
+  # is evaluated on did - the same argument this file already made for the P10 band.  On today's
+  # construction (`overlay-20260907T085119Z` / `-085209Z`, control row):
+  #     pit     baseline OOS 1.7737 -> 1.8483  (+0.0746),  MDD -25.34% -> -24.21%
+  #     static  baseline OOS 1.3888 -> 1.3337  (-0.0551),  MDD -30.11% -> -28.21%
+  # Read against the "-0.0092 / -0.0892" recorded above: an order of magnitude larger and, on pit, the
+  # opposite sign.  D-017's rule (MDD improves on both, Sharpe loss <= 0.10 on both) still holds, so the
+  # setting does not change - but "free" was a 0.15 statement and is not this one.  Fires 561 times in
+  # 49,072 bars (541 take-profit, 20 stop) and adds 10.3% of turnover.
+  # From 2026-09-08 `research validate` applies this overlay by default and records it in the report,
+  # so the number the registry cites is the book that carries these stops rather than one without them.
+  #
+  # 2026-09-07 CORRECTION - the two numbers above are corrected rather than deleted, because what they
+  # were wrong ABOUT is the finding.  The tail check's script (`scratchpad/stop_tail.py`) had never been
+  # committed; rebuilt from the log's definition it reproduces the STATIC half to within 0.55% and the
+  # pattern digit for digit, but the PIT half does not reproduce at all (-3.448% XRPUSDT here against the
+  # logged -2.125% TRUMPUSDT - not even the same name).  The fourth axis: the pit run reads the
+  # point-in-time membership table, and that table was rebuilt from monthly to daily on 2026-09-04 13:20
+  # while P11-b ran at 06:33.  The old table is gone, so the pit half is structurally irreproducible.
+  # Read "-2.125% (pit)" as a historical record, not as a quantity.
+  #
+  # The two numbers were also the LEAST informative cell of the table they came from.  On today's
+  # construction (vol_target 0.30) the same ruler gives worst name -4.783% (pit) / -6.214% (static), and
+  # the sum of the 20 worst names - the quantity that says how much is at stake - is -67.94% / -66.88%.
+  #
+  # And the tension the log ends on ("the only thing that could reach it is a trailing stop, which is the
+  # one layer that reliably destroys value") was closed at zero ledger cost - on arithmetic that used the
+  # wrong ruler.  It read: "D-017 allows 0.10 OOS Sharpe, but sl6+tp6 already spent 0.0891 on static,
+  # leaving 0.0109.  Nothing that reaches the tail fits: trailing k=12 fires ZERO times in 5.6 years on
+  # either universe, k=9 fires 3-4, k=6 fires on 127 episodes for a projected -0.0302 (2.8x over);
+  # take_profit 4 and 3 are 5.1x and 7.5x over; the pool admission gate costs -0.4352.  The sweet spot is
+  # empty, not undiscovered."
+  #
+  # 2026-09-08 correction.  0.0891 is the vol_target 0.15 reading (overlay-20260904T063901Z, static
+  # 1.5212 -> 1.4320).  The construction that trades is 0.30, where the same sl6+tp6 costs 0.0551
+  # (overlay-20260907T085209Z, 1.3888 -> 1.3337), so the headroom is 0.0449, not 0.0109 - 4.1x larger.
+  # This block sits twenty lines below its own "RE-PRICED AT vol_target 0.30" paragraph and then reached
+  # back for the 0.15 number: two rulers in one file.  Re-run against 0.0449, trailing k=6's projected
+  # -0.0302 fits; tp4 (1.24x) and tp3 (1.83x) and the pool gate (9.7x) still do not.  "The sweet spot is
+  # empty" is therefore WITHDRAWN as stated - it was never tested at the live construction.
+  #
+  # The per-trigger constant the projection rests on (-2.22e-4) also does not hold at 0.30, and on pit it
+  # changes SIGN: pit tp6 is +1.330e-04 per trigger (561 triggers, +0.0746), static tp6 is -1.138e-04
+  # (484, -0.0551), static tp3 -1.626e-04 (1068, -0.1736).  Any projection multiplying a trigger count by
+  # a fixed cost is unsound on this book.
+  #
+  # What replaced it (P24, 2026-09-08, RESEARCH_LOG).  The question was re-asked under the operator's own
+  # criterion - higher return, not smaller drawdown - because every number above was produced by D-017's
+  # drawdown filter, and at the live construction corr(dSharpe, dMDD) over 18 candidates is -0.875.  Two
+  # arms, pre-registered, charged (tsmom 104->108, flow 28->32): take_profit 8.0 and cooldown_bars 6.
+  # Both REFUTED on cross-universe sign flip.  Exits are closed under the return criterion.
+  # The lever that does work is still `vol_target` (static's 20-worst sum: -66.88% at 0.30, -40.71% at
+  # 0.15 - measured, and NOT linear, because max_weight/max_gross bind more often at 0.30).  Evidence:
+  # docs/analysis/2026-09-07-exits-tail-endpoint.md (read its section 1 with this correction);
+  # measurements: scratchpad/exit_reachability.py, -exit_mfe_uncensored.py, -exit_paired_ruler.py.
+  stop_loss: 6.0
+  trailing_stop: 0.0
+  take_profit: 6.0
+  cooldown_bars: 24
+  vol_halflife: 48
+drawdown_throttle:            # scale the whole book down between `start` and `stop` drawdown from the equity high-water mark
+  # Re-confirmed 2026-09-04 (P11, same runs as `exits` above): still a split verdict, so still off.  On the
+  # point-in-time universe it QUALIFIES (1.7601 -> 1.6906, OOS MDD -12.21% -> -11.89%: Sharpe loss 0.0695
+  # inside the 0.10 limit for +0.32pp of drawdown); on the static universe it does not (1.5212 -> 1.4043,
+  # loss 0.1168 > 0.10, for +0.67pp).  D-017 needs both, so the answer is unchanged - recorded here because
+  # "still off" after a re-run is a different fact from "never re-checked".
+  # Overlay evidence 2026-09-03: on the point-in-time universe OOS Sharpe 1.55 -> 1.45 (exactly the -0.10 limit) for
+  # OOS MDD -16.7% -> -14.8%, and fold 2 (2022-11 -> 2023-11, the recovery) turns negative: the classic whipsaw of a
+  # drawdown throttle.  Boundary case, left disabled (D-017).
+  # 2026-09-04 (P13): the `start` / `stop` / `floor` numbers below were calibrated at `vol_target 0.15`
+  # and their meaning moved when it went to 0.30 - a 5% drawdown is now about half as rare an event as it
+  # was, so these thresholds would bite earlier and more often than anything measured them at.  Still
+  # disabled, so nothing changes today; re-running D-017 is a PRECONDITION of ever enabling them, not
+  # something to do afterwards.  Recorded here rather than only in the log, because this is the line
+  # someone would flip.
+  enabled: false
+  start: 0.05
+  stop: 0.20
+  floor: 0.25
+risk_budget:                  # P13 monitoring (M-001..M-004).  Pre-registered before the change went live;
+  # a breach alerts through `report daily --check` and the hourly job, and this block does not trade:
+  # rewriting live position sizing from a cron job is a different risk from measuring it.  The acting is
+  # R8's, inside the loop, on the attributed drawdown (`Policy.drawdown_ladder`, `LiveEngine._risk_ladder`).
+  # 2026-09-14: re-derived for the -70% budget declared when `vol_target` went to 0.60, by the shipped
+  # rule transcribed - `deescalate_at` = 70% of budget, `rollback_at` = budget, `deescalate_to` = 75%
+  # of k, `rollback_to` = 50% of k.  `Policy.drawdown_ladder` is what ACTS; these four are the
+  # reporting copy and the two must not disagree.  The old numbers were calibrated at k=0.30 against a
+  # 50% budget, and left alone they would have de-risked at -35%, far inside the budget chosen to buy
+  # return - a measured median 20.5pp of CAGR (`scratchpad/p32d_ladder_bootstrap_pathwise.py`, both
+  # universes).  The rescaled ladder costs 0.4pp and puts q95 at -66.5%, inside the declared -70%.
+  deescalate_at: 0.49         # drawdown from the high-water mark -> vol_target 0.45
+  rollback_at: 0.70           # -> vol_target 0.30, the declared budget
+  deescalate_to: 0.45
+  rollback_to: 0.30
+  # 2026-09-14: scaled x2 with `vol_target` 0.30 -> 0.60.  This is a transcription, not a new choice -
+  # the band keeps exactly its old relative width.  It has to move with the target or M-002 alerts every
+  # cycle by construction; it measures and never trades.
+  vol_band: [0.52, 0.76]      # 30-day realised annualised vol; 0.60 target, same relative width as before
+  vol_window_days: 30
+  min_vol_bars: 240           # ten days of hourly cycles before this estimate is allowed to say anything
+  # L1-04, fixed 2026-09-07.  The bar is M-Q08's "slippage <= 2x model", so it is written that way
+  # rather than as a standalone number.  The retired `max_slippage_bps: 10.0` said "against the cost
+  # model's 7 bps", but 7 is turnover_bps - the 5 bps taker fee plus 2 bps slippage - while the
+  # instrument measures price slippage alone.  A fee-inclusive budget judging a fee-exclusive number,
+  # at 2.5x the stated bar, could not fail: the measured +4.3 bps was outside M-Q08's 4 and inside 10.
+  model_slippage_bps: 2.0     # what the backtest's cost model charges for slippage
+  slippage_multiple: 2.0      # -> 4.0 bps.  Setting max_slippage_bps here is now refused, not ignored
+  slippage_window_days: 30    # real capital (KILL-A) is owed sooner
+  min_slippage_fills: 30
+  # M-Q03 (DL-L4 / RISK-P2), 2026-09-09.  These two numbers were already in force - the 2026-09-06
+  # remediation plan's M-Q03 row reads baseline "稳态 0/8", threshold "<= 5% / 0", failure action
+  # "查重启原因" - and `reports.restart_cost` computed the quantities they judge without ever comparing
+  # them to anything.  Transcribed rather than invented, exactly as `model_slippage_bps` transcribed
+  # M-Q08's "2x model": a threshold that lives only in a document has no reader.
+  #
+  # The share is counted per cycle.  KILL-R6 refuted the original per-FILL reading (73% was a
+  # development-period ratio dominated by three operator events) and named this as the fallback in the
+  # same breath: "M-Q03 改为「迟到入场仓位的 bar 小时占比」或至少按周期计".  The bar-hour version needs
+  # how long a late-entered position was held, which nothing records; the 0/8 baseline is per cycle
+  # anyway, so the 5% is compared against the reading it was set against.
+  max_late_cycle_share: 0.05  # of the day's cycles, how many woke outside the rebalance window
+  max_missed_rebalances: 0    # a restart that cost a rebalance; the plan's bar is exactly zero
+  # M-Q06 (DL-X1): alert when the nearest REACHABLE liquidation price comes inside this many daily-vol
+  # units.  Measured baseline 2026-09-07, replacing the plan's "unmeasured": 242 units (TUTUSDT), with
+  # 14 of 18 positions reporting no reachable price at all - the ordinary shape of a cross-margin long,
+  # and not an alarm.  Like everything else in this block it alerts and does not trade.
+  min_liq_distance: 10.0
+  guard_window_days: 90       # DAILY_LOSS_PAUSE / GROSS_CAPPED counts; reported, not enforced (M-003)
+guards:
+  daily_loss_pause: -0.05     # stop adding risk for the rest of the UTC day below -5%
+  stale_bars_max: 2           # skip the cycle if the newest closed bar is older than 2 intervals
+  # D-025: the host clock is the reference (operator decision).  A constant offset is accepted; what is guarded
+  # is how far the wake-up sits from a real bar boundary, and any jump between cycles.
+  max_bar_alignment_seconds: 60
+  kill_switch_path: .starquant/live/KILL_SWITCH
+paths:
+  state_dir: .starquant/live
+  reports_dir: reports
+alerts:
+  webhook_url: "${STARQUANT_ALERTS_WEBHOOK_URL:-}"   # expanded from the environment; empty disables
+  # DL-L3: one URL is a single point of silence, and the breaker (DL-L2) is only allowed to stop the
+  # loop cleanly if a channel accepts its last message.  Empty disables the second channel.
+  webhook_url_2: "${STARQUANT_ALERTS_WEBHOOK_URL_2:-}"
+  # The dedup window is NOT set here.  It has to be strictly shorter than the period of whoever
+  # is calling - the loop once a bar, `run_check.sh` on the hour - which is a property of the
+  # callers and not of this deployment, and a second copy of a number that must agree with the
+  # first is how they stop agreeing: this file said 3600 while `alerts.py` had moved to 3540,
+  # so the loop and the check job ran different windows against one shared state file.  It lives
+  # in `HOURLY_CALLER_WINDOW_SECONDS` (KILL-R7); setting `dedup_window_seconds` here still
+  # overrides it, deliberately, for an operator who has a reason.

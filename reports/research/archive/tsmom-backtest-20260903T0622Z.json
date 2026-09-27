@@ -1,0 +1,316 @@
+{
+  "benchmark": {
+    "gross_return": 2.0606760812156932,
+    "sharpe": 0.6633426440241529
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "execution": "open_to_close",
+  "generated_at": "2026-09-03T06:22:26.248165+00:00",
+  "interval": "1h",
+  "kind": "backtest",
+  "params": {
+    "entry_threshold": 0.2,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      168,
+      336,
+      720
+    ],
+    "persistence_weight": 0.1,
+    "return_scale": 0.2,
+    "return_weight": 0.4,
+    "slope_scale": 0.01,
+    "slope_weight": 0.25,
+    "vol_window": 400
+  },
+  "per_symbol": {
+    "1000PEPEUSDT": {
+      "annualized_sharpe": 0.6689527646566743,
+      "annualized_sharpe_gross": 0.7595344428151095,
+      "average_absolute_exposure": 0.017384563135898576,
+      "bars": 45364,
+      "cost_share_of_gross": 0.11939191426076064,
+      "gross_return": 0.11487115376456014,
+      "hit_rate": 0.5005805566306605,
+      "max_drawdown": -0.035465368486458204,
+      "net_return": 0.10022171041179107,
+      "nonzero_target_bars": 28476,
+      "turnover_units": 15.805670985671096
+    },
+    "ADAUSDT": {
+      "annualized_sharpe": 0.176699891550796,
+      "annualized_sharpe_gross": 0.30107172247154046,
+      "average_absolute_exposure": 0.038464261648323526,
+      "bars": 45364,
+      "cost_share_of_gross": 0.41316897398078484,
+      "gross_return": 0.04946750069104433,
+      "hit_rate": 0.501725993006366,
+      "max_drawdown": -0.06894810776130522,
+      "net_return": 0.027560276221949565,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 27.821201265312453
+    },
+    "AKEUSDT": {
+      "annualized_sharpe": 0.921625493988383,
+      "annualized_sharpe_gross": 0.9418696233794435,
+      "average_absolute_exposure": 0.0024924406766478596,
+      "bars": 45364,
+      "cost_share_of_gross": 0.021681166167267896,
+      "gross_return": 0.10260011206403497,
+      "hit_rate": 0.5097827553636486,
+      "max_drawdown": -0.03448091151548671,
+      "net_return": 0.1002428578444523,
+      "nonzero_target_bars": 7480,
+      "turnover_units": 2.8076560424839796
+    },
+    "BNBUSDT": {
+      "annualized_sharpe": 0.190338119567498,
+      "annualized_sharpe_gross": 0.33421361039399256,
+      "average_absolute_exposure": 0.04995595975227068,
+      "bars": 45364,
+      "cost_share_of_gross": 0.4303612469309325,
+      "gross_return": 0.050716974300472506,
+      "hit_rate": 0.5013482450711697,
+      "max_drawdown": -0.06198717510165519,
+      "net_return": 0.027555882831597378,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 36.24441666858832
+    },
+    "BTCUSDT": {
+      "annualized_sharpe": 1.2029864718914218,
+      "annualized_sharpe_gross": 1.4001412867711827,
+      "average_absolute_exposure": 0.05554145368383723,
+      "bars": 45364,
+      "cost_share_of_gross": 0.14080261815410133,
+      "gross_return": 0.23790156509076654,
+      "hit_rate": 0.5030539569138498,
+      "max_drawdown": -0.033289403676910356,
+      "net_return": 0.2008688517570989,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 34.3933759672261
+    },
+    "DOGEUSDT": {
+      "annualized_sharpe": 0.5018251067117656,
+      "annualized_sharpe_gross": 0.6195762172380735,
+      "average_absolute_exposure": 0.03650327060365545,
+      "bars": 45364,
+      "cost_share_of_gross": 0.19014662207165003,
+      "gross_return": 0.11318395921523261,
+      "hit_rate": 0.501264250543406,
+      "max_drawdown": -0.05093328921178053,
+      "net_return": 0.09008450542760316,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 27.931443073956608
+    },
+    "ENAUSDT": {
+      "annualized_sharpe": 0.2502834668066644,
+      "annualized_sharpe_gross": 0.33576543443175744,
+      "average_absolute_exposure": 0.010918866232228663,
+      "bars": 45364,
+      "cost_share_of_gross": 0.25450349337261896,
+      "gross_return": 0.03711832265553938,
+      "hit_rate": 0.5040561931143649,
+      "max_drawdown": -0.05566904591757138,
+      "net_return": 0.027224975259250384,
+      "nonzero_target_bars": 20488,
+      "turnover_units": 9.7019505012712
+    },
+    "ETHUSDT": {
+      "annualized_sharpe": 0.7631023329027273,
+      "annualized_sharpe_gross": 0.9188346099256971,
+      "average_absolute_exposure": 0.04691423353020445,
+      "bars": 45364,
+      "cost_share_of_gross": 0.16942386468592804,
+      "gross_return": 0.15774115760167384,
+      "hit_rate": 0.5033523002955317,
+      "max_drawdown": -0.052734155675469685,
+      "net_return": 0.12887849016692088,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 29.985231290474374
+    },
+    "HYPEUSDT": {
+      "annualized_sharpe": 0.18986286194937366,
+      "annualized_sharpe_gross": 0.25572320423465245,
+      "average_absolute_exposure": 0.006779985049463962,
+      "bars": 45364,
+      "cost_share_of_gross": 0.25761924715613616,
+      "gross_return": 0.018615214081663334,
+      "hit_rate": 0.5008234040492106,
+      "max_drawdown": -0.027459337483410007,
+      "net_return": 0.013647989495479518,
+      "nonzero_target_bars": 10338,
+      "turnover_units": 6.6946766502646575
+    },
+    "PUMPUSDT": {
+      "annualized_sharpe": 0.6076704168268099,
+      "annualized_sharpe_gross": 0.6384306451318278,
+      "average_absolute_exposure": 0.006558509079237149,
+      "bars": 45364,
+      "cost_share_of_gross": 0.048155350699967604,
+      "gross_return": 0.06486668113303717,
+      "hit_rate": 0.500887435777674,
+      "max_drawdown": -0.035464118299989744,
+      "net_return": 0.0615994097792496,
+      "nonzero_target_bars": 11486,
+      "turnover_units": 5.113958491901456
+    },
+    "SOLUSDT": {
+      "annualized_sharpe": 0.8091928933286544,
+      "annualized_sharpe_gross": 0.9513789256272358,
+      "average_absolute_exposure": 0.0358463928827845,
+      "bars": 45364,
+      "cost_share_of_gross": 0.1494210549932993,
+      "gross_return": 0.19114286699364014,
+      "hit_rate": 0.5055486228719137,
+      "max_drawdown": -0.052518989434337415,
+      "net_return": 0.15982681644576258,
+      "nonzero_target_bars": 45194,
+      "turnover_units": 27.403377596313074
+    },
+    "SUIUSDT": {
+      "annualized_sharpe": 1.1565130429704271,
+      "annualized_sharpe_gross": 1.2508695752315795,
+      "average_absolute_exposure": 0.019859519740017664,
+      "bars": 45364,
+      "cost_share_of_gross": 0.07536057330870101,
+      "gross_return": 0.19764994557512816,
+      "hit_rate": 0.5037120439111924,
+      "max_drawdown": -0.03212145456606974,
+      "net_return": 0.18129838714792657,
+      "nonzero_target_bars": 28524,
+      "turnover_units": 16.615192265732492
+    },
+    "TRUMPUSDT": {
+      "annualized_sharpe": -0.22180033110619354,
+      "annualized_sharpe_gross": -0.10514794389299638,
+      "average_absolute_exposure": 0.010007424590093723,
+      "bars": 45364,
+      "cost_share_of_gross": null,
+      "gross_return": -0.00957700044282106,
+      "hit_rate": 0.5006402048655569,
+      "max_drawdown": -0.05307533555562938,
+      "net_return": -0.01932914952678777,
+      "nonzero_target_bars": 13503,
+      "turnover_units": 9.239056731229262
+    },
+    "XRPUSDT": {
+      "annualized_sharpe": 0.3070851485414357,
+      "annualized_sharpe_gross": 0.44442304460792453,
+      "average_absolute_exposure": 0.04070423596381594,
+      "bars": 45364,
+      "cost_share_of_gross": 0.3089427211379336,
+      "gross_return": 0.07713434196017555,
+      "hit_rate": 0.5017876296031463,
+      "max_drawdown": -0.04057866401294452,
+      "net_return": 0.051740807487692386,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 32.3653088574059
+    },
+    "ZECUSDT": {
+      "annualized_sharpe": 0.8323325849436296,
+      "annualized_sharpe_gross": 0.9217800958731732,
+      "average_absolute_exposure": 0.03497657281788805,
+      "bars": 45364,
+      "cost_share_of_gross": 0.09700062607851428,
+      "gross_return": 0.19356700607432265,
+      "hit_rate": 0.5010172826257071,
+      "max_drawdown": -0.05101494877686297,
+      "net_return": 0.17283346354985873,
+      "nonzero_target_bars": 45364,
+      "turnover_units": 28.37059434312679
+    }
+  },
+  "portfolio": {
+    "covariance_halflife": 96,
+    "max_gross": 2.0,
+    "max_scalar": 3.0,
+    "max_weight": 0.15,
+    "min_asset_vol": 0.1,
+    "no_trade_band": 0.005,
+    "no_trade_rel_band": 0.25,
+    "vol_halflife": 48,
+    "vol_target": 0.15
+  },
+  "range": {
+    "bars": 45364,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-07-01 01:00:00+00:00"
+  },
+  "strategy": "tsmom",
+  "summary": {
+    "annualized_sharpe": 1.5528353520030589,
+    "annualized_sharpe_gross": 1.8513222875138136,
+    "average_absolute_exposure": 0.41290768938636746,
+    "bars": 45364,
+    "cost_share_of_gross": 0.16115620779368608,
+    "gross_return": 3.2744222718644034,
+    "hit_rate": 0.5097654527819416,
+    "max_drawdown": -0.13131103075559025,
+    "net_return": 2.347089132335162,
+    "nonzero_target_bars": 45364,
+    "turnover_units": 310.4931107309578
+  },
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "yearly": {
+    "2021": {
+      "bars": 4415,
+      "max_drawdown": -0.07482309365901585,
+      "return": 0.11643167708154745,
+      "sharpe": 1.4963971850361708
+    },
+    "2022": {
+      "bars": 8760,
+      "max_drawdown": -0.13131103075558526,
+      "return": 0.2531632106312738,
+      "sharpe": 1.5237915825574786
+    },
+    "2023": {
+      "bars": 8760,
+      "max_drawdown": -0.08375989440996967,
+      "return": 0.20817076858079764,
+      "sharpe": 1.2492192739801564
+    },
+    "2024": {
+      "bars": 8784,
+      "max_drawdown": -0.0968202841990371,
+      "return": 0.27337738624390195,
+      "sharpe": 1.5914428379565704
+    },
+    "2025": {
+      "bars": 8760,
+      "max_drawdown": -0.09282846090897201,
+      "return": 0.3263005528843852,
+      "sharpe": 1.8815856849277244
+    },
+    "2026": {
+      "bars": 5885,
+      "max_drawdown": -0.08939603501036719,
+      "return": 0.17246552858545328,
+      "sharpe": 1.5574280125185764
+    }
+  }
+}

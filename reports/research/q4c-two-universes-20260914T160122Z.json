@@ -1,0 +1,28 @@
+{
+  "alpha": 0.05,
+  "draws": 20000,
+  "generated_at": "2026-09-14T16:01:22.320813+00:00",
+  "joint": {
+    "columns": 1352,
+    "control_fwer": 0.02515,
+    "n_exact": 641
+  },
+  "kind": "q4c-two-universes",
+  "note": "No ledger row was written; this scores and counts, it does not select.  Li & Ji is not used (Q4b).",
+  "ratio": 1.9020771513353116,
+  "seed": 20260914,
+  "shared_bars": 49243,
+  "singles": {
+    "pit": {
+      "columns": 676,
+      "control_fwer": 0.02525,
+      "n_exact": 337
+    },
+    "static": {
+      "columns": 676,
+      "control_fwer": 0.02235,
+      "n_exact": 291
+    }
+  },
+  "verdict": "\u2461 per expression x universe (bucket 1342)"
+}

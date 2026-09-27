@@ -1,0 +1,119 @@
+# StarQuant — 密钥扫描配置
+#
+# 这个文件存在的理由，写在最前面，免得下次有人把它当成「把检查关小一点」的开关：
+#
+#   2026-09-19 第一次在本仓库跑 gitleaks，全历史 1,637 个 commit、72 MB，报了 **117 处**。
+#   逐个核实后**没有一处是真的密钥**：100 处是 `reports/research/trials.jsonl` 里的
+#   `param_key`（16 位参数指纹）、9 处是 `config/write-capability-registry.json` 的 sha256
+#   文件摘要、2 处是 SSH **公钥**指纹、2 处是 Binance 的响应头名 `x-mbx-order-count-1m`、
+#   其余是测试里写死的假值。全部出自 gitleaks 那条以误报著称的 `generic-api-key` 规则。
+#
+#   117 个红的检查等于没有检查——人看三次就开始无视它，然后第 118 个（真的那个）也一起被无视。
+#   所以 allowlist 不是让步，它是让这个检查**有可能保持零基线**的前提。与 `CEILING_SECONDS`
+#   和 source budget 同一个道理：一条永远亮着的警报不是警报。
+#
+# 因此这个文件的两条性质：
+#
+#   1. **allowlist 按「这个东西是什么」写，不按「它在哪个目录」写。**  用 `paths` 整片放行
+#      `tests/` 很省事，代价是测试文件里贴一个真密钥从此无人拦截——而那恰恰是最容易发生的
+#      泄漏（「我先跑通再换掉」）。所以下面每一条都带 `regexes`，描述那个具体的形态。
+#
+#   2. **放行一个形态要写清楚它为什么不可能是密钥。**  没写理由的放行，下一个人无法判断该不该
+#      收回，于是它永远留着。
+
+title = "starquant secret scanning"
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# 自定义规则：Binance API key / secret 的形态
+#
+# 本仓库唯一真正怕丢的东西。Binance 的 API key 与 secret 都是 64 位 [A-Za-z0-9]，
+# 大小写字母与数字混排。默认规则集里没有针对它的条目，`generic-api-key` 只在有
+# `key =` 之类赋值上下文时才响——而泄漏最常见的形态是一行裸串（粘进注释、日志、
+# 报告）。这条规则不看上下文，只看形态。
+#
+# 为什么要把纯 hex 排除掉：sha256 摘要、git object id、construction fingerprint 在本仓库
+# 遍地都是，全是 64 位纯小写 hex。一个 64 位串同时是合法 Binance key 又恰好只用到 16 个
+# hex 字符的概率是 (16/62)^64，可以当成零。排除它，这条规则的基线才是零。
+#
+# 排除的写法绕了一圈，值得记一句，免得下次有人「顺手改简洁」：gitleaks 用 Go 的 RE2，
+# **不支持 lookahead**。第一版写成 `(?=.*[A-Z])(?=.*[a-z])` 那种「同时含大小写和数字」
+# 的断言，gitleaks 直接 panic（不是报错，是带栈回溯的崩溃）。RE2 表达不了「同时包含」，
+# 所以改成：规则只认形态，把「不是 hex」交给下面的 allowlist 与 entropy 两道。
+#
+# entropy 3.5 这个数是量出来的，不是猜的：64 位纯小写 hex 的 Shannon entropy ≈ 3.9–4.0，
+# 64 位大小写数字混排 ≈ 5.2–5.4。两者分得很开，取中间偏低的一档留余量。
+[[rules]]
+id = "starquant-binance-credential-shape"
+description = "Binance API key/secret 形态（64 位大小写字母数字混排）"
+regex = '''\b[A-Za-z0-9]{64}\b'''
+keywords = []
+entropy = 4.5
+
+[[rules.allowlists]]
+description = "单一字符集的 64 位串是摘要/指纹，不是 Binance 凭据"
+regexTarget = "match"
+regexes = [
+  '''^[0-9a-f]{64}$''',
+  '''^[0-9A-F]{64}$''',
+  '''^[0-9]{64}$''',
+  '''^[a-z]{64}$''',
+  '''^[A-Z]{64}$''',
+]
+
+[[rules.allowlists]]
+description = "锁文件里的 wheel 摘要与 base64 编码块不是凭据"
+paths = ['''.*\.lock$''']
+
+# ---------------------------------------------------------------------------
+# 全局 allowlist：逐条对应 2026-09-19 那 117 处误报
+# ---------------------------------------------------------------------------
+[allowlist]
+description = "2026-09-19 全历史扫描的 117 处误报，逐个核实后按形态放行"
+
+# 匹配的是 gitleaks 判定出的 **secret 本身**，不是它周围那行。第一版写成 `match` 并带上
+# 前后的 `"key": ` 上下文，一条都没生效——gitleaks 交给 `match` 的串是从 secret 往外扩的
+# 片段，开头那个引号不在里面（实测：`param_key": "207ad3fb54979ace"`，前引号缺失）。
+# 按 secret 写还有一个好处：将来新增的哈希不会因为周围写法不同又冒出来。
+regexTarget = "secret"
+
+regexes = [
+  # 纯小写 hex 的摘要与指纹（109 处：trials.jsonl 的 `param_key` 100 处、
+  # write-capability-registry.json 的 sha256 文件摘要 9 处）。
+  #
+  # 放行这个形态为什么不削弱防护：**单一字符集**的串不可能是 Binance 凭据——key 与 secret
+  # 都是大小写字母加数字混排。抓那个形态的是上面 `starquant-binance-credential-shape` 那条
+  # 独立规则，它不在这个 allowlist 的管辖内。这里放宽的只有 `generic-api-key`，而本仓库
+  # 里满地都是 construction fingerprint、git object id 和 sha256 摘要，不放行它就永远是红的。
+  '''^[0-9a-f]{16}$''',
+  '''^[0-9a-f]{32}$''',
+  '''^[0-9a-f]{40}$''',
+  '''^[0-9a-f]{64}$''',
+
+  # SSH **公钥**指纹（2 处，artifacts/analysis/.../metric-owner-verification.json）。
+  # 原文是 `key SHA256:l2fe96...`，即 `ssh-keygen -lf` 的输出。公开它正是指纹的用途——
+  # 它用来核对公钥，本身推不出私钥。真正的私钥由内置的 `private-key` 规则抓，那条没有
+  # 被放行。
+  #
+  # 按这一个具体值放行，不按 `SHA256:[A-Za-z0-9+/]{43}` 这种形态放行：43 位 base64 是
+  # 很多真 token 的长度，放行整个形态会开一个不必要的口子。多一个公钥指纹就多加一行。
+  '''^l2fe96Mv2K8iVBPt6\+wwNVSE1X1c\+SWivXOlTXVmjiI$''',
+
+  # Binance 的 HTTP 响应头名（2 处）。`x-mbx-order-count-1m` 是币安返回的限速头，
+  # 代码里按名字匹配它。是协议常量，不是任何人的凭据。
+  '''x-mbx-(order-count|used-weight)[a-z0-9-]*''',
+
+  # 测试里写死的假凭据。三个值全部是人手敲的占位符，从未对应任何真账户：
+  #   idem-duplicate-001      幂等键的重复用例
+  #   sk-1234567890abcdef     一眼假的 OpenAI 形态串，用于断言脱敏逻辑会遮住它
+  #   Zq7XpLm3VtRw9KdN        release 测试里的固定 key
+  # 按值放行而不是按路径放行：往 tests/ 里贴一个**真**密钥仍然会被拦下。
+  '''idem-[a-z0-9-]+''',
+  '''sk-1234567890abcdef''',
+  '''Zq7XpLm3VtRw9KdN''',
+]
+
+# 本文件自己：上面那些 regex 字面量会被自己的规则命中。
+paths = ['''\.gitleaks\.toml$''']

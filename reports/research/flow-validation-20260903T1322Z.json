@@ -1,0 +1,391 @@
+{
+  "best_params": {
+    "cross_sectional": true,
+    "entry_threshold": 0.2,
+    "gate_horizons": [
+      168,
+      336,
+      720
+    ],
+    "gate_return_scale": 0.2,
+    "gate_vol_window": 400,
+    "gate_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "scale": 0.05,
+    "short_gate": 0.3,
+    "volume_window": 48,
+    "window": 168
+  },
+  "cost_stress": {
+    "x1": 0.8384558434805343,
+    "x1.5": 0.739993325719066,
+    "x2": 0.6415236475282998
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168",
+      "cross_sectional=True|entry_threshold=0.2|gate_horizons=[168, 336, 720]|gate_return_scale=0.2|gate_vol_window=400|gate_weights=[0.2, 0.3, 0.5]|scale=0.05|short_gate=0.3|volume_window=48|window=168"
+    ],
+    "fraction_negative": 0.26666666666666666,
+    "oos_sharpe_mean": 0.8479124428379411,
+    "oos_sharpe_min": -0.6480753521575433,
+    "oos_sharpe_q05": -0.5454075537409395,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 0.8389762700060738,
+    "annualized_sharpe_gross": 1.0514167775296608,
+    "average_absolute_exposure": 0.42578190865394283,
+    "bars": 48995,
+    "cost_share_of_gross": 0.20219976228847167,
+    "gross_return": 1.3077492700920756,
+    "hit_rate": 0.5100112256352689,
+    "max_drawdown": -0.3330551455968376,
+    "net_return": 0.9230210939691204,
+    "nonzero_target_bars": 48994,
+    "turnover_units": 241.2947163920588
+  },
+  "generated_at": "2026-09-03T13:22:02.220658+00:00",
+  "grid_size": 1,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 0.8389762700060738,
+    "degradation_slope": null,
+    "dsr": 0.4435549651754643,
+    "dsr_p_value": 0.5564450348245358,
+    "expected_max_sharpe_annual": 0.8990285194410138,
+    "grid_trials": 1,
+    "ledger_trials": 4,
+    "n_trials": 44,
+    "pbo": null,
+    "pbo_combinations": null,
+    "prior_trials": 39,
+    "prob_oos_loss": null,
+    "sharpe_variance_period": 1.8605650241726805e-05
+  },
+  "range": {
+    "bars": 48995,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-01-31 01:00:00+00:00"
+  },
+  "reasons": [
+    "dsr_p_value 0.5564450348245358 > 0.1"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 0.8389762700060738,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.0941913262612193,
+          "up": 0.8247157337158995
+        },
+        "scale": {
+          "down": 1.065463479801659,
+          "up": 0.8481521591633056
+        },
+        "window": {
+          "down": 1.075752243879034,
+          "up": 0.8285378162513841
+        }
+      },
+      "worst_degradation": 0.016997544269125846,
+      "worst_neighbour": 0.8247157337158995
+    },
+    "time_split_sharpes": [
+      -0.45494488680136014,
+      1.225836359812045,
+      0.7785022130027647,
+      0.8100738311012037
+    ]
+  },
+  "strategy": "flow",
+  "symbols": [
+    "1000BONKUSDT",
+    "1000FLOKIUSDT",
+    "1000LUNCUSDT",
+    "1000PEPEUSDT",
+    "1000SATSUSDT",
+    "1000SHIBUSDT",
+    "AAVEUSDT",
+    "ACEUSDT",
+    "ADAUSDT",
+    "AKEUSDT",
+    "ALICEUSDT",
+    "ALPACAUSDT",
+    "APEUSDT",
+    "APTUSDT",
+    "ARBUSDT",
+    "ARKUSDT",
+    "ARPAUSDT",
+    "ASTERUSDT",
+    "ATOMUSDT",
+    "AUCTIONUSDT",
+    "AVAXUSDT",
+    "AXSUSDT",
+    "BANDUSDT",
+    "BANKUSDT",
+    "BCHUSDT",
+    "BEATUSDT",
+    "BELUSDT",
+    "BIOUSDT",
+    "BLURUSDT",
+    "BLZUSDT",
+    "BNBUSDT",
+    "BNTUSDT",
+    "BOMEUSDT",
+    "BSBUSDT",
+    "BTCUSDT",
+    "CFXUSDT",
+    "CHZUSDT",
+    "COAIUSDT",
+    "COMPUSDT",
+    "CYBERUSDT",
+    "DASHUSDT",
+    "DEXEUSDT",
+    "DOGEUSDT",
+    "DOGSUSDT",
+    "DOTUSDT",
+    "DYDXUSDT",
+    "EDUUSDT",
+    "ENAUSDT",
+    "ENJUSDT",
+    "EOSUSDT",
+    "ETCUSDT",
+    "ETHUSDT",
+    "EVAAUSDT",
+    "FARTCOINUSDT",
+    "FETUSDT",
+    "FILUSDT",
+    "FLMUSDT",
+    "FTMUSDT",
+    "FTTUSDT",
+    "FUNUSDT",
+    "GALAUSDT",
+    "GASUSDT",
+    "GIGGLEUSDT",
+    "GMTUSDT",
+    "HBARUSDT",
+    "HIGHUSDT",
+    "HUSDT",
+    "HYPEUSDT",
+    "IDUSDT",
+    "INJUSDT",
+    "JASMYUSDT",
+    "KNCUSDT",
+    "LABUSDT",
+    "LIGHTUSDT",
+    "LINAUSDT",
+    "LINKUSDT",
+    "LPTUSDT",
+    "LRCUSDT",
+    "LTCUSDT",
+    "LUNAUSDT",
+    "MANAUSDT",
+    "MASKUSDT",
+    "MATICUSDT",
+    "MKRUSDT",
+    "MOODENGUSDT",
+    "MTLUSDT",
+    "MYXUSDT",
+    "NEARUSDT",
+    "NEIROETHUSDT",
+    "NEIROUSDT",
+    "NOTUSDT",
+    "OMUSDT",
+    "OPUSDT",
+    "ORDIUSDT",
+    "PAXGUSDT",
+    "PENGUUSDT",
+    "PEOPLEUSDT",
+    "PERPUSDT",
+    "PIPPINUSDT",
+    "PNUTUSDT",
+    "POWERUSDT",
+    "PUMPUSDT",
+    "RAVEUSDT",
+    "REEFUSDT",
+    "RIVERUSDT",
+    "RNDRUSDT",
+    "RUNEUSDT",
+    "RVNUSDT",
+    "SANDUSDT",
+    "SEIUSDT",
+    "SIRENUSDT",
+    "SOLUSDT",
+    "STORJUSDT",
+    "STOUSDT",
+    "STXUSDT",
+    "SUIUSDT",
+    "SUSHIUSDT",
+    "SXPUSDT",
+    "TAOUSDT",
+    "THETAUSDT",
+    "TIAUSDT",
+    "TOMOUSDT",
+    "TONUSDT",
+    "TRBUSDT",
+    "TRUMPUSDT",
+    "TRXUSDT",
+    "TURBOUSDT",
+    "TUTUSDT",
+    "UNFIUSDT",
+    "UNIUSDT",
+    "UXLINKUSDT",
+    "VELVETUSDT",
+    "VETUSDT",
+    "VIRTUALUSDT",
+    "WAVESUSDT",
+    "WIFUSDT",
+    "WLDUSDT",
+    "WLFIUSDT",
+    "XLMUSDT",
+    "XPLUSDT",
+    "XRPUSDT",
+    "YFIUSDT",
+    "ZECUSDT",
+    "ZILUSDT",
+    "ZROUSDT",
+    "\u5e01\u5b89\u4eba\u751fUSDT"
+  ],
+  "universe_mode": "pit",
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      },
+      {
+        "cross_sectional": true,
+        "entry_threshold": 0.2,
+        "gate_horizons": [
+          168,
+          336,
+          720
+        ],
+        "gate_return_scale": 0.2,
+        "gate_vol_window": 400,
+        "gate_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "scale": 0.05,
+        "short_gate": 0.3,
+        "volume_window": 48,
+        "window": 168
+      }
+    ],
+    "fold_consistency": 0.6,
+    "fold_sharpes": [
+      -0.3973751483019906,
+      -0.0428196308237499,
+      1.5009022396263811,
+      1.1277115327632214,
+      0.785203552272007
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.33305514559684024,
+    "oos_return": 0.4918365283513675,
+    "oos_sharpe": 0.5845718664477376
+  }
+}

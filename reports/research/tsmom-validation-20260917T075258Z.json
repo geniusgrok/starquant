@@ -1,0 +1,724 @@
+{
+  "best_key_oos_sharpe": 1.5228723445025625,
+  "best_params": {
+    "conviction_mode": "sign",
+    "crowding_cut": 0.7,
+    "crowding_penalty": 0.5,
+    "crowding_window": 72,
+    "entry_threshold": 0.2,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      168,
+      336,
+      720
+    ],
+    "momentum_mode": "fixed",
+    "persistence_weight": 0.1,
+    "return_scale": 0.2,
+    "return_weight": 0.4,
+    "slope_scale": 0.01,
+    "slope_weight": 0.25,
+    "vol_window": 400
+  },
+  "book_guards": {
+    "daily_loss_pause": -0.05,
+    "max_gross": 2.0,
+    "max_weight": 0.15
+  },
+  "cost_stress": {
+    "x1": 1.6618991695248804,
+    "x1.5": 1.6032363137894972,
+    "x2": 1.544547975657503
+  },
+  "cost_stress_gate": {
+    "x1": {
+      "clears": false,
+      "margin": -0.052557450282993745,
+      "oos_sharpe": 1.5228723445025625,
+      "threshold": 1.5754297947855562
+    },
+    "x1.5": {
+      "clears": false,
+      "margin": -0.11275436414230744,
+      "oos_sharpe": 1.462730370734063,
+      "threshold": 1.5754847348763705
+    },
+    "x2": {
+      "clears": false,
+      "margin": -0.1729772227713804,
+      "oos_sharpe": 1.4025640141183688,
+      "threshold": 1.5755412368897492
+    }
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400"
+    ],
+    "fraction_negative": 0.0,
+    "oos_sharpe_mean": 1.5849697498204092,
+    "oos_sharpe_min": 1.036543283492493,
+    "oos_sharpe_q05": 1.1913326604130525,
+    "paths": 15
+  },
+  "cpcv_groups": 6,
+  "dataset": {
+    "digest": "7e16f59a9b377e9b",
+    "funding": {
+      "bytes": 21941638,
+      "fingerprint": "825baa7708c3c121",
+      "symbols": 252
+    },
+    "interval": "1h",
+    "kind": "dataset-manifest",
+    "klines": {
+      "bytes": 472410486,
+      "fingerprint": "54a4d9ee1ab7b56c",
+      "symbols": 252
+    },
+    "membership": {
+      "file": {
+        "bytes": 435563
+      },
+      "first": "2021-01-31 00:00:00+00:00",
+      "last": "2026-09-03 00:00:00+00:00",
+      "mean_size": 17.5803,
+      "median_gap_hours": 24.0,
+      "refreshes": 2042,
+      "symbols": 877,
+      "union": 211
+    },
+    "root": "~/starquant/.starquant/data",
+    "universe": {
+      "count": 17,
+      "fingerprint": "b8a76083767c35b1",
+      "selected_at_ms": 1789606820783,
+      "source": "live-refresh"
+    },
+    "version": 2
+  },
+  "embargo": 50,
+  "evidence_construction": "5bcad243f8c73fe6",
+  "execution": "open_to_close",
+  "execution_comparison": {
+    "annualized_sharpe": 1.6458469165337066,
+    "annualized_sharpe_gross": 1.7710238693299312,
+    "average_absolute_exposure": 1.3439758674588047,
+    "bars": 49312,
+    "cost_share_of_gross": 0.07080351363998102,
+    "execution": "close_to_close",
+    "gross_return": 118.95379885059494,
+    "guards": {
+      "bars": 49312,
+      "daily_loss_pause_bars": 496,
+      "gross_capped_bars": 4033,
+      "liquidation_touches": 0,
+      "min_margin_buffer": 97.17857925879886,
+      "replayed": true
+    },
+    "hit_rate": 0.5119037962362103,
+    "max_drawdown": -0.40567535745763905,
+    "net_return": 79.0835715742931,
+    "nonzero_target_bars": 49312,
+    "turnover_units": 540.0419260911692
+  },
+  "exits": {
+    "bars_per_day": 24,
+    "cooldown_bars": 24,
+    "min_unit": 0.005,
+    "regime_er_cut": 0.05,
+    "regime_side": "low",
+    "regime_tp_scale": 0.5,
+    "regime_window": 0,
+    "stale_carry_bars": 2,
+    "stop_loss": 6.0,
+    "take_profit": 6.0,
+    "trailing_stop": 0.0,
+    "unit_mode": "entry",
+    "vol_halflife": 48
+  },
+  "folds": 5,
+  "full_sample": {
+    "annualized_sharpe": 1.6618991695248804,
+    "annualized_sharpe_gross": 1.7870949097409092,
+    "average_absolute_exposure": 1.3439758674588047,
+    "bars": 49312,
+    "cost_share_of_gross": 0.0701744904801807,
+    "gross_return": 125.27809573509408,
+    "guards": {
+      "bars": 49312,
+      "daily_loss_pause_bars": 492,
+      "gross_capped_bars": 4033,
+      "liquidation_touches": 0,
+      "min_margin_buffer": 97.16899127128382,
+      "replayed": true
+    },
+    "hit_rate": 0.5123499351070734,
+    "max_drawdown": -0.4028776916882598,
+    "net_return": 83.30516736686836,
+    "nonzero_target_bars": 49312,
+    "turnover_units": 540.0419260911692
+  },
+  "funding_inputs": {
+    "panel_carried": true,
+    "panel_symbols": 206,
+    "required_by": [
+      "tsmom"
+    ],
+    "symbols_settled": 206
+  },
+  "generated_at": "2026-09-17T07:52:58.027683+00:00",
+  "grid": {
+    "entry_threshold": [
+      0.2,
+      0.3
+    ],
+    "horizons": [
+      [
+        5,
+        20,
+        50
+      ],
+      [
+        24,
+        72,
+        168
+      ],
+      [
+        168,
+        336,
+        720
+      ],
+      [
+        336,
+        720,
+        1440
+      ]
+    ],
+    "return_scale": [
+      0.2,
+      0.3
+    ],
+    "vol_window": [
+      400
+    ]
+  },
+  "grid_size": 16,
+  "holdout": null,
+  "impact_model": {
+    "adv_window": 720,
+    "capital": 0.0,
+    "coefficient": 1.0,
+    "vol_window": 720
+  },
+  "interval": "1h",
+  "kind": "validation",
+  "ledger": {
+    "duplicate_rows": 38,
+    "ledger_rows": 145,
+    "ledger_trials": 107,
+    "pooled_sharpes": 122,
+    "replayed_rows": 0,
+    "whole_library_trials": 1771
+  },
+  "min_tenure": 0,
+  "min_train": 4000,
+  "multiple_testing": {
+    "candidate_sharpe_annual": 1.6211571361973203,
+    "degradation_slope": -0.8684569216599177,
+    "dsr": 0.48945722358984484,
+    "dsr_p_value": 0.5105427764101551,
+    "expected_max_sharpe_annual": 1.6323602149222414,
+    "grid_effective_trials": 5.999999999999999,
+    "grid_trials": 16,
+    "ledger_trials": 107,
+    "n_trials": 275,
+    "noise_null": {
+      "dsr_p_value": 0.16939797641106824,
+      "expected_max_sharpe_annual": 1.2156969550521508,
+      "sharpe_variance_period": 2.0510662552237583e-05
+    },
+    "pbo": 0.0434,
+    "pbo_combinations": 5000,
+    "prior_trials": 152,
+    "prob_oos_loss": 0.0,
+    "sharpe_variance_period": 3.697949995675667e-05
+  },
+  "oos_selection": {
+    "alpha": 0.05,
+    "expected_max_annual": 1.2674981085744923,
+    "gate": "max_sharpe_quantile",
+    "n_obs": 44592,
+    "n_trials": 275,
+    "oos_sharpe_annual": 1.2757343359189512,
+    "p_family": 0.4148437450815582,
+    "threshold_annual": 1.5726366892930652,
+    "variance": 2.229583139680071e-05
+  },
+  "oos_selection_whole_library": {
+    "alpha": 0.05,
+    "expected_max_annual": 1.5089023666986678,
+    "gate": "max_sharpe_quantile",
+    "n_obs": 44592,
+    "n_trials": 1771,
+    "oos_sharpe_annual": 1.2757343359189512,
+    "p_family": 0.9682874821295546,
+    "threshold_annual": 1.7770909739532463,
+    "variance": 2.229583139680071e-05
+  },
+  "portfolio": {
+    "budget_mode": "inverse_vol",
+    "covariance_halflife": 96,
+    "flat_inside_band": false,
+    "garch_fit_bars": 8760,
+    "garch_refit_bars": 720,
+    "hrp_refit_bars": 720,
+    "max_gross": 2.0,
+    "max_scalar": 3.0,
+    "max_weight": 0.15,
+    "min_asset_vol": 0.1,
+    "no_trade_band": 0.005,
+    "no_trade_rel_band": 0.4,
+    "sleeve_max_gross": 0.0,
+    "vol_halflife": 48,
+    "vol_model": "ewma",
+    "vol_target": 0.6
+  },
+  "preregistration": null,
+  "prior_trials_declared": 152,
+  "purge": 50,
+  "range": {
+    "bars": 48592,
+    "end": "2026-09-16 16:00:00+00:00",
+    "start": "2021-03-02 01:00:00+00:00"
+  },
+  "reasons": [
+    "oos_sharpe 1.28 < the deflated threshold 1.57 at 275 trials, p_family=0.4148"
+  ],
+  "slippage_stress": {
+    "slip2": 1.6618991695248804,
+    "slip5.5": 1.6032363137894972,
+    "slip9.2": 1.54119398144633
+  },
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 1.6618991695248804,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.5559851180127706,
+          "up": 1.5435212638484503
+        },
+        "return_scale": {
+          "down": 1.6240088349008637,
+          "up": 1.6595209993971118
+        },
+        "vol_window": {
+          "down": 1.6618991695248804,
+          "up": 1.6618991695248804
+        }
+      },
+      "worst_degradation": 0.07123049812358534,
+      "worst_neighbour": 1.5435212638484503
+    },
+    "time_split_sharpes": [
+      0.9546650534354165,
+      0.7131071335111715,
+      1.5019514381232608,
+      1.9560203052452845
+    ]
+  },
+  "strategy": "tsmom",
+  "symbols": [
+    "1000BONKUSDT",
+    "1000FLOKIUSDT",
+    "1000LUNCUSDT",
+    "1000PEPEUSDT",
+    "1000RATSUSDT",
+    "1000SATSUSDT",
+    "1000SHIBUSDT",
+    "1MBABYDOGEUSDT",
+    "AAVEUSDT",
+    "ACEUSDT",
+    "ADAUSDT",
+    "AGIXUSDT",
+    "AKEUSDT",
+    "ALICEUSDT",
+    "ALPACAUSDT",
+    "ALTUSDT",
+    "APEUSDT",
+    "API3USDT",
+    "APTUSDT",
+    "ARBUSDT",
+    "ARKUSDT",
+    "ARPAUSDT",
+    "ASTERUSDT",
+    "ATOMUSDT",
+    "AUCTIONUSDT",
+    "AVAXUSDT",
+    "AVNTUSDT",
+    "AXSUSDT",
+    "BABYUSDT",
+    "BANDUSDT",
+    "BANKUSDT",
+    "BBUSDT",
+    "BCHUSDT",
+    "BEATUSDT",
+    "BELUSDT",
+    "BERAUSDT",
+    "BIGTIMEUSDT",
+    "BIOUSDT",
+    "BLURUSDT",
+    "BLZUSDT",
+    "BNBUSDT",
+    "BNTUSDT",
+    "BNXUSDT",
+    "BOMEUSDT",
+    "BSBUSDT",
+    "BTCUSDT",
+    "CFXUSDT",
+    "CHIPUSDT",
+    "CHZUSDT",
+    "COAIUSDT",
+    "COMPUSDT",
+    "CRVUSDT",
+    "CTSIUSDT",
+    "CYBERUSDT",
+    "CYSUSDT",
+    "DASHUSDT",
+    "DEXEUSDT",
+    "DOGEUSDT",
+    "DOGSUSDT",
+    "DOTUSDT",
+    "DYDXUSDT",
+    "EDUUSDT",
+    "ENAUSDT",
+    "ENJUSDT",
+    "ENSUSDT",
+    "EOSUSDT",
+    "ETCUSDT",
+    "ETHFIUSDT",
+    "ETHUSDT",
+    "EVAAUSDT",
+    "FARTCOINUSDT",
+    "FETUSDT",
+    "FILUSDT",
+    "FLMUSDT",
+    "FOLKSUSDT",
+    "FTMUSDT",
+    "FTTUSDT",
+    "FUNUSDT",
+    "GALAUSDT",
+    "GALUSDT",
+    "GASUSDT",
+    "GIGGLEUSDT",
+    "GMTUSDT",
+    "GOATUSDT",
+    "GRTUSDT",
+    "HBARUSDT",
+    "HIFIUSDT",
+    "HIGHUSDT",
+    "HNTUSDT",
+    "HUSDT",
+    "HYPERUSDT",
+    "HYPEUSDT",
+    "IDUSDT",
+    "INJUSDT",
+    "IOUSDT",
+    "IPUSDT",
+    "JASMYUSDT",
+    "JUPUSDT",
+    "KAITOUSDT",
+    "KNCUSDT",
+    "LABUSDT",
+    "LAYERUSDT",
+    "LDOUSDT",
+    "LEVERUSDT",
+    "LIGHTUSDT",
+    "LINAUSDT",
+    "LINKUSDT",
+    "LOOMUSDT",
+    "LPTUSDT",
+    "LQTYUSDT",
+    "LRCUSDT",
+    "LTCUSDT",
+    "LUNA2USDT",
+    "LUNAUSDT",
+    "MANAUSDT",
+    "MANTAUSDT",
+    "MASKUSDT",
+    "MATICUSDT",
+    "MEMEUSDT",
+    "MEWUSDT",
+    "MKRUSDT",
+    "MMTUSDT",
+    "MOODENGUSDT",
+    "MOVEUSDT",
+    "MTLUSDT",
+    "MUBARAKUSDT",
+    "MYXUSDT",
+    "NEARUSDT",
+    "NEIROETHUSDT",
+    "NEIROUSDT",
+    "NOTUSDT",
+    "NXPCUSDT",
+    "OCEANUSDT",
+    "OGNUSDT",
+    "OMUSDT",
+    "OPUSDT",
+    "ORDIUSDT",
+    "PAXGUSDT",
+    "PENGUUSDT",
+    "PEOPLEUSDT",
+    "PERPUSDT",
+    "PIPPINUSDT",
+    "PNUTUSDT",
+    "POLYXUSDT",
+    "POPCATUSDT",
+    "POWERUSDT",
+    "PUMPUSDT",
+    "RAREUSDT",
+    "RAVEUSDT",
+    "REEFUSDT",
+    "RIVERUSDT",
+    "RNDRUSDT",
+    "RSRUSDT",
+    "RUNEUSDT",
+    "RVNUSDT",
+    "SANDUSDT",
+    "SEIUSDT",
+    "SIRENUSDT",
+    "SOLUSDT",
+    "STMXUSDT",
+    "STORJUSDT",
+    "STOUSDT",
+    "STXUSDT",
+    "SUIUSDT",
+    "SUNUSDT",
+    "SUSHIUSDT",
+    "SXPUSDT",
+    "SYNUSDT",
+    "TAOUSDT",
+    "THETAUSDT",
+    "TIAUSDT",
+    "TNSRUSDT",
+    "TOMOUSDT",
+    "TONUSDT",
+    "TRBUSDT",
+    "TRUMPUSDT",
+    "TRXUSDT",
+    "TSTUSDT",
+    "TURBOUSDT",
+    "TUTUSDT",
+    "UMAUSDT",
+    "UNFIUSDT",
+    "UNIUSDT",
+    "USUALUSDT",
+    "UXLINKUSDT",
+    "VELVETUSDT",
+    "VETUSDT",
+    "VINEUSDT",
+    "VIRTUALUSDT",
+    "VOXELUSDT",
+    "WAVESUSDT",
+    "WCTUSDT",
+    "WIFUSDT",
+    "WLDUSDT",
+    "WLFIUSDT",
+    "XAIUSDT",
+    "XLMUSDT",
+    "XPLUSDT",
+    "XRPUSDT",
+    "XTZUSDT",
+    "YFIUSDT",
+    "YGGUSDT",
+    "ZECUSDT",
+    "ZILUSDT",
+    "ZROUSDT",
+    "\u5e01\u5b89\u4eba\u751fUSDT"
+  ],
+  "trial_sharpes": {
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.6211571361973203,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.556637093634499,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.9682905546566528,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.00129779115475,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[336, 720, 1440]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.4596177915096662,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[336, 720, 1440]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.5389918761167974,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.3728689934251508,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.5075708704166277,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.3478185938221234,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.0697191882728359,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.1352365911849558,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.0399703183222497,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[336, 720, 1440]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.41542852072986475,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[336, 720, 1440]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.3611491050660222,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.5201019060031232,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=72|entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[5, 20, 50]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 0.6651855902757582
+  },
+  "universe_mode": "pit",
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 72,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 72,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 72,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 72,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 72,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      }
+    ],
+    "fold_consistency": 1.0,
+    "fold_sharpes": [
+      1.5230778716123607,
+      0.3322402042730782,
+      0.9906444997973172,
+      1.3796036415073558,
+      2.1604445570641815
+    ],
+    "folds": 5,
+    "oos_bars": 44592,
+    "oos_is_full_sample_tail": false,
+    "oos_max_drawdown": -0.40763039030050474,
+    "oos_return": 17.58537472741164,
+    "oos_sharpe": 1.2757343359189512,
+    "oos_t_lags": 15,
+    "oos_t_stat": 2.854065723337939,
+    "oos_window_sharpe_q10": -1.9483307753115022,
+    "oos_windows": 61,
+    "selection_consistent": false
+  }
+}

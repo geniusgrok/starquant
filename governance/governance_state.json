@@ -1,0 +1,24 @@
+{
+  "candidates": {
+    "flow": {
+      "cooldown_until_window": -1,
+      "fraction": 0.3333333333333333,
+      "probe_entries": 1,
+      "state": "probe",
+      "windows_survived": 0
+    },
+    "tsmom": {
+      "cooldown_until_window": -1,
+      "fraction": 0.0,
+      "probe_entries": 0,
+      "state": "main",
+      "windows_survived": 0
+    }
+  },
+  "consecutive_probe_stops": 0,
+  "frozen_until_window": -1,
+  "promotions_this_window": 0,
+  "to_main_this_window": 0,
+  "version": 1,
+  "window": 0
+}

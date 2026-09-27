@@ -1,0 +1,412 @@
+{
+  "baseline": {
+    "average_absolute_exposure": 0.42666677896653477,
+    "fold_sharpes": [
+      1.490516714231681,
+      0.8359443541723021,
+      2.2564462367927107,
+      0.744417181445771,
+      1.9429153092610671
+    ],
+    "full_mdd": -0.13841254871423103,
+    "full_sharpe": 1.656281940522657,
+    "oos_mdd": -0.13841254871422903,
+    "oos_return": 2.3948039002144856,
+    "oos_sharpe": 1.4666400454215893,
+    "turnover_units": 348.7823533005083
+  },
+  "candidates": [
+    {
+      "average_absolute_exposure": 0.4183485696660958,
+      "events": {
+        "by_rule": {
+          "TRAILING_STOP": 603
+        },
+        "exits": 603
+      },
+      "fold_sharpes": [
+        1.4023244294269857,
+        0.7408468344190139,
+        2.148901089684601,
+        0.382863785621926,
+        1.8391389274642085
+      ],
+      "full_mdd": -0.140838532183591,
+      "full_sharpe": 1.4795082058557216,
+      "kind": "exits",
+      "oos_mdd": -0.14083853218358922,
+      "oos_return": 1.9569122383520021,
+      "oos_sharpe": 1.31946189847098,
+      "params": {
+        "stop_loss": 0.0,
+        "take_profit": 0.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 372.69944192550633
+    },
+    {
+      "average_absolute_exposure": 0.41998809206521526,
+      "events": {
+        "by_rule": {
+          "TAKE_PROFIT": 391
+        },
+        "exits": 391
+      },
+      "fold_sharpes": [
+        1.4125092271974033,
+        0.6960871891330273,
+        2.3757246396932916,
+        0.7333686953775927,
+        1.5450622240313858
+      ],
+      "full_mdd": -0.13069405505250686,
+      "full_sharpe": 1.5404385872265716,
+      "kind": "exits",
+      "oos_mdd": -0.13069405505250264,
+      "oos_return": 1.9434605153599178,
+      "oos_sharpe": 1.35783101995987,
+      "params": {
+        "stop_loss": 0.0,
+        "take_profit": 6.0,
+        "trailing_stop": 0.0
+      },
+      "turnover_units": 373.392619849537
+    },
+    {
+      "average_absolute_exposure": 0.4142285097036252,
+      "events": {
+        "by_rule": {
+          "TAKE_PROFIT": 385,
+          "TRAILING_STOP": 401
+        },
+        "exits": 786
+      },
+      "fold_sharpes": [
+        1.2606073460953104,
+        0.5087848418065294,
+        2.1993256318313397,
+        0.6499226951373231,
+        1.5444663022497018
+      ],
+      "full_mdd": -0.14215144777011823,
+      "full_sharpe": 1.4423008295424111,
+      "kind": "exits",
+      "oos_mdd": -0.14215144777011923,
+      "oos_return": 1.6583997659509584,
+      "oos_sharpe": 1.240796110883598,
+      "params": {
+        "stop_loss": 0.0,
+        "take_profit": 6.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 388.95835778121915
+    },
+    {
+      "average_absolute_exposure": 0.42416454257901415,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 193
+        },
+        "exits": 193
+      },
+      "fold_sharpes": [
+        1.4424285659777043,
+        0.6895503537899041,
+        2.1852366383230746,
+        0.8035151314367208,
+        1.9471719495319344
+      ],
+      "full_mdd": -0.14554407023864602,
+      "full_sharpe": 1.6195992174414153,
+      "kind": "exits",
+      "oos_mdd": -0.14554407023864324,
+      "oos_return": 2.2708178210942123,
+      "oos_sharpe": 1.425803641385502,
+      "params": {
+        "stop_loss": 2.5,
+        "take_profit": 0.0,
+        "trailing_stop": 0.0
+      },
+      "turnover_units": 355.8744047889435
+    },
+    {
+      "average_absolute_exposure": 0.41624070556647497,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 201,
+          "TRAILING_STOP": 535
+        },
+        "exits": 736
+      },
+      "fold_sharpes": [
+        1.2672085075924613,
+        0.6432764278722632,
+        2.2099033796347998,
+        0.44329206390784154,
+        1.9026083280867645
+      ],
+      "full_mdd": -0.1558324321242257,
+      "full_sharpe": 1.4652396039817799,
+      "kind": "exits",
+      "oos_mdd": -0.1558324321242276,
+      "oos_return": 1.9304770196428884,
+      "oos_sharpe": 1.3090827281302508,
+      "params": {
+        "stop_loss": 2.5,
+        "take_profit": 0.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 379.03248705251764
+    },
+    {
+      "average_absolute_exposure": 0.4150645914862971,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 330,
+          "TAKE_PROFIT": 397
+        },
+        "exits": 727
+      },
+      "fold_sharpes": [
+        1.4096245078111411,
+        0.6064353837705607,
+        2.324804321971719,
+        0.7529877619381059,
+        1.6227192452266088
+      ],
+      "full_mdd": -0.14218526901940076,
+      "full_sharpe": 1.5305863036762908,
+      "kind": "exits",
+      "oos_mdd": -0.1421852690194002,
+      "oos_return": 1.9137272228683422,
+      "oos_sharpe": 1.3495330164712451,
+      "params": {
+        "stop_loss": 2.5,
+        "take_profit": 6.0,
+        "trailing_stop": 0.0
+      },
+      "turnover_units": 387.4856132064307
+    },
+    {
+      "average_absolute_exposure": 0.41172258032119535,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 272,
+          "TAKE_PROFIT": 388,
+          "TRAILING_STOP": 288
+        },
+        "exits": 948
+      },
+      "fold_sharpes": [
+        1.3060537260933966,
+        0.5051811443542782,
+        2.2082762302455254,
+        0.7658105863324236,
+        1.6213369399174733
+      ],
+      "full_mdd": -0.1479303715032414,
+      "full_sharpe": 1.4629581079692333,
+      "kind": "exits",
+      "oos_mdd": -0.14793037150323973,
+      "oos_return": 1.7683714538251647,
+      "oos_sharpe": 1.2881123084951025,
+      "params": {
+        "stop_loss": 2.5,
+        "take_profit": 6.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 396.01440631239063
+    },
+    {
+      "average_absolute_exposure": 0.42646987794554087,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 30
+        },
+        "exits": 30
+      },
+      "fold_sharpes": [
+        1.4903495755373295,
+        0.8217483895858354,
+        2.2567821104416628,
+        0.7569602641548762,
+        1.9444664586297455
+      ],
+      "full_mdd": -0.13841254871422948,
+      "full_sharpe": 1.6579506271939617,
+      "kind": "exits",
+      "oos_mdd": -0.13841254871422903,
+      "oos_return": 2.3948840532709132,
+      "oos_sharpe": 1.466543275276501,
+      "params": {
+        "stop_loss": 4.0,
+        "take_profit": 0.0,
+        "trailing_stop": 0.0
+      },
+      "turnover_units": 349.2145992369251
+    },
+    {
+      "average_absolute_exposure": 0.4183485696660958,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 11,
+          "TRAILING_STOP": 592
+        },
+        "exits": 603
+      },
+      "fold_sharpes": [
+        1.4023244294269857,
+        0.7408468344190139,
+        2.148901089684601,
+        0.382863785621926,
+        1.8391389274642085
+      ],
+      "full_mdd": -0.140838532183591,
+      "full_sharpe": 1.4795082058557216,
+      "kind": "exits",
+      "oos_mdd": -0.14083853218358922,
+      "oos_return": 1.9569122383520021,
+      "oos_sharpe": 1.31946189847098,
+      "params": {
+        "stop_loss": 4.0,
+        "take_profit": 0.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 372.69944192550633
+    },
+    {
+      "average_absolute_exposure": 0.41902382975333113,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 82,
+          "TAKE_PROFIT": 391
+        },
+        "exits": 473
+      },
+      "fold_sharpes": [
+        1.4137699030589979,
+        0.5251825165383734,
+        2.384572100877072,
+        0.669808889188764,
+        1.5438289765949287
+      ],
+      "full_mdd": -0.1297866541910313,
+      "full_sharpe": 1.5003437807485152,
+      "kind": "exits",
+      "oos_mdd": -0.1297866541910343,
+      "oos_return": 1.832385265568071,
+      "oos_sharpe": 1.3139468906596645,
+      "params": {
+        "stop_loss": 4.0,
+        "take_profit": 6.0,
+        "trailing_stop": 0.0
+      },
+      "turnover_units": 375.84342744593545
+    },
+    {
+      "average_absolute_exposure": 0.4142285097036252,
+      "events": {
+        "by_rule": {
+          "STOP_LOSS": 23,
+          "TAKE_PROFIT": 385,
+          "TRAILING_STOP": 378
+        },
+        "exits": 786
+      },
+      "fold_sharpes": [
+        1.2606073460953104,
+        0.5087848418065294,
+        2.1993256318313397,
+        0.6499226951373231,
+        1.5444663022497018
+      ],
+      "full_mdd": -0.14215144777011823,
+      "full_sharpe": 1.4423008295424111,
+      "kind": "exits",
+      "oos_mdd": -0.14215144777011923,
+      "oos_return": 1.6583997659509584,
+      "oos_sharpe": 1.240796110883598,
+      "params": {
+        "stop_loss": 4.0,
+        "take_profit": 6.0,
+        "trailing_stop": 4.0
+      },
+      "turnover_units": 388.95835778121915
+    },
+    {
+      "average_absolute_exposure": 0.40721344108265184,
+      "fold_sharpes": [
+        1.4065717722222124,
+        0.7240614255052572,
+        2.1946585797864806,
+        0.6141333385541357,
+        1.784691455645915
+      ],
+      "full_mdd": -0.1300752081806812,
+      "full_sharpe": 1.5613141532991952,
+      "kind": "throttle",
+      "mean_scalar": 0.9694858920030147,
+      "oos_mdd": -0.13007520818067608,
+      "oos_return": 1.9960985103306013,
+      "oos_sharpe": 1.3586503669926118,
+      "params": {
+        "floor": 0.25,
+        "start": 0.05,
+        "stop": 0.2
+      },
+      "turnover_units": 371.82029454492135
+    }
+  ],
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "folds": 5,
+  "generated_at": "2026-09-04T02:10:40.015315+00:00",
+  "interval": "1h",
+  "kind": "overlay",
+  "min_train": 4000,
+  "range": {
+    "bars": 48996,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-01-31 00:00:00+00:00"
+  },
+  "recommendation": {
+    "exits": {
+      "enable": false,
+      "params": null,
+      "qualified": 0,
+      "rule": "oos_mdd improves and oos_sharpe >= baseline - 0.1; tie-break: highest oos_sharpe",
+      "tested": 11
+    },
+    "throttle": {
+      "enable": false,
+      "params": null,
+      "qualified": 0,
+      "rule": "oos_mdd improves and oos_sharpe >= baseline - 0.1; tie-break: highest oos_sharpe",
+      "tested": 1
+    }
+  },
+  "strategies": [
+    "tsmom",
+    "flow"
+  ],
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "universe_mode": "static"
+}

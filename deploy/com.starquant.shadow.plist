@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      L4 / DL-G5 / AC-G5: the canary soak, 168 cycles beside the armed loop.
+      `run_shadow.sh` existed since 2026-09-08 and nothing ever ran it, so the
+      canary, M-G03 and DRILL-G4 had no sample at all; a script that is not
+      scheduled is a script that has not run.  Operator ruling 2026-09-12:
+      one machine only, so the credentials the canary needs (dry_run still
+      builds the venue) are on this host and L4 no longer has a home problem.
+      No lock contention with the armed loop: the account lock is taken only
+      by runs that are neither dry_run nor paper.  No shared-file contention
+      either: `trades_the_account` keeps universe.json and metrics_snapshot
+      for the process actually trading.
+      KeepAlive only on a crash, never on a clean exit, because the soak ENDS
+      at 168 cycles and restarting it there would silently begin a second one.
+      The flags in run_shadow.sh are written without leading dashes in these
+      comments on purpose: two dashes in a row end an XML comment.
+      Install: cp to /Users/you/Library/LaunchAgents/ and
+      `launchctl load -w /Users/you/Library/LaunchAgents/com.starquant.shadow.plist`.
+    -->
+    <key>Label</key>
+    <string>com.starquant.shadow</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/you/starquant/deploy/run_shadow.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/you/starquant</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/you/Library/Application Support/starquant/shadow.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/Library/Application Support/starquant/shadow.stderr.log</string>
+</dict>
+</plist>

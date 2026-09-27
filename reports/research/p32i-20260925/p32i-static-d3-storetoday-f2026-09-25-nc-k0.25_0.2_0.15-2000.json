@@ -1,0 +1,304 @@
+{
+ "mode": "static",
+ "band": "d3",
+ "store": "today",
+ "store_0923": null,
+ "draws": 2000,
+ "seed": 20260904,
+ "block": 168,
+ "k_grid": [
+  0.25,
+  0.2,
+  0.15
+ ],
+ "end_exclusive": "2026-09-22 17:00",
+ "bars": 49457,
+ "honest_sharpe_target": 1.2306419157745636,
+ "evidence": "tsmom-validation-20260919T081914Z.json",
+ "drifts": [
+  "orig",
+  "honest"
+ ],
+ "controls": false,
+ "prop_keep": null,
+ "usdt_share_at_peak": 0.5721286576816903,
+ "usdt_factor": 1.747858609376565,
+ "usdt_factor_date": "2026-09-25",
+ "static_universe": [
+  "BTCUSDT",
+  "ETHUSDT",
+  "SOLUSDT",
+  "ZECUSDT",
+  "XRPUSDT",
+  "HYPEUSDT",
+  "DOGEUSDT",
+  "BNBUSDT",
+  "ENAUSDT",
+  "NEARUSDT",
+  "UNIUSDT",
+  "SUIUSDT",
+  "LSKUSDT",
+  "TRUMPUSDT",
+  "1000PEPEUSDT",
+  "ADAUSDT"
+ ],
+ "drift": {
+  "0.25": {
+   "full_sample_sharpe": 1.7559680814066911,
+   "c_per_bar": 1.695778929342668e-05,
+   "c_annual_arithmetic": 0.14855023421041771,
+   "mean_per_bar_before": 5.6683520979097156e-05,
+   "mean_per_bar_after": 3.972573168567049e-05,
+   "sharpe_after": 1.230641915774564,
+   "std_rel_change": 0.0,
+   "lag1_before": 0.008087609886408331,
+   "lag1_after": 0.008087609886408331,
+   "starts_sha256_16": "ea75b24b9f463606"
+  },
+  "0.20": {
+   "full_sample_sharpe": 1.8349955077977658,
+   "c_per_bar": 1.5792837640904495e-05,
+   "c_annual_arithmetic": 0.13834525773432338,
+   "mean_per_bar_before": 4.7951706598488524e-05,
+   "mean_per_bar_after": 3.2158868957584e-05,
+   "sharpe_after": 1.2306419157745627,
+   "std_rel_change": 0.0,
+   "lag1_before": 0.007560832935909194,
+   "lag1_after": 0.007560832935909196,
+   "starts_sha256_16": "ea75b24b9f463606"
+  },
+  "0.15": {
+   "full_sample_sharpe": 1.802302738214605,
+   "c_per_bar": 1.1083983342910353e-05,
+   "c_annual_arithmetic": 0.09709569408389469,
+   "mean_per_bar_before": 3.494501065156981e-05,
+   "mean_per_bar_after": 2.3861027308659448e-05,
+   "sharpe_after": 1.2306419157745634,
+   "std_rel_change": 0.0,
+   "lag1_before": 0.009362445370711557,
+   "lag1_after": 0.009362445370711549,
+   "starts_sha256_16": "ea75b24b9f463606"
+  }
+ },
+ "rows": [
+  {
+   "k": 0.25,
+   "arm": "ladder@k",
+   "base": 0.25,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.1875
+    ],
+    [
+     -0.4004900603771832,
+     0.125
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.2827912382147853,
+   "q95_total": -0.3923649449564364,
+   "q95_usdt": -0.6857984470596694,
+   "p_past_70_usdt": 0.0365,
+   "cagr_median": 0.559396152172664,
+   "ladder_cost_median": 0.0,
+   "draws_that_ever_tripped": 0.5015,
+   "throttled_bars_median": 2.024619371558147e-05,
+   "holds_the_usdt_budget": true,
+   "bars": 49457,
+   "drift": "orig"
+  },
+  {
+   "k": 0.25,
+   "arm": "ladder@k",
+   "base": 0.25,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.1875
+    ],
+    [
+     -0.4004900603771832,
+     0.125
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.3314491333370341,
+   "q95_total": -0.45266656877978956,
+   "q95_usdt": -0.7911971594187042,
+   "p_past_70_usdt": 0.1935,
+   "cagr_median": 0.3389170903226727,
+   "ladder_cost_median": 0.005931659819771062,
+   "draws_that_ever_tripped": 0.774,
+   "throttled_bars_median": 0.03416545189504373,
+   "holds_the_usdt_budget": false,
+   "bars": 49457,
+   "drift": "honest"
+  },
+  {
+   "k": 0.2,
+   "arm": "ladder@k",
+   "base": 0.2,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.15000000000000002
+    ],
+    [
+     -0.4004900603771832,
+     0.1
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.22960571646393668,
+   "q95_total": -0.33284977609896493,
+   "q95_usdt": -0.5817743467836378,
+   "p_past_70_usdt": 0.006,
+   "cagr_median": 0.46945811908608137,
+   "ladder_cost_median": 0.0,
+   "draws_that_ever_tripped": 0.2065,
+   "throttled_bars_median": 0.0,
+   "holds_the_usdt_budget": true,
+   "bars": 49457,
+   "drift": "orig"
+  },
+  {
+   "k": 0.2,
+   "arm": "ladder@k",
+   "base": 0.2,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.15000000000000002
+    ],
+    [
+     -0.4004900603771832,
+     0.1
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.28003773646237295,
+   "q95_total": -0.41012814478084225,
+   "q95_usdt": -0.7168460088028334,
+   "p_past_70_usdt": 0.061,
+   "cagr_median": 0.27826948436122945,
+   "ladder_cost_median": 0.0,
+   "draws_that_ever_tripped": 0.492,
+   "throttled_bars_median": 0.0,
+   "holds_the_usdt_budget": false,
+   "bars": 49457,
+   "drift": "honest"
+  },
+  {
+   "k": 0.15,
+   "arm": "ladder@k",
+   "base": 0.15,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.11249999999999999
+    ],
+    [
+     -0.4004900603771832,
+     0.075
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.18093905290857254,
+   "q95_total": -0.27487292946950004,
+   "q95_usdt": -0.4804390162578229,
+   "p_past_70_usdt": 0.0005,
+   "cagr_median": 0.33236303339454687,
+   "ladder_cost_median": 0.0,
+   "draws_that_ever_tripped": 0.042,
+   "throttled_bars_median": 0.0,
+   "holds_the_usdt_budget": true,
+   "bars": 49457,
+   "drift": "orig"
+  },
+  {
+   "k": 0.15,
+   "arm": "ladder@k",
+   "base": 0.15,
+   "rungs": [
+    [
+     -0.28034304226402823,
+     0.11249999999999999
+    ],
+    [
+     -0.4004900603771832,
+     0.075
+    ]
+   ],
+   "acting_scalars": [
+    0.75,
+    0.5
+   ],
+   "median_total": -0.21681762934052334,
+   "q95_total": -0.33650463801765107,
+   "q95_usdt": -0.588162528654296,
+   "p_past_70_usdt": 0.009,
+   "cagr_median": 0.20871547100169674,
+   "ladder_cost_median": 0.0,
+   "draws_that_ever_tripped": 0.2005,
+   "throttled_bars_median": 0.0,
+   "holds_the_usdt_budget": true,
+   "bars": 49457,
+   "drift": "honest"
+  }
+ ],
+ "checks": {
+  "bars": 49457,
+  "band": "d3",
+  "store": "today",
+  "band_verified_bit_for_bit_at_k": [],
+  "funding_rows_kept": {},
+  "published_cells": {
+   "source": "RESEARCH_LOG D3 section \u00a7\u4e09 (D2+D3)",
+   "compared": 3,
+   "identical": 1,
+   "misses": [
+    {
+     "k": 0.25,
+     "arm": "ladder@k",
+     "published": "-69.2",
+     "now": "-68.6"
+    },
+    {
+     "k": 0.25,
+     "arm": "ladder@k",
+     "published": "4.4",
+     "now": "3.6"
+    }
+   ]
+  }
+ },
+ "summary": {
+  "orig": {
+   "first_grid_k": 0.25,
+   "interpolated": null
+  },
+  "honest": {
+   "first_grid_k": 0.15,
+   "interpolated": [
+    0.19345447885642028,
+    0.2691641390599165
+   ]
+  }
+ }
+}

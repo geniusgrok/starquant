@@ -1,0 +1,258 @@
+{
+  "alpha": {
+    "alpha_source_sha256": "b8eb56a7ce9f6fa08ca60c747f3176af4b327cef8a9a32e09283798d24abb95d",
+    "candidate_selection": false,
+    "entrypoint": "apps.alpha_app.OfflineAlphaApp",
+    "parameter_search": false,
+    "policy_hash": "67635b144f2ea59b7181dcc1be59dd501d72b6b42ebca1730a6d2e54009e8e3a",
+    "policy_version": "trend-alpha-v3-policy-v1",
+    "trend_source_sha256": "865d689e5f6da23c99306dde5767ff6561e3d83e8a66f601bc70ed4baf2a3dea"
+  },
+  "cost_model": {
+    "adverse_hourly_funding_bps": 0.125,
+    "components": {
+      "avg_spread_bps": 1.0,
+      "funding_rate_8h_pct": 0.01,
+      "impact_bps_per_10k": 0.1,
+      "slippage_bps": 1.0,
+      "taker_fee_bps": 4.0
+    },
+    "impact_application": "NOT_EVALUATED_NO_NOTIONAL_OR_PARTICIPATION_FACTS",
+    "interpretation": "diagnostic adverse carry; not a calibrated execution-cost model",
+    "policy_path": "config/factor_mining_policy.yaml",
+    "policy_sha256": "0fe937fbe1e13ad8112f1dd3c2d86c39822533fb97d4c51b8cd9cb4daf50d1a0",
+    "policy_version": "2.0.0",
+    "turnover_cost_bps": 6.0
+  },
+  "dataset": {
+    "end_exclusive": "2026-08-31T00:00:00Z",
+    "index_sha256": "811affae3e2cc2ee5d24a617f4278f8bcf97ed7b208bb92b2b22a83cab572d28",
+    "interval": "1h",
+    "path": "artifacts/datasets/alpha-return-2026-08-01_2026-08-31-v1",
+    "rows_per_symbol": 720,
+    "start_inclusive": "2026-08-01T00:00:00Z",
+    "status": "PASS",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT",
+      "SOLUSDT"
+    ]
+  },
+  "decision": "DO_NOT_PROMOTE",
+  "economic_truth": {
+    "e0_by_symbol": {
+      "BNBUSDT": "NOT_EVALUATED",
+      "BTCUSDT": "NOT_EVALUATED",
+      "ETHUSDT": "NOT_EVALUATED",
+      "SOLUSDT": "NOT_EVALUATED"
+    },
+    "overall": "NOT_EVALUATED",
+    "reasons": [
+      "PIT_LINEAGE_MANIFEST_ABSENT",
+      "FEATURE_LINEAGE_MANIFEST_ABSENT",
+      "OOS_SEAL_ABSENT_AND_PRESEAL_RESULTS_ALREADY_INSPECTED",
+      "METRIC_OWNER_POLICY_NOT_PROVIDED",
+      "IMPACT_AND_CAPACITY_NOT_EVALUATED"
+    ]
+  },
+  "limitations": [
+    "The 720-hour range is a single short market episode and cannot establish multi-regime robustness.",
+    "The authorized range was inspected before an immutable OOS seal, so all metrics are descriptive only.",
+    "The cost policy is explicit but not calibrated to fills; impact and capacity are not evaluated.",
+    "Annualized hourly Sharpe is reported for arithmetic reproducibility and is unstable on this short sample.",
+    "No Paper, Testnet, Mainnet, account, order, deployment, restart, commit, or push action occurred."
+  ],
+  "oos": {
+    "reasons": [
+      "PRESEAL_RESULT_INSPECTION",
+      "NO_UNSEEN_HOLDOUT_REMAINS_IN_AUTHORIZED_RANGE",
+      "ONLY_135_EVALUABLE_BARS_POSTDATE_OFFLINE_ALPHA_APP_COMMIT"
+    ],
+    "status": "INVALIDATED_FOR_PROMOTION"
+  },
+  "per_symbol": {
+    "BNBUSDT": {
+      "bars": 669,
+      "benchmark_metrics": {
+        "annualized_hourly_sharpe": 5.426290956107412,
+        "average_absolute_position": 1.0,
+        "bars": 669,
+        "gross_return": 0.1673968774046053,
+        "max_drawdown": -0.05934447510254526,
+        "net_return": 0.1673968774046053,
+        "nonzero_target_bars": 669,
+        "turnover_units": 1.0
+      },
+      "e0_reasons": [
+        "MISSING_EVIDENCE:pit_manifest_hash",
+        "MISSING_EVIDENCE:lineage_hash"
+      ],
+      "e0_status": "NOT_EVALUATED",
+      "entry_threshold": 0.2,
+      "first_open_time_ms": 1785542400000,
+      "last_open_time_ms": 1788130800000,
+      "lookahead_violations": 0,
+      "manifest_hash": "7d525e76def19be7675483e9e179c8cdb6aadea46f5cc7d31b3464eab3365dac",
+      "market_data_status": "PASS",
+      "metrics": {
+        "annualized_hourly_sharpe": 0.15721462675717665,
+        "average_absolute_position": 0.13578141290377355,
+        "bars": 669,
+        "gross_return": 0.01751588725353659,
+        "max_drawdown": -0.03908220408200691,
+        "net_return": 0.0008647770952194822,
+        "nonzero_target_bars": 669,
+        "turnover_units": 25.607910091343054
+      },
+      "rows": 720,
+      "same_bar_executions": 0,
+      "signal_manifest_hash": "4192bf5c46fe723235301e13d21c191a06e8afa108b5ca784ba898a227956079",
+      "subthreshold_nonzero_targets": 542
+    },
+    "BTCUSDT": {
+      "bars": 669,
+      "benchmark_metrics": {
+        "annualized_hourly_sharpe": 7.258551472028789,
+        "average_absolute_position": 1.0,
+        "bars": 669,
+        "gross_return": 0.22991865441481485,
+        "max_drawdown": -0.041753831802396335,
+        "net_return": 0.22991865441481485,
+        "nonzero_target_bars": 669,
+        "turnover_units": 1.0
+      },
+      "e0_reasons": [
+        "MISSING_EVIDENCE:pit_manifest_hash",
+        "MISSING_EVIDENCE:lineage_hash"
+      ],
+      "e0_status": "NOT_EVALUATED",
+      "entry_threshold": 0.2,
+      "first_open_time_ms": 1785542400000,
+      "last_open_time_ms": 1788130800000,
+      "lookahead_violations": 0,
+      "manifest_hash": "fd011645ac4e82917c38cdd3d14c8ae08ee74541133a2fc395f08ca8bebe21cf",
+      "market_data_status": "PASS",
+      "metrics": {
+        "annualized_hourly_sharpe": 3.7073096251652737,
+        "average_absolute_position": 0.1410030932541572,
+        "bars": 669,
+        "gross_return": 0.05277919758551963,
+        "max_drawdown": -0.032605981952877006,
+        "net_return": 0.035241210890566865,
+        "nonzero_target_bars": 669,
+        "turnover_units": 26.03518731334512
+      },
+      "rows": 720,
+      "same_bar_executions": 0,
+      "signal_manifest_hash": "0e1e35b06cdd892fc0d5d0f00c44c205c389e9d59187ba19fc41c46aa4a8985d",
+      "subthreshold_nonzero_targets": 557
+    },
+    "ETHUSDT": {
+      "bars": 669,
+      "benchmark_metrics": {
+        "annualized_hourly_sharpe": 6.6908024469176475,
+        "average_absolute_position": 1.0,
+        "bars": 669,
+        "gross_return": 0.29646231124716915,
+        "max_drawdown": -0.05925403070407742,
+        "net_return": 0.29646231124716915,
+        "nonzero_target_bars": 669,
+        "turnover_units": 1.0
+      },
+      "e0_reasons": [
+        "MISSING_EVIDENCE:pit_manifest_hash",
+        "MISSING_EVIDENCE:lineage_hash"
+      ],
+      "e0_status": "NOT_EVALUATED",
+      "entry_threshold": 0.2,
+      "first_open_time_ms": 1785542400000,
+      "last_open_time_ms": 1788130800000,
+      "lookahead_violations": 0,
+      "manifest_hash": "832037d1897be70665407e8112101fb04b4b85f912dbdbc3f2a0aaadd68d8b02",
+      "market_data_status": "PASS",
+      "metrics": {
+        "annualized_hourly_sharpe": 2.867835144436754,
+        "average_absolute_position": 0.14784143069033348,
+        "bars": 669,
+        "gross_return": 0.06311409687377512,
+        "max_drawdown": -0.04124844141303874,
+        "net_return": 0.04103770324136735,
+        "nonzero_target_bars": 669,
+        "turnover_units": 32.916396349599154
+      },
+      "rows": 720,
+      "same_bar_executions": 0,
+      "signal_manifest_hash": "dcb37810e7f8609fede3aed8e0fdecde89ba873eba291ca9b8ee06cb0d755cca",
+      "subthreshold_nonzero_targets": 545
+    },
+    "SOLUSDT": {
+      "bars": 669,
+      "benchmark_metrics": {
+        "annualized_hourly_sharpe": 7.574401688007777,
+        "average_absolute_position": 1.0,
+        "bars": 669,
+        "gross_return": 0.3824805899061601,
+        "max_drawdown": -0.07068887952666125,
+        "net_return": 0.3824805899061601,
+        "nonzero_target_bars": 669,
+        "turnover_units": 1.0
+      },
+      "e0_reasons": [
+        "MISSING_EVIDENCE:pit_manifest_hash",
+        "MISSING_EVIDENCE:lineage_hash"
+      ],
+      "e0_status": "NOT_EVALUATED",
+      "entry_threshold": 0.2,
+      "first_open_time_ms": 1785542400000,
+      "last_open_time_ms": 1788130800000,
+      "lookahead_violations": 0,
+      "manifest_hash": "a895dd6d597824cb787f15ac6f9a6afcaa7217cc5bfb9b672f485e4d22deb8ad",
+      "market_data_status": "PASS",
+      "metrics": {
+        "annualized_hourly_sharpe": 1.335526961176328,
+        "average_absolute_position": 0.16837703361470874,
+        "bars": 669,
+        "gross_return": 0.041932584373967074,
+        "max_drawdown": -0.04241558571888249,
+        "net_return": 0.0181462367154428,
+        "nonzero_target_bars": 669,
+        "turnover_units": 36.140910202695046
+      },
+      "rows": 720,
+      "same_bar_executions": 0,
+      "signal_manifest_hash": "e791ab4850dba46d5d90a0db10940057d0869d8fe7aea67a851bb3a64251f677",
+      "subthreshold_nonzero_targets": 488
+    }
+  },
+  "portfolio": {
+    "annualized_hourly_sharpe": 2.435898613079093,
+    "average_absolute_position": 0.14825074261574323,
+    "bars": 669,
+    "benchmark": {
+      "annualized_hourly_sharpe": 7.648537901764749,
+      "average_absolute_position": 1.0,
+      "bars": 669,
+      "gross_return": 0.26909192450296726,
+      "max_drawdown": -0.05353030073336451,
+      "net_return": 0.26909192450296726,
+      "nonzero_target_bars": 669,
+      "turnover_units": 1.0
+    },
+    "construction": "equal-capital four-sleeve average; max theoretical gross exposure 1.0",
+    "gross_return": 0.044007217651851116,
+    "max_drawdown": -0.03304729145251872,
+    "net_return": 0.0240062190462067,
+    "nonzero_target_bars": 669,
+    "turnover_units": 30.175100989245593
+  },
+  "schema_version": "1.0",
+  "status": "DIAGNOSTIC_ONLY",
+  "timing_audit": {
+    "execution_assumption": "next bar open, PnL marked next open-to-close",
+    "lookahead_violations": 0,
+    "same_bar_executions": 0,
+    "signal_basis": "closed bar t using history through t only",
+    "signal_rows": 2676
+  }
+}

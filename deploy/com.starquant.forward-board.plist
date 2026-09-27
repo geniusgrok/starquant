@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Daily read of the candidate forward board (operator ruling 2026-09-17, Q-C).  Read-only twice
+      over: it never touches the venue, and it never writes a ledger row.  The charge happens once,
+      when a candidate goes on the board; every read after that is the same pre-registered hypothesis
+      on more data, which is what separates a forward test from another search.
+
+      Runs at 02:00 local, after the data sync at 01:20 - the board reads the store, and a store that
+      is a day behind costs the board a day.
+
+      The normal output is a screen of OBSERVING and decidable: 0.  With thirty candidates on the
+      board the gate needs about 3.8 years, so this job produces no verdicts for years.  What it is
+      accumulating IS those years.
+
+      Install (operator action):
+        cp deploy/com.starquant.forward-board.plist /Users/you/Library/LaunchAgents/
+        launchctl load -w /Users/you/Library/LaunchAgents/com.starquant.forward-board.plist
+    -->
+    <key>Label</key>
+    <string>com.starquant.forward-board</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/you/starquant/deploy/run_forward_board.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/you/starquant</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/you/Library/Application Support/starquant/forward-board.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/Library/Application Support/starquant/forward-board.stderr.log</string>
+</dict>
+</plist>

@@ -1,0 +1,233 @@
+{
+  "best_params": {
+    "entry_threshold": 0.3,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      24,
+      72,
+      168
+    ],
+    "min_symbols": 3,
+    "rank_weight": 0.25,
+    "relative_weight": 0.75,
+    "score_scale": 0.15
+  },
+  "cost_stress": {
+    "x1": 0.8959659733014774,
+    "x1.5": 0.6336307435219802,
+    "x2": 0.3713926718067464
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15",
+      "entry_threshold=0.3|horizon_weights=[0.2, 0.3, 0.5]|horizons=[24, 72, 168]|min_symbols=3|rank_weight=0.25|relative_weight=0.75|score_scale=0.15"
+    ],
+    "fraction_negative": 0.13333333333333333,
+    "oos_sharpe_mean": 0.7203953960333914,
+    "oos_sharpe_min": -0.9426811110733737,
+    "oos_sharpe_q05": -0.32955155076491316,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 0.8957838487289224,
+    "annualized_sharpe_gross": 1.3868090503232409,
+    "average_absolute_exposure": 0.749487236001452,
+    "bars": 45365,
+    "cost_share_of_gross": 0.3539039562181364,
+    "gross_return": 1.9131686986799719,
+    "hit_rate": 0.5022594511187038,
+    "max_drawdown": -0.14852177575403136,
+    "net_return": 0.9502770268648235,
+    "nonzero_target_bars": 45365,
+    "turnover_units": 612.6096179203414
+  },
+  "generated_at": "2026-09-03T06:19:01.327563+00:00",
+  "grid_size": 12,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 0.9631420602646658,
+    "degradation_slope": -1.0643488016717482,
+    "dsr": 0.8745756782257617,
+    "dsr_p_value": 0.12542432177423835,
+    "expected_max_sharpe_annual": 0.45506747603126263,
+    "n_trials": 12,
+    "pbo": 0.2018,
+    "pbo_combinations": 5000,
+    "prob_oos_loss": 0.1494
+  },
+  "range": {
+    "bars": 44644,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-07-31 01:00:00+00:00"
+  },
+  "reasons": [
+    "dsr_p_value 0.12542432177423835 > 0.1"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 0.8957838487289224,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 0.7307385949733891,
+          "up": 0.836072317430732
+        },
+        "score_scale": {
+          "down": 0.7429300578613879,
+          "up": 0.8508314160999612
+        }
+      },
+      "worst_degradation": 0.184246739868915,
+      "worst_neighbour": 0.7307385949733891
+    },
+    "time_split_sharpes": [
+      1.1306796309255827,
+      0.5257184260342647,
+      0.8818947346913095,
+      1.5838577237044416
+    ]
+  },
+  "strategy": "xsmom",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "min_symbols": 3,
+        "rank_weight": 0.25,
+        "relative_weight": 0.75,
+        "score_scale": 0.15
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "min_symbols": 3,
+        "rank_weight": 0.25,
+        "relative_weight": 0.75,
+        "score_scale": 0.15
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "min_symbols": 3,
+        "rank_weight": 0.25,
+        "relative_weight": 0.75,
+        "score_scale": 0.15
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "min_symbols": 3,
+        "rank_weight": 0.25,
+        "relative_weight": 0.75,
+        "score_scale": 0.15
+      },
+      {
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          24,
+          72,
+          168
+        ],
+        "min_symbols": 3,
+        "rank_weight": 0.25,
+        "relative_weight": 0.75,
+        "score_scale": 0.15
+      }
+    ],
+    "fold_consistency": 1.0,
+    "fold_sharpes": [
+      1.0357391784039165,
+      1.0465120491438944,
+      0.8184388918469411,
+      1.3928466258201269,
+      0.8773099667919658
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.14852177575403247,
+    "oos_return": 0.8803112562459317,
+    "oos_sharpe": 1.0334595869997105
+  }
+}

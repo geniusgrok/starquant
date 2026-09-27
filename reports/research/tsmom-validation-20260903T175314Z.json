@@ -1,0 +1,279 @@
+{
+  "best_params": {
+    "crowding_cut": 0.7,
+    "crowding_penalty": 0.5,
+    "crowding_window": 0,
+    "entry_threshold": 0.2,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      168,
+      336,
+      720
+    ],
+    "momentum_mode": "fixed",
+    "persistence_weight": 0.1,
+    "return_scale": 0.2,
+    "return_weight": 0.4,
+    "slope_scale": 0.01,
+    "slope_weight": 0.25,
+    "vol_window": 400
+  },
+  "cost_stress": {
+    "x1": 1.562650303628218,
+    "x1.5": 1.4291553708636098,
+    "x2": 1.2956345786394006
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.3|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400"
+    ],
+    "fraction_negative": 0.0,
+    "oos_sharpe_mean": 1.4540674723850702,
+    "oos_sharpe_min": 0.8152602991745912,
+    "oos_sharpe_q05": 0.8165235898340717,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 1.5627177955791,
+    "annualized_sharpe_gross": 1.8633213075769306,
+    "average_absolute_exposure": 0.41618859670476394,
+    "bars": 44651,
+    "cost_share_of_gross": 0.161265487584703,
+    "gross_return": 3.2272436036702157,
+    "hit_rate": 0.5096414414010885,
+    "max_drawdown": -0.1263622844264315,
+    "net_return": 2.3159757085074903,
+    "nonzero_target_bars": 44651,
+    "turnover_units": 307.8127436471452
+  },
+  "generated_at": "2026-09-03T17:53:14.097819+00:00",
+  "grid_size": 16,
+  "interval": "1h",
+  "kind": "validation",
+  "min_tenure": 0,
+  "multiple_testing": {
+    "candidate_sharpe_annual": 1.4793337796250872,
+    "degradation_slope": -0.6640211218981412,
+    "dsr": 0.6687991951283516,
+    "dsr_p_value": 0.3312008048716484,
+    "expected_max_sharpe_annual": 1.2853505431557468,
+    "grid_trials": 16,
+    "ledger_trials": 24,
+    "n_trials": 40,
+    "pbo": 0.0888,
+    "pbo_combinations": 5000,
+    "prior_trials": 0,
+    "prob_oos_loss": 0.0232,
+    "sharpe_variance_period": 3.934205208633476e-05
+  },
+  "range": {
+    "bars": 43931,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-08-30 01:00:00+00:00"
+  },
+  "reasons": [
+    "dsr_p_value 0.3312008048716484 > 0.1"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 1.5627177955791,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.467901397461906,
+          "up": 1.4846347836348908
+        },
+        "return_scale": {
+          "down": 1.5554650882777552,
+          "up": 1.5337820228208139
+        },
+        "vol_window": {
+          "down": 1.5627177955791,
+          "up": 1.5627177955791
+        }
+      },
+      "worst_degradation": 0.06067403749123992,
+      "worst_neighbour": 1.467901397461906
+    },
+    "time_split_sharpes": [
+      -0.7113571332915245,
+      2.404298909968827,
+      0.8783808791693511,
+      2.176158834709666
+    ]
+  },
+  "strategy": "tsmom",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "universe_mode": "static",
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.3,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          336,
+          720,
+          1440
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.3,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      }
+    ],
+    "fold_consistency": 0.8,
+    "fold_sharpes": [
+      -0.9863527411281725,
+      2.3291591346004377,
+      1.0059888219409614,
+      1.7511026787935993,
+      1.8529338849366421
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.15727609509317142,
+    "oos_return": 1.0876970151613556,
+    "oos_sharpe": 1.2094004028713288
+  }
+}

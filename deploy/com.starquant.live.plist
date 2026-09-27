@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Unattended demo trading loop.  The loop is restart-idempotent (exchange
+      positions are the only truth; client order ids derive from the bar), so
+      KeepAlive is safe: a crash is re-launched after ThrottleInterval seconds.
+      Credentials come from the environment file sourced by run_live.sh, never
+      from this plist.  Install: cp to /Users/you/Library/LaunchAgents/ and
+      `launchctl load -w /Users/you/Library/LaunchAgents/com.starquant.live.plist`.
+    -->
+    <key>Label</key>
+    <string>com.starquant.live</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/you/starquant/deploy/run_live.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/you/starquant</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/you/Library/Application Support/starquant/live.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/Library/Application Support/starquant/live.stderr.log</string>
+</dict>
+</plist>

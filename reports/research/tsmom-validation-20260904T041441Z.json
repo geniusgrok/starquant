@@ -1,0 +1,463 @@
+{
+  "best_params": {
+    "conviction_mode": "sign",
+    "crowding_cut": 0.7,
+    "crowding_penalty": 0.5,
+    "crowding_window": 0,
+    "entry_threshold": 0.2,
+    "horizon_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "horizons": [
+      168,
+      336,
+      720
+    ],
+    "momentum_mode": "fixed",
+    "persistence_weight": 0.1,
+    "return_scale": 0.2,
+    "return_weight": 0.4,
+    "slope_scale": 0.01,
+    "slope_weight": 0.25,
+    "vol_window": 400
+  },
+  "cost_stress": {
+    "x1": 1.7946083829956576,
+    "x1.5": 1.7064404186136404,
+    "x2": 1.6182157076093475
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400",
+      "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400"
+    ],
+    "fraction_negative": 0.0,
+    "oos_sharpe_mean": 1.799246473378433,
+    "oos_sharpe_min": 1.3380527245175855,
+    "oos_sharpe_q05": 1.3685555618527419,
+    "paths": 15
+  },
+  "cpcv_groups": 6,
+  "execution": "open_to_close",
+  "folds": 5,
+  "full_sample": {
+    "annualized_sharpe": 1.7948747664349969,
+    "annualized_sharpe_gross": 1.9874455897547365,
+    "average_absolute_exposure": 0.4537514370117472,
+    "bars": 48995,
+    "cost_share_of_gross": 0.09682643605072995,
+    "gross_return": 4.843318668540279,
+    "hit_rate": 0.5091744055515869,
+    "max_drawdown": -0.12123509070617733,
+    "net_return": 3.8887192481087407,
+    "nonzero_target_bars": 48995,
+    "turnover_units": 232.94257973668738
+  },
+  "generated_at": "2026-09-04T04:14:41.947055+00:00",
+  "grid": {
+    "horizon_weights": [
+      [
+        0.2,
+        0.3,
+        0.5
+      ],
+      [
+        0.2,
+        0.5,
+        0.3
+      ]
+    ]
+  },
+  "grid_size": 2,
+  "interval": "1h",
+  "kind": "validation",
+  "ledger": {
+    "duplicate_rows": 20,
+    "ledger_rows": 77,
+    "ledger_trials": 56,
+    "pooled_sharpes": 58,
+    "replayed_rows": 1
+  },
+  "min_tenure": 0,
+  "min_train": 4000,
+  "multiple_testing": {
+    "candidate_sharpe_annual": 1.7948747664349969,
+    "degradation_slope": -0.9618957486282868,
+    "dsr": 0.8017893706423084,
+    "dsr_p_value": 0.19821062935769163,
+    "expected_max_sharpe_annual": 1.4374569279240315,
+    "grid_trials": 2,
+    "ledger_trials": 56,
+    "n_trials": 96,
+    "noise_null": {
+      "dsr_p_value": 0.04071785970132369,
+      "expected_max_sharpe_annual": 1.060501607489117,
+      "sharpe_variance_period": 2.0278036518948643e-05
+    },
+    "pbo": 0.07,
+    "pbo_combinations": 5000,
+    "prior_trials": 38,
+    "prob_oos_loss": 0.0,
+    "sharpe_variance_period": 3.725571641833667e-05
+  },
+  "portfolio": {
+    "covariance_halflife": 96,
+    "max_gross": 2.0,
+    "max_scalar": 3.0,
+    "max_weight": 0.15,
+    "min_asset_vol": 0.1,
+    "no_trade_band": 0.005,
+    "no_trade_rel_band": 0.4,
+    "vol_halflife": 48,
+    "vol_target": 0.15
+  },
+  "prior_trials_declared": 38,
+  "purge": 50,
+  "range": {
+    "bars": 48995,
+    "end": "2026-09-03 11:00:00+00:00",
+    "start": "2021-01-31 01:00:00+00:00"
+  },
+  "reasons": [],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 1.7948747664349969,
+      "neighbours": {
+        "entry_threshold": {
+          "down": 1.7359468403992515,
+          "up": 1.6084733252659236
+        },
+        "return_scale": {
+          "down": 1.783554700655458,
+          "up": 1.665429655638258
+        },
+        "vol_window": {
+          "down": 1.7948747664349969,
+          "up": 1.7948747664349969
+        }
+      },
+      "worst_degradation": 0.10385205957254959,
+      "worst_neighbour": 1.6084733252659236
+    },
+    "time_split_sharpes": [
+      1.1876827000644894,
+      1.7233096785138682,
+      1.9609741625219477,
+      2.007905091075297
+    ]
+  },
+  "strategy": "tsmom",
+  "symbols": [
+    "1000BONKUSDT",
+    "1000FLOKIUSDT",
+    "1000LUNCUSDT",
+    "1000PEPEUSDT",
+    "1000SATSUSDT",
+    "1000SHIBUSDT",
+    "AAVEUSDT",
+    "ACEUSDT",
+    "ADAUSDT",
+    "AKEUSDT",
+    "ALICEUSDT",
+    "ALPACAUSDT",
+    "APEUSDT",
+    "APTUSDT",
+    "ARBUSDT",
+    "ARKUSDT",
+    "ARPAUSDT",
+    "ASTERUSDT",
+    "ATOMUSDT",
+    "AUCTIONUSDT",
+    "AVAXUSDT",
+    "AXSUSDT",
+    "BANDUSDT",
+    "BANKUSDT",
+    "BCHUSDT",
+    "BEATUSDT",
+    "BELUSDT",
+    "BIOUSDT",
+    "BLURUSDT",
+    "BLZUSDT",
+    "BNBUSDT",
+    "BNTUSDT",
+    "BOMEUSDT",
+    "BSBUSDT",
+    "BTCUSDT",
+    "CFXUSDT",
+    "CHZUSDT",
+    "COAIUSDT",
+    "COMPUSDT",
+    "CYBERUSDT",
+    "DASHUSDT",
+    "DEXEUSDT",
+    "DOGEUSDT",
+    "DOGSUSDT",
+    "DOTUSDT",
+    "DYDXUSDT",
+    "EDUUSDT",
+    "ENAUSDT",
+    "ENJUSDT",
+    "EOSUSDT",
+    "ETCUSDT",
+    "ETHUSDT",
+    "EVAAUSDT",
+    "FARTCOINUSDT",
+    "FETUSDT",
+    "FILUSDT",
+    "FLMUSDT",
+    "FTMUSDT",
+    "FTTUSDT",
+    "FUNUSDT",
+    "GALAUSDT",
+    "GASUSDT",
+    "GIGGLEUSDT",
+    "GMTUSDT",
+    "HBARUSDT",
+    "HIGHUSDT",
+    "HUSDT",
+    "HYPEUSDT",
+    "IDUSDT",
+    "INJUSDT",
+    "JASMYUSDT",
+    "KNCUSDT",
+    "LABUSDT",
+    "LIGHTUSDT",
+    "LINAUSDT",
+    "LINKUSDT",
+    "LPTUSDT",
+    "LRCUSDT",
+    "LTCUSDT",
+    "LUNAUSDT",
+    "MANAUSDT",
+    "MASKUSDT",
+    "MATICUSDT",
+    "MKRUSDT",
+    "MOODENGUSDT",
+    "MTLUSDT",
+    "MYXUSDT",
+    "NEARUSDT",
+    "NEIROETHUSDT",
+    "NEIROUSDT",
+    "NOTUSDT",
+    "OMUSDT",
+    "OPUSDT",
+    "ORDIUSDT",
+    "PAXGUSDT",
+    "PENGUUSDT",
+    "PEOPLEUSDT",
+    "PERPUSDT",
+    "PIPPINUSDT",
+    "PNUTUSDT",
+    "POWERUSDT",
+    "PUMPUSDT",
+    "RAVEUSDT",
+    "REEFUSDT",
+    "RIVERUSDT",
+    "RNDRUSDT",
+    "RUNEUSDT",
+    "RVNUSDT",
+    "SANDUSDT",
+    "SEIUSDT",
+    "SIRENUSDT",
+    "SOLUSDT",
+    "STORJUSDT",
+    "STOUSDT",
+    "STXUSDT",
+    "SUIUSDT",
+    "SUSHIUSDT",
+    "SXPUSDT",
+    "TAOUSDT",
+    "THETAUSDT",
+    "TIAUSDT",
+    "TOMOUSDT",
+    "TONUSDT",
+    "TRBUSDT",
+    "TRUMPUSDT",
+    "TRXUSDT",
+    "TURBOUSDT",
+    "TUTUSDT",
+    "UNFIUSDT",
+    "UNIUSDT",
+    "UXLINKUSDT",
+    "VELVETUSDT",
+    "VETUSDT",
+    "VIRTUALUSDT",
+    "WAVESUSDT",
+    "WIFUSDT",
+    "WLDUSDT",
+    "WLFIUSDT",
+    "XLMUSDT",
+    "XPLUSDT",
+    "XRPUSDT",
+    "YFIUSDT",
+    "ZECUSDT",
+    "ZILUSDT",
+    "ZROUSDT",
+    "\u5e01\u5b89\u4eba\u751fUSDT"
+  ],
+  "trial_sharpes": {
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.3, 0.5]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.7948747664349969,
+    "conviction_mode=sign|crowding_cut=0.7|crowding_penalty=0.5|crowding_window=0|entry_threshold=0.2|horizon_weights=[0.2, 0.5, 0.3]|horizons=[168, 336, 720]|momentum_mode=fixed|persistence_weight=0.1|return_scale=0.2|return_weight=0.4|slope_scale=0.01|slope_weight=0.25|vol_window=400": 1.5081015356546241
+  },
+  "universe_mode": "pit",
+  "verdict": "PASS",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      },
+      {
+        "conviction_mode": "sign",
+        "crowding_cut": 0.7,
+        "crowding_penalty": 0.5,
+        "crowding_window": 0,
+        "entry_threshold": 0.2,
+        "horizon_weights": [
+          0.2,
+          0.3,
+          0.5
+        ],
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "momentum_mode": "fixed",
+        "persistence_weight": 0.1,
+        "return_scale": 0.2,
+        "return_weight": 0.4,
+        "slope_scale": 0.01,
+        "slope_weight": 0.25,
+        "vol_window": 400
+      }
+    ],
+    "fold_consistency": 1.0,
+    "fold_sharpes": [
+      1.2947250926984553,
+      0.634362714600894,
+      2.6951335027624674,
+      1.5813765306419354,
+      2.354223086121671
+    ],
+    "folds": 5,
+    "oos_bars": 44995,
+    "oos_max_drawdown": -0.12123509070617855,
+    "oos_return": 3.0199743527588687,
+    "oos_sharpe": 1.7140199747941751,
+    "oos_t_lags": 15,
+    "oos_t_stat": 3.9488041330511527
+  }
+}

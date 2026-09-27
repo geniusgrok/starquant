@@ -1,0 +1,15 @@
+# Trading/research universe.  Signals are computed from MAINNET public data;
+# execution happens on the demo venue (see live.demo.yaml).
+quote_asset: USDT
+interval: 1h
+history_start: "2021-01"          # first archive month to download
+top_n: 15                         # by 30-day mainnet quote volume
+volume_lookback_days: 30
+# Pins match the research membership table (`starquant data pool history` pins BTC/ETH only, D-013): BNB and SOL
+# are top-15 by volume anyway, and pinning today's favourites is not something the backtest was allowed to do.
+always_include: [BTCUSDT, ETHUSDT]
+exclude: []
+max_min_notional_usdt: 20         # symbols whose venue minNotional exceeds this are skipped (always_include is exempt)
+hysteresis:
+  enter_rank: 15                  # a symbol enters when ranked <= enter_rank
+  exit_rank: 20                   # ... and leaves only when ranked > exit_rank

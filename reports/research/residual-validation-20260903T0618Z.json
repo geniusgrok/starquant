@@ -1,0 +1,198 @@
+{
+  "best_params": {
+    "benchmark": "BTCUSDT",
+    "beta_window": 336,
+    "entry_threshold": 0.2,
+    "horizons": [
+      24,
+      72,
+      168
+    ],
+    "scale": 0.1
+  },
+  "cost_stress": {
+    "x1": 0.827539893666551,
+    "x1.5": 0.4278487598202813,
+    "x2": 0.028341719353476798
+  },
+  "costs": {
+    "carry_bps_per_bar": 0.0,
+    "turnover_bps": 7.0,
+    "use_funding": true
+  },
+  "cpcv": {
+    "chosen": [
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=720|entry_threshold=0.2|horizons=[168, 336, 720]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=720|entry_threshold=0.2|horizons=[168, 336, 720]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=720|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[168, 336, 720]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[24, 72, 168]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[168, 336, 720]|scale=0.1",
+      "benchmark=BTCUSDT|beta_window=336|entry_threshold=0.2|horizons=[168, 336, 720]|scale=0.1"
+    ],
+    "fraction_negative": 0.2,
+    "oos_sharpe_mean": 0.5027604788546782,
+    "oos_sharpe_min": -0.8701861434408286,
+    "oos_sharpe_q05": -0.5044325154066417,
+    "paths": 15
+  },
+  "execution": "open_to_close",
+  "full_sample": {
+    "annualized_sharpe": 0.8255362259826251,
+    "annualized_sharpe_gross": 1.6282025268944018,
+    "average_absolute_exposure": 0.4511775495085183,
+    "bars": 45365,
+    "cost_share_of_gross": 0.4928828834722486,
+    "gross_return": 2.651970400756124,
+    "hit_rate": 0.4984238950732944,
+    "max_drawdown": -0.227054537229461,
+    "net_return": 0.8654970348598598,
+    "nonzero_target_bars": 45365,
+    "turnover_units": 955.7818894062252
+  },
+  "generated_at": "2026-09-03T06:18:59.813097+00:00",
+  "grid_size": 8,
+  "interval": "1h",
+  "kind": "validation",
+  "multiple_testing": {
+    "candidate_sharpe_annual": 0.8276372013230754,
+    "degradation_slope": -0.951000542865865,
+    "dsr": 0.8434828752902874,
+    "dsr_p_value": 0.15651712470971257,
+    "expected_max_sharpe_annual": 0.38610232398103494,
+    "n_trials": 8,
+    "pbo": 0.3938,
+    "pbo_combinations": 5000,
+    "prob_oos_loss": 0.0858
+  },
+  "range": {
+    "bars": 45364,
+    "end": "2026-09-03 04:00:00+00:00",
+    "start": "2021-07-01 01:00:00+00:00"
+  },
+  "reasons": [
+    "dsr_p_value 0.15651712470971257 > 0.1",
+    "pbo 0.39 > 0.3"
+  ],
+  "stability": {
+    "parameter_neighborhood": {
+      "base": 0.8255362259826251,
+      "neighbours": {
+        "beta_window": {
+          "down": 0.8193778758027889,
+          "up": 0.9075135266883583
+        },
+        "scale": {
+          "down": 0.7827443934782681,
+          "up": 0.8355486436454935
+        }
+      },
+      "worst_degradation": 0.05183519651535881,
+      "worst_neighbour": 0.7827443934782681
+    },
+    "time_split_sharpes": [
+      1.4278316850903803,
+      -0.4640354035453131,
+      0.9549054194686233,
+      1.2403074746687979
+    ]
+  },
+  "strategy": "residual",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ZECUSDT",
+    "HYPEUSDT",
+    "DOGEUSDT",
+    "TRUMPUSDT",
+    "BNBUSDT",
+    "ENAUSDT",
+    "1000PEPEUSDT",
+    "PUMPUSDT",
+    "SUIUSDT",
+    "AKEUSDT",
+    "ADAUSDT"
+  ],
+  "verdict": "FAIL",
+  "walk_forward": {
+    "chosen_params": [
+      {
+        "benchmark": "BTCUSDT",
+        "beta_window": 336,
+        "entry_threshold": 0.2,
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "scale": 0.05
+      },
+      {
+        "benchmark": "BTCUSDT",
+        "beta_window": 336,
+        "entry_threshold": 0.2,
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "scale": 0.1
+      },
+      {
+        "benchmark": "BTCUSDT",
+        "beta_window": 336,
+        "entry_threshold": 0.2,
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "scale": 0.1
+      },
+      {
+        "benchmark": "BTCUSDT",
+        "beta_window": 336,
+        "entry_threshold": 0.2,
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "scale": 0.1
+      },
+      {
+        "benchmark": "BTCUSDT",
+        "beta_window": 336,
+        "entry_threshold": 0.2,
+        "horizons": [
+          168,
+          336,
+          720
+        ],
+        "scale": 0.1
+      }
+    ],
+    "fold_consistency": 0.8,
+    "fold_sharpes": [
+      1.5672212503815075,
+      -1.0545056449085706,
+      1.808278805710259,
+      0.9364768683238075,
+      0.6070432997223075
+    ],
+    "folds": 5,
+    "oos_max_drawdown": -0.2901979007949316,
+    "oos_return": 0.6009509683126875,
+    "oos_sharpe": 0.7811289593467519
+  }
+}
