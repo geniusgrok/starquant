@@ -1,0 +1,7 @@
+# Python virtualenv created by .cursor/install.sh
+.venv/
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
