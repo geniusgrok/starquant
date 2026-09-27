@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # Idempotent bootstrap for the starquant Cloud Agent environment.
 #
-# The repository is currently greenfield, so this script is written to be safe
-# when no dependency manifests exist yet. As soon as real manifests land
-# (requirements*.txt, pyproject.toml/setup.py, or package.json), they are
-# picked up automatically without any further changes here.
+# Mirrors the canonical install used by .github/workflows/ci.yml:
+#   pip install -r requirements.lock       # pinned, reproducible versions
+#   pip install -e . --no-deps             # the project itself
+#
+# The requirements.lock anchor exists precisely so CI and local dev do NOT
+# re-resolve dependencies to "today's latest" (see the header of that file),
+# so we always prefer it when present. A generic fallback keeps this script
+# usable if the repository layout ever changes.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -12,6 +16,7 @@ cd "$REPO_ROOT"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 VENV_DIR="${VENV_DIR:-.venv}"
+GITLEAKS_VERSION="${GITLEAKS_VERSION:-8.30.1}"
 
 # The Ubuntu base image ships Python but not the venv/ensurepip module, which is
 # required to create virtualenvs. Install it once (idempotent) if missing.
@@ -27,44 +32,49 @@ if [ ! -x "${VENV_DIR}/bin/python" ]; then
 fi
 # shellcheck disable=SC1091
 source "${VENV_DIR}/bin/activate"
-python -m pip install --upgrade pip setuptools wheel
+python -m pip install --upgrade pip
 
-installed_any=0
-
-if [ -f requirements.txt ]; then
-  echo "==> Installing requirements.txt"
-  python -m pip install -r requirements.txt
-  installed_any=1
-fi
-
-if [ -f requirements-dev.txt ]; then
-  echo "==> Installing requirements-dev.txt"
-  python -m pip install -r requirements-dev.txt
-  installed_any=1
-fi
-
-if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f setup.cfg ]; then
-  echo "==> Installing project package (editable)"
-  # Fall back to a non-editable install if the project layout does not
-  # support editable installs.
-  python -m pip install -e . || python -m pip install .
-  installed_any=1
-fi
-
-if [ -f package.json ]; then
-  echo "==> Installing Node dependencies"
-  if [ -f package-lock.json ]; then
-    npm ci
-  else
-    npm install
+if [ -f requirements.lock ]; then
+  echo "==> Installing pinned dependencies (requirements.lock) — mirrors CI"
+  python -m pip install -r requirements.lock
+  echo "==> Installing starquant package (editable, no deps)"
+  python -m pip install -e . --no-deps
+else
+  echo "==> requirements.lock not found; using generic dependency detection"
+  if [ -f requirements.txt ]; then
+    python -m pip install -r requirements.txt
   fi
-  installed_any=1
+  if [ -f requirements-dev.txt ]; then
+    python -m pip install -r requirements-dev.txt
+  fi
+  if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f setup.cfg ]; then
+    python -m pip install -e . || python -m pip install .
+  fi
+  if [ -f package.json ]; then
+    if [ -f package-lock.json ]; then npm ci; else npm install; fi
+  fi
 fi
 
-if [ "${installed_any}" -eq 0 ]; then
-  echo "==> No dependency manifests found yet."
-  echo "    Base virtualenv is ready; add requirements*.txt, pyproject.toml,"
-  echo "    setup.py, or package.json and re-run to install project deps."
+# Secret-scanning tool used by the repo's git hooks (.githooks) and the CI
+# "Secrets" gate. Optional (hooks no-op without it) but installing it makes the
+# local dev loop match the project. Pin to the version CI uses.
+if [ -f .gitleaks.toml ] && ! command -v gitleaks >/dev/null 2>&1; then
+  echo "==> Installing gitleaks ${GITLEAKS_VERSION}"
+  tmp="$(mktemp -d)"
+  if curl -sSfL -o "${tmp}/gitleaks.tar.gz" \
+      "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"; then
+    tar -xzf "${tmp}/gitleaks.tar.gz" -C "${tmp}" gitleaks
+    sudo install -m 0755 "${tmp}/gitleaks" /usr/local/bin/gitleaks
+  else
+    echo "    (could not download gitleaks; hooks will no-op until it is installed)"
+  fi
+  rm -rf "${tmp}"
+fi
+
+# Route git to the repo-tracked hooks so commit/push secret scanning is active.
+if [ -d .githooks ]; then
+  git config core.hooksPath .githooks || true
+  chmod +x .githooks/* 2>/dev/null || true
 fi
 
 echo "==> Install complete."
