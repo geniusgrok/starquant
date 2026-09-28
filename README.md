@@ -1,38 +1,50 @@
 # BTCUSDT 账户
 
-私人研究。许可见 [`LICENSE`](LICENSE)：只有版权人本人可以使用，禁止实盘，禁止他人复制或二次创作。
+私人研究。只有版权人本人可以使用，禁止实盘，禁止他人复制或二次创作。许可见 [LICENSE](LICENSE)。
 
-一个币安 BTCUSDT U 本位永续账户，起始 10,000 元人民币，中间不加钱，单向逐仓，保证金按 20 倍计算，可多可空。全样本复现：
+## 账户
+
+一个币安 BTCUSDT U 本位永续账户：
+
+- 起始 10,000 元人民币，中间不加钱
+- 单向逐仓，保证金按 20 倍计算
+- 可以做多，也可以做空
+- 测量从 2020-01-01 到 2026-09-20，结束日不含
+
+已记录结果：期末 1,416,356 元，年化 109.0%，最低权益除以峰值 0.527。口径和配置里没有写出的规则见 [docs/btc_account.md](docs/btc_account.md)。
+
+## 复现
+
+行情放在仓库旁的 `data/`，不进版本库。至少要有 `data/btcusdt_1m.npz`，以及同目录的资金费和人民币汇率。
 
 ```bash
-PYTHONPATH=. python -m btc_perp --measure
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.lock
+pip install -e . --no-deps
+python -m btc_perp --measure
 ```
 
-口径、配置里没有写出的减半规则，以及实盘拒绝，写在 [`docs/btc_account.md`](docs/btc_account.md)。不带 `--measure` 的入口不下单。树里没有 API key。
+不带 `--measure` 只打印拒绝，然后退出。它不下单，也不启动会话。
 
-## 仓库里有什么
+## 目录
 
-- `btc_perp/`：配置、费率常量、拒绝下单的交易所接口、手动会话、全样本入口。
-- `scripts/frontier.py`：测量用的回放内核。
-- `config/btc_account.yaml`：这一份账户配置。
-- `reports/btc_account_measure.json`：已记录的全样本结果。
-- `data/`：本地行情，不进版本库。
+| 路径 | 内容 |
+| --- | --- |
+| `btc_perp/` | 配置、费率、拒绝下单的接口、全样本入口 |
+| `scripts/frontier.py` | 回放内核 |
+| `config/btc_account.yaml` | 这一份账户配置 |
+| `reports/btc_account_measure.json` | 已记录的全样本结果 |
+| `docs/btc_account.md` | 测量口径 |
 
 ## 检查
 
 ```bash
-python3.12 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.lock
-pip install -e . --no-deps
 ruff format --check . && ruff check . && mypy && pytest -m "not network"
 ```
 
-密钥扫描：`git config core.hooksPath .githooks`，并安装 `gitleaks`。CI 用同一份 `.gitleaks.toml` 扫全部历史。
+提交前的密钥扫描需要本机的 gitleaks，并执行 `git config core.hooksPath .githooks`。CI 用同一份配置扫全部历史。约定见 [SECURITY.md](SECURITY.md)。
 
-## License
+## 许可
 
-Proprietary — all rights reserved. Full terms in [`LICENSE`](LICENSE).
-
-The copyright holder may use this repository only for private research.
-Live trading is prohibited. No other person may copy, modify, or create
-derivative works. Being able to read a public checkout is not a license.
+专有软件，保留全部权利。版权人只能把它用于私人研究。禁止实盘。其他人不得复制、修改或二次创作。能在网页上读到本仓库，不构成使用许可。

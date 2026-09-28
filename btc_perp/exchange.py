@@ -140,4 +140,4 @@ class BinanceExchange:
         return False
 
     def submit_market(self, side: int, qty: float, stop: float, take_profit: float) -> float:
-        raise RuntimeError("live orders are disabled: this project is private research and must not send live orders")
+        raise RuntimeError("禁止实盘：这是私人研究，不会发送订单")
