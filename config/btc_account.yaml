@@ -1,8 +1,9 @@
-# One BTCUSDT USDT-M research account. It trades both sides. Live orders are not
-# a setting: the adapter always refuses. taker, slip_base, impact_y, fx_fee, and
-# leverage are recorded here. The replay reads btc_perp/costs.py.
-# tests/test_btc_account.py fails if this copy drifts. take_profit_multiple is
-# the far resting take-profit on the measurement venue.
+# One BTCUSDT USDT-M account. Both sides, one-way isolated, leverage 20.
+# taker, slip_base, impact_y, fx_fee, and leverage are recorded here.
+# The replay reads btc_perp/costs.py. tests/test_btc_account.py fails if this
+# copy drifts. take_profit_multiple is a disaster cap, not the research exit.
+# Production entries stay closed until config/limits.yaml is filled and
+# STARQUANT_ALLOW_PROD_ORDERS=yes.
 symbol: BTCUSDT
 margin_mode: isolated
 position_mode: one_way
@@ -32,8 +33,9 @@ cooldown_hours: 6
 ratchet_gain: 0.35
 ratchet_trail: 0.07
 heat: 0.6
-# Far resting take-profit on the measurement venue. The replay exits with the
-# trailing stop and the channel. The simulator does not fill this price.
+# Disaster cap resting on the exchange while a position is open. The research
+# exit is the trail, the channel, or the half-peak flatten. The historical
+# simulator does not fill this price.
 take_profit_multiple: 10.0
 
 taker: 0.0004

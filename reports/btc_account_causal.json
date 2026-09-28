@@ -1,0 +1,41 @@
+{
+  "verified": true,
+  "funding_gap_unverified": true,
+  "fills": "signal after the minute close, fill at the next bar open; stops still use the intrabar path",
+  "start_cny": 10000.0,
+  "end_cny": 2039228.742932259,
+  "cagr": 1.206671820181076,
+  "min_equity_over_peak": 0.5280011467046337,
+  "min_day": 20210519,
+  "n_long": 57,
+  "n_short": 35,
+  "n_stop": 80,
+  "turnover_btc": 511.774,
+  "turnover_usdt": 27773928.92993,
+  "target_cny_100": 1053236.6589794934,
+  "target_cny_150": 4716652.688753132,
+  "meets_100": true,
+  "meets_150": false,
+  "economic_goal_met": false,
+  "inputs": {
+    "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
+    "funding.npz": "0682df98242a6fccfe86da66a1da871c2af1d0b955fac6d38734b0059b94cb7a",
+    "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
+  },
+  "funding_gap": {
+    "present": true,
+    "rate": 0.0,
+    "missing_slot": true,
+    "note": "2026-09-01 00:00 UTC 的资金费槽位为 0，这一档未用官方结算价验证"
+  },
+  "previous_same_bar": {
+    "end_cny": 2029866.4296051874,
+    "cagr": 1.2051609721471608,
+    "min_equity_over_peak": 0.525842588784016,
+    "n_long": 57,
+    "n_short": 35,
+    "n_stop": 80,
+    "note": "同根收盘成交的旧研究，不是这次的结果"
+  },
+  "why_it_can_differ": "开仓、加仓和通道出场改到下一根开盘；止损和一半峰值平仓仍在当根路径上。最后一根的信号没有下一根开盘，不会成交。"
+}

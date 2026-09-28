@@ -8,7 +8,7 @@ packages = ["btc_perp"]
 [project]
 name = "btc-perp"
 version = "0.1.0"
-description = "Private research on one BTCUSDT USDT-margined account. Proprietary. No live trading."
+description = "Private BTCUSDT USDT-M research. The copyright holder may run a demo account and, after that record, a capped personal account. Proprietary. Third parties have no rights."
 readme = "README.md"
 license = {text = "Proprietary"}
 requires-python = ">=3.12,<3.14"

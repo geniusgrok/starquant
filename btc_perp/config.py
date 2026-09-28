@@ -3,9 +3,10 @@
 ``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
 ``dd_flat``, ``flatten_ratio``, entry scale, heat, ratchet, and cooldown).
 Fee rates and those scale lines live in ``btc_perp.costs`` and are copied
-into the YAML. A test rejects a drift between the two. ``take_profit_multiple`` is the far take-profit the
-measurement session rests on the venue. The replay still exits with the
-trailing stop and the channel. This package does not send orders.
+into the YAML. A test rejects a drift between the two. ``take_profit_multiple`` is a disaster cap (long entry times the multiple,
+short entry divided by it). The research exit is the trail, the channel, or
+the half-peak flatten. The forward runner rests that cap on the exchange and
+does not count it as the strategy exit.
 """
 
 from __future__ import annotations
