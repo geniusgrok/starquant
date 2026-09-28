@@ -11,7 +11,8 @@ start_cny: 10000
 session_seconds: 300
 poll_seconds: 5
 
-# Donchian on completed hours. Stops are live on every 1-minute OHLC path point.
+# Donchian on completed hours. The first entry_hours bars are not a signal:
+# a short prefix is not this window. Stops are live on every 1-minute OHLC path point.
 entry_hours: 1008
 exit_hours: 192
 stop: 0.032
@@ -19,11 +20,13 @@ trail: 0.16
 add_step: 0.05
 max_units: 3
 risk: 0.048
-# Blocks a new entry when close-to-close equity/peak is at or below 1 - dd_flat.
-# An open position is left in place. A separate cut in scripts/frontier.py halves
-# a new entry once that ratio is below 0.82. Adds are not halved. Neither rule is
-# a hard flatten at a 50% drawdown.
+# Blocks a new entry and a pyramid add when close-to-close equity/peak is at or below 1 - dd_flat.
 dd_flat: 0.47
+# Closes the open position when a path mark is at or below this fraction of the path peak.
+flatten_ratio: 0.5
+# New entries use entry_scale once close equity/peak is below entry_scale_below. Adds do not.
+entry_scale_below: 0.82
+entry_scale: 0.5
 iso_frac: 0.28
 cooldown_hours: 6
 ratchet_gain: 0.35

@@ -1,9 +1,9 @@
 """The one config for the one research account.
 
 ``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
-``dd_flat``, heat, ratchet, and cooldown). Fee rates live in
-``btc_perp.costs`` and are copied into the YAML. A test rejects a drift
-between the two. ``take_profit_multiple`` is the far take-profit the
+``dd_flat``, ``flatten_ratio``, entry scale, heat, ratchet, and cooldown).
+Fee rates and those scale lines live in ``btc_perp.costs`` and are copied
+into the YAML. A test rejects a drift between the two. ``take_profit_multiple`` is the far take-profit the
 measurement session rests on the venue. The replay still exits with the
 trailing stop and the channel. This package does not send orders.
 """
@@ -36,6 +36,9 @@ class AccountConfig:
     max_units: int
     risk: float
     dd_flat: float
+    flatten_ratio: float
+    entry_scale_below: float
+    entry_scale: float
     iso_frac: float
     cooldown_hours: int
     ratchet_gain: float
@@ -66,6 +69,9 @@ def load_config(path: Path | None = None) -> AccountConfig:
         max_units=int(raw["max_units"]),
         risk=float(raw["risk"]),
         dd_flat=float(raw["dd_flat"]),
+        flatten_ratio=float(raw["flatten_ratio"]),
+        entry_scale_below=float(raw["entry_scale_below"]),
+        entry_scale=float(raw["entry_scale"]),
         iso_frac=float(raw["iso_frac"]),
         cooldown_hours=int(raw["cooldown_hours"]),
         ratchet_gain=float(raw["ratchet_gain"]),
