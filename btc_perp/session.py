@@ -88,6 +88,10 @@ class Session:
                 self.halted = True
                 return
             self._act(intent)
+            # A partial fill parks the rest. Do not send another order on top of it.
+            if self.exchange.late:
+                self.halted = True
+                return
 
     def _act(self, intent: Intent) -> None:
         pos = self.exchange.position_qty

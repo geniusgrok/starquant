@@ -142,6 +142,25 @@ def test_a_zero_qty_intent_amends_protection_without_another_fill():
     assert ex.protections[1].price == 880.0
 
 
+def test_a_partial_close_does_not_open_the_other_side_in_the_same_poll():
+    ex = SimExchange(partial_ratio=0.5, defer_remainder=True)
+    _arm(ex, 0.010)
+
+    def decide(_view):
+        return (Intent(0, 0.010, 1.0, 2.0), Intent(-1, 0.008, 110.0, 40.0))
+
+    Session(ex, ManualClock(), duration_s=5, poll_s=5)._poll(decide)
+    assert ex.submits == 1
+    assert ex.position_qty == 0.005
+    assert ex.late
+    assert ex.protection_covers_position() is False
+    Session(ex, ManualClock(), duration_s=5, poll_s=5)._poll(lambda _view: None)
+    assert ex.submits == 1
+    assert ex.position_qty == 0.0
+    assert ex.late == []
+    assert ex.protection_covers_position()
+
+
 def test_one_poll_can_close_and_then_open_the_other_side():
     ex = SimExchange()
     _arm(ex, 0.010)

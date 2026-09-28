@@ -60,9 +60,13 @@ class SimExchange:
         return AccountView(self.connected, known, self.position_qty, tuple(self.protections), exposed)
 
     def protection_covers_position(self) -> bool:
+        # A remainder that has not printed yet is an open order. The book is
+        # not covered, long or flat, until that print arrives.
+        if self.late:
+            return False
         net = abs(self.position_qty)
         if net < 0.001:
-            return not self.protections and not self.late
+            return not self.protections
         stops = [p for p in self.protections if p.kind == "stop"]
         takes = [p for p in self.protections if p.kind == "take_profit"]
         if len(stops) != 1 or len(takes) != 1:
