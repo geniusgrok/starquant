@@ -18,8 +18,9 @@ DEMO = "demo"
 PROD = "prod"
 DEMO_REST = "https://demo-fapi.binance.com"
 PROD_REST = "https://fapi.binance.com"
-DEMO_WS = "wss://demo-fstream.binance.com/ws"
-PROD_WS = "wss://fstream.binance.com/ws"
+# Host only. Since 2026-04-23 the user stream is /private/ws?listenKey=...&events=...
+DEMO_WS = "wss://demo-fstream.binance.com"
+PROD_WS = "wss://fstream.binance.com"
 PROD_ORDER_ENV = "STARQUANT_ALLOW_PROD_ORDERS"
 
 

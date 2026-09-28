@@ -17,8 +17,10 @@ from btc_perp.bars import bars_from_kline_rows, completed_hour_channels
 from btc_perp.binance_client import UrllibTransport, UsdMClient
 from btc_perp.config import ROOT, load_config
 from btc_perp.gates import DEMO, PROD, load_limits, prod_orders_allowed
+from btc_perp.permissions import prod_permission_block
 from btc_perp.runner import run_cycle
 from btc_perp.store import Store
+from btc_perp.user_stream import UserStream
 
 _EXAMPLES = """
 examples:
@@ -140,10 +142,35 @@ def _forward(found: argparse.Namespace) -> int:
         str(found.command)
     ]
     once = bool(found.once or found.command != "run")
+    if found.environment == PROD and found.command in {"run", "stop", "flatten"} and not found.dry_run:
+        blocked = prod_permission_block(str(found.environment), keys[0], keys[1], client.transport)
+        if blocked:
+            print(blocked)
+            store.close()
+            return 2
+    stream: UserStream | None = None
+    if not found.dry_run and found.command in {"run", "stop", "flatten"}:
+        stream = UserStream(client, str(found.environment))
+        stream.start()
     report = None
     try:
         while True:
             now_ms = int(time.time() * 1000)
+            stream_expired = False
+            if stream is not None:
+                stream.keepalive(now_ms)
+                stream.reconnect_if_due(now_ms)
+                hints, stream_expired = stream.poll()
+                for hint in hints:
+                    store.append_journal(
+                        {
+                            "ts_ms": now_ms,
+                            "kind": "stream",
+                            "event": hint.kind,
+                            "client_id": hint.client_id,
+                            "status": hint.status,
+                        }
+                    )
             try:
                 minute = client.klines("1m", 5)
                 hourly = client.klines("1h", max(cfg.entry_hours + 2, 100))
@@ -171,6 +198,7 @@ def _forward(found: argparse.Namespace) -> int:
                 mode=mode,
                 prod_enabled=prod_orders_allowed(),
                 dry_run=bool(found.dry_run),
+                stream_expired=stream_expired,
             )
             print(
                 f"mode={report.mode} frozen={str(report.frozen).lower()} reason={report.reason} "
@@ -183,6 +211,8 @@ def _forward(found: argparse.Namespace) -> int:
             mode = "run"
             time.sleep(max(float(found.poll_seconds), 1.0))
     finally:
+        if stream is not None:
+            stream.stop()
         store.close()
     if report is None:
         return 2
