@@ -10,7 +10,13 @@ from dataclasses import dataclass, field
 
 
 def _step(qty: float) -> float:
-    return float(int(qty * 1000.0 + 1e-9) / 1000.0)
+    # Lot size is 0.001. Truncate toward zero, but a value that is already on a
+    # lot can be a hair under that lot in float (0.008 * 1000 is not 8).
+    scaled = qty * 1000.0
+    nearest = round(scaled)
+    if abs(scaled - nearest) < 1e-4:
+        scaled = nearest
+    return float(int(scaled) / 1000.0)
 
 
 @dataclass
