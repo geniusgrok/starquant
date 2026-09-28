@@ -30,10 +30,13 @@ MARGIN_BRACKETS = (
     (20_000_000.0, 0.050, 141_300.0),
 )
 
-# A new entry is halved once close-to-close equity is below this fraction of
+# A new entry is scaled once close-to-close equity is below this fraction of
 # the close-to-close peak. Pyramid adds do not use the factor.
+# config/btc_account.yaml repeats these. A test fails if the copies diverge.
 ENTRY_SCALE_BELOW = 0.82
 ENTRY_SCALE = 0.5
+# Path equity at or below this fraction of the path peak closes the position.
+FLATTEN_RATIO = 0.5
 
 
 def new_entry_scale(close_ratio: float) -> float:

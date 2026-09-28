@@ -11,6 +11,7 @@ from btc_perp.config import ROOT, load_config
 from btc_perp.costs import (
     ENTRY_SCALE,
     ENTRY_SCALE_BELOW,
+    FLATTEN_RATIO,
     FX_FEE,
     IMPACT_Y,
     LEVERAGE,
@@ -39,6 +40,9 @@ def test_yaml_fees_match_the_replay_constants() -> None:
     assert cfg.fx_fee == FX_FEE
     assert cfg.leverage == LEVERAGE
     assert cfg.start_cny == START_CNY
+    assert cfg.entry_scale_below == ENTRY_SCALE_BELOW
+    assert cfg.entry_scale == ENTRY_SCALE
+    assert cfg.flatten_ratio == FLATTEN_RATIO
 
 
 def test_maintenance_brackets_match_the_published_table() -> None:
@@ -355,8 +359,103 @@ def _replay(
         0.35,
         0.07,
         heat,
+        FLATTEN_RATIO,
+        ENTRY_SCALE_BELOW,
+        ENTRY_SCALE,
         np.ones(n, np.int8),
         qv,
         np.empty(1),
         trace,
     )
+
+
+def test_channels_stay_shut_until_the_window_is_full() -> None:
+    from scripts.frontier import _channels
+
+    high = np.arange(1, 21, dtype=np.float64)
+    low = high - 0.5
+    hh, ll, xh, xl = _channels(high, low, 10, 4)
+    assert np.isinf(hh[:10]).all()
+    assert np.isneginf(ll[:10]).all()
+    assert np.isinf(xh[:4]).all()
+    assert np.isneginf(xl[:4]).all()
+    assert hh[10] == pytest.approx(high[:10].max())
+    assert ll[10] == pytest.approx(low[:10].min())
+    assert xh[4] == pytest.approx(high[:4].max())
+    assert xl[4] == pytest.approx(low[:4].min())
+
+
+def _flat_book(prices: np.ndarray, *, hh: np.ndarray, ll: np.ndarray, stop: float, trail: float, flatten: float):
+    n = len(prices)
+    trace = np.zeros((n, 5))
+    return run(
+        prices,
+        prices,
+        prices,
+        prices,
+        np.zeros(n),
+        np.full(n, 7.0),
+        hh,
+        ll,
+        np.full(n, 1.0e9),
+        np.full(n, 1.0),
+        stop,
+        trail,
+        0.05,
+        1,
+        0.50,
+        0.99,
+        1.0,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        flatten,
+        ENTRY_SCALE_BELOW,
+        ENTRY_SCALE,
+        np.ones(n, np.int8),
+        np.empty(1),
+        np.empty(1),
+        trace,
+    ), trace
+
+
+def test_a_mark_through_half_the_peak_flattens() -> None:
+    # Rally lifts the trail to 105. The print at 120 is still above that stop and
+    # already through half the path peak, so the account flatten closes it.
+    prices = np.array([100.0, 150.0, 120.0])
+    hh = np.array([50.0, 50.0, 1.0e9])
+    ll = np.full(3, 1.0)
+    (end, ratio, n_long, n_short, n_stop, _min_i), trace = _flat_book(
+        prices, hh=hh, ll=ll, stop=0.05, trail=0.30, flatten=FLATTEN_RATIO
+    )
+    assert n_long == 1
+    assert n_short == 0
+    assert n_stop == 1
+    assert trace[1, 0] == 1.0
+    assert trace[1, 2] == pytest.approx(105.0)
+    assert trace[-1, 0] == 0.0
+    assert 0.45 < ratio <= 0.5
+    assert end > 4_000.0
+    held = _flat_book(prices, hh=hh, ll=ll, stop=0.05, trail=0.30, flatten=0.0)
+    assert held[0][4] == 0
+    assert held[1][-1, 0] == 1.0
+
+
+def test_a_short_mark_through_half_the_peak_flattens() -> None:
+    # The short trail sits at 90. Price 80 has not reached it, and the mark is
+    # already through half the path peak.
+    prices = np.array([100.0, 50.0, 80.0])
+    hh = np.full(3, 1.0e9)
+    ll = np.array([200.0, 200.0, 1.0])
+    (end, ratio, n_long, n_short, n_stop, _min_i), trace = _flat_book(
+        prices, hh=hh, ll=ll, stop=0.05, trail=0.80, flatten=FLATTEN_RATIO
+    )
+    assert n_long == 0
+    assert n_short == 1
+    assert n_stop == 1
+    assert trace[1, 0] == -1.0
+    assert trace[1, 2] == pytest.approx(90.0)
+    assert trace[-1, 0] == 0.0
+    assert 0.45 < ratio <= 0.5
+    assert end > 4_000.0

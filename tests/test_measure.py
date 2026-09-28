@@ -27,5 +27,5 @@ def test_full_period_clears_100pct_cagr_and_half_drawdown():
     assert sessions["poll_seconds"] == 5
     assert sessions["count"] == 706_752
     assert sessions["polls"] == 42_405_120
-    assert sessions["closes"] == 97
+    assert sessions["closes"] == 92
     assert report["path"].startswith("successive manual sessions")

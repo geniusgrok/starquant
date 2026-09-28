@@ -24,8 +24,6 @@ from numba import njit
 from btc_perp.config import ROOT
 from btc_perp.costs import (
     CASH_BUFFER,
-    ENTRY_SCALE,
-    ENTRY_SCALE_BELOW,
     FX_FEE,
     IMPACT_Y,
     LEVERAGE,
@@ -73,6 +71,14 @@ def _channels(h, l, entry_w, exit_w):
     ll[1:] = rl[:-1]
     xh[1:] = rxh[:-1]
     xl[1:] = rxl[:-1]
+    # The first ``entry_w`` hours are not an entry window of that length.
+    # A 2-hour high is not a 1008-hour breakout. Channel exits wait the same way.
+    if entry_w > 0:
+        hh[:entry_w] = np.inf
+        ll[:entry_w] = -np.inf
+    if exit_w > 0:
+        xh[:exit_w] = np.inf
+        xl[:exit_w] = -np.inf
     return hh, ll, xh, xl
 
 
@@ -327,6 +333,9 @@ def _loop(
     ratchet_gain,
     ratchet_trail,
     heat,
+    flatten_ratio,
+    entry_scale_below,
+    entry_scale,
     gate,
     qv,
     eq_out,
@@ -411,6 +420,26 @@ def _loop(
                     hit = True
                     fill = (px if k == 0 else stop_px) * (1.0 + slip_b)
                     break
+                # Account giveback, not the price stop. Fill at the price where
+                # equity/peak equals flatten_ratio, or at this print if the bar gapped through it.
+                if flatten_ratio > 0.0 and peak > 0.0 and qty > 0.0:
+                    scale_fx = fx[i] * (1.0 - fx_fee)
+                    eq_usd = wallet + (px - entry) * qty * side
+                    if scale_fx > 0.0 and eq_usd * scale_fx <= flatten_ratio * peak:
+                        target_eq = flatten_ratio * peak / scale_fx
+                        pxs = entry + (target_eq - wallet) / (qty * side)
+                        if side > 0 and px < pxs:
+                            pxs = px
+                        elif side < 0 and px > pxs:
+                            pxs = px
+                        fill = pxs * (1.0 - slip_b) if side > 0 else pxs * (1.0 + slip_b)
+                        # The print already crossed the line. Isolated margin can cap the cash
+                        # loss, so the ratio has to be stored before that cap.
+                        peak, min_ratio, min_i = _mark(
+                            px, wallet, entry, qty, side, fx[i], fx_fee, peak, min_ratio, min_i, i
+                        )
+                        hit = True
+                        break
                 if side > 0 and px > extreme:
                     extreme = px
                 elif side < 0 and px < extreme:
@@ -469,7 +498,7 @@ def _loop(
             trace[i, 2] = stop_px
             trace[i, 3] = wallet
             trace[i, 4] = entry
-        # dd_flat blocks a new entry. It does not flatten the open position.
+        # dd_flat blocks a new entry and a pyramid add. The half-equity flatten is above.
         if i < cool or ratio_c <= 1.0 - dd_flat:
             continue
         if gate.shape[0] == n and gate[i] == 0:
@@ -482,10 +511,8 @@ def _loop(
         if side == 0 and want != 0:
             px = C[i]
             dist = px * stop
-            # Same rule as btc_perp.costs.new_entry_scale. Inlined because this
-            # loop is compiled. Adds below do not apply it. The published pass
-            # depends on it; the rule is not a config field.
-            scale = ENTRY_SCALE if ratio_c < ENTRY_SCALE_BELOW else 1.0
+            # Same numbers as btc_perp.costs.new_entry_scale. Adds below do not apply it.
+            scale = entry_scale if ratio_c < entry_scale_below else 1.0
             q = np.floor(eq * risk * scale / dist * 1000.0) / 1000.0
             capn = eq * iso_frac * lev
             if heat > 0.0:
@@ -614,6 +641,9 @@ def run(
     ratchet_gain,
     ratchet_trail,
     heat,
+    flatten_ratio,
+    entry_scale_below,
+    entry_scale,
     gate,
     qv,
     eq_out,
@@ -648,6 +678,9 @@ def run(
         ratchet_gain,
         ratchet_trail,
         heat,
+        flatten_ratio,
+        entry_scale_below,
+        entry_scale,
         gate,
         qv,
         eq_out,
@@ -688,6 +721,9 @@ def resume(
     ratchet_gain: float,
     ratchet_trail: float,
     heat: float,
+    flatten_ratio: float,
+    entry_scale_below: float,
+    entry_scale: float,
     gate: np.ndarray,
     qv: np.ndarray,
     eq_out: np.ndarray,
@@ -724,6 +760,9 @@ def resume(
         ratchet_gain,
         ratchet_trail,
         heat,
+        flatten_ratio,
+        entry_scale_below,
+        entry_scale,
         gate,
         qv,
         eq_out,
