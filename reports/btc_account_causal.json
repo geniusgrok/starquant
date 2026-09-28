@@ -39,8 +39,8 @@
     "note": "缺失槽位在回放里按 0 计，没有官方结算价验证；proxy 槽位来自溢价指数估算，不是官方结算价。"
   },
   "provenance": {
-    "git_head": "518ca6c31095135ec7ec61d52d39a45498189e64",
-    "git_dirty": true,
+    "git_head": "d35cb982ae3384954b65cf52d8b5bb3a2dab6075",
+    "git_dirty": false,
     "files_sha256": {
       "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
