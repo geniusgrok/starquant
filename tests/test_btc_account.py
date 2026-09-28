@@ -2,22 +2,26 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import numpy as np
 import pytest
 
-from btc_perp.config import load_config
+from btc_perp.config import ROOT, load_config
 from btc_perp.costs import (
     ENTRY_SCALE,
     ENTRY_SCALE_BELOW,
     FX_FEE,
     IMPACT_Y,
     LEVERAGE,
+    MARGIN_BRACKETS,
     SLIP_BASE,
+    START_CNY,
     TAKER,
     new_entry_scale,
 )
 from btc_perp.exchange import BinanceExchange
-from scripts.frontier import run
+from scripts.frontier import _clamp_stop, _liq_from, _liq_price, _mmr_cum, _slip_amt, causal_fx, run
 
 
 def test_market_files_are_read_from_the_repo_data_dir() -> None:
@@ -34,7 +38,130 @@ def test_yaml_fees_match_the_replay_constants() -> None:
     assert cfg.impact_y == IMPACT_Y
     assert cfg.fx_fee == FX_FEE
     assert cfg.leverage == LEVERAGE
+    assert cfg.start_cny == START_CNY
     assert cfg.live_orders is False
+
+
+def test_maintenance_brackets_match_the_published_table() -> None:
+    for cap, rate, amount in MARGIN_BRACKETS:
+        got_rate, got_amount = _mmr_cum(cap)
+        assert got_rate == rate
+        assert got_amount == amount
+    assert _mmr_cum(50_000.01) == (0.005, 50.0)
+    assert _mmr_cum(800_000.0) == (0.01, 1_300.0)
+
+
+def test_liquidation_price_uses_the_bracket_at_that_price() -> None:
+    # Mark notional is just inside the 1% tier. The liquidation notional falls
+    # into the 0.5% tier, so the price has to be solved there.
+    entry = 100.0
+    qty = 2_500.01
+    isolated = entry * qty / LEVERAGE
+    mark_rate, mark_cum = _mmr_cum(entry * qty)
+    assert mark_rate == 0.01
+    inconsistent = _liq_from(1, entry, qty, isolated, mark_rate, mark_cum)
+    assert _mmr_cum(qty * inconsistent)[0] == 0.005
+    rate, cum = _mmr_cum(qty * inconsistent)
+    consistent = _liq_from(1, entry, qty, isolated, rate, cum)
+    assert _liq_price(1, entry, qty, isolated, entry) == pytest.approx(consistent)
+    assert consistent != pytest.approx(inconsistent)
+
+
+def test_a_stop_cannot_sit_through_liquidation() -> None:
+    # 800k notional is in the 1% bracket. A stop 10% below entry is past liquidation.
+    entry = 100_000.0
+    qty = 8.0
+    isolated = entry * qty / LEVERAGE
+    liq = _liq_price(1, entry, qty, isolated, entry)
+    assert liq == pytest.approx((entry * qty - isolated - 1_300.0) / (qty * 0.99))
+    clamped = _clamp_stop(1, entry * 0.90, entry, qty, isolated, entry)
+    assert clamped == pytest.approx(liq * 1.001)
+    assert clamped > liq
+
+
+def test_impact_stays_inside_the_completed_bar() -> None:
+    calm = _slip_amt(100.0, 1.0, 100.1, 99.9, 1_000_000.0)
+    empty = _slip_amt(100.0, 1.0, 110.0, 90.0, 0.0)
+    assert empty == pytest.approx(SLIP_BASE + IMPACT_Y * 0.2)
+    assert calm < empty
+
+
+def test_fx_fixing_is_applied_only_after_its_date() -> None:
+    rates = {dt.date(2020, 1, 2): 7.0, dt.date(2020, 1, 3): 8.0}
+    days = [dt.date(2020, 1, 2), dt.date(2020, 1, 3), dt.date(2020, 1, 4)]
+    assert list(causal_fx(days, rates, fallback=6.5)) == [6.5, 7.0, 8.0]
+
+
+@pytest.mark.skipif(not (ROOT / "data" / "usdcny_frankfurter.json").exists(), reason="FX file is not in the tree")
+def test_replay_fx_does_not_use_the_same_days_fixing() -> None:
+    from scripts.frontier import load_hourly
+
+    _o, _h, _l, _c, _fund, fx, days = load_hourly()
+    # 2020-01-02 is the first stored fixing after the New Year holiday.
+    # The bar on that date still uses the 2019-12-31 rate.
+    jan2 = np.where(days == 20200102)[0]
+    jan3 = np.where(days == 20200103)[0]
+    assert fx[jan2[0]] == pytest.approx(6.9615)
+    assert fx[jan3[0]] == pytest.approx(6.9638)
+
+
+def test_a_stop_uses_the_previous_minutes_impact() -> None:
+    # Bar 2 is calm. Bar 3 gaps through the stop and has an empty book.
+    # The fill must pay the calm bar's slippage, not the empty bar's.
+    n = 4
+    # Bullish stop bar: open, then low, so the low is tested before any new high.
+    # The close is back inside the channel, so the same bar does not re-enter.
+    open_ = np.array([100.0, 101.0, 101.0, 99.0])
+    high = np.array([100.0, 101.0, 101.0, 100.0])
+    low = np.array([100.0, 101.0, 101.0, 70.0])
+    close = np.array([100.0, 101.0, 101.0, 100.0])
+    qv = np.array([1.0e7, 1.0e7, 1.0e7, 0.0])
+    end, _ratio, n_long, _n_short, n_stop, _min_i = _replay(open_, high, low, close, np.zeros(n), qv=qv)
+    assert n_long == 1
+    assert n_stop == 1
+    assert end == pytest.approx(_stopped_equity(), rel=0, abs=1e-6)
+
+
+def test_funding_liquidation_closes_at_the_mark_and_keeps_free_cash() -> None:
+    # A 4.9% funding charge uses up the 5% posted margin. The close is at the
+    # open, not a confiscation of whatever margin is left after the charge.
+    open_ = np.array([100.0, 101.0, 101.0, 100.0])
+    close = np.array([100.0, 101.0, 100.0, 100.0])
+    high = np.maximum(open_, close)
+    low = np.minimum(open_, close)
+    fund = np.array([0.0, 0.0, 0.049, 0.0])
+    end, _ratio, n_long, _n_short, n_stop, _min_i = _replay(open_, high, low, close, fund, max_units=1)
+    assert n_long == 1
+    assert n_stop == 1
+    wallet0 = 10000.0 / (7.0 * (1.0 + FX_FEE))
+    q, fill_in, fee_in = _entry(wallet0)
+    isolated = q * fill_in / LEVERAGE
+    pay = q * 101.0 * 0.049
+    fill_out = 101.0 * (1.0 - SLIP_BASE)
+    fee_out = q * fill_out * TAKER
+    raw = (fill_out - fill_in) * q - fee_out
+    delta = raw - pay
+    assert delta > -isolated
+    wallet = wallet0 - fee_in + delta
+    expected = wallet * 7.0 * (1.0 - FX_FEE)
+    assert end == pytest.approx(expected, rel=0, abs=1e-4)
+    confiscated = (wallet0 - fee_in - isolated) * 7.0 * (1.0 - FX_FEE)
+    assert end > confiscated + 1.0
+
+
+def test_unrealized_profit_covers_funding_so_the_position_stays_open() -> None:
+    open_ = np.array([101.0, 130.0, 130.0])
+    close = open_.copy()
+    fund = np.array([0.0, 0.05, 0.0])
+    end, _ratio, n_long, _n_short, n_stop, _min_i = _replay(open_, close, close, close, fund, max_units=1)
+    assert n_long == 1
+    assert n_stop == 0
+    wallet0 = 10000.0 / (7.0 * (1.0 + FX_FEE))
+    q, fill_in, fee_in = _entry(wallet0, price=101.0)
+    pay = q * 130.0 * 0.05
+    equity = wallet0 - fee_in - pay + (130.0 - fill_in) * q
+    expected = equity * 7.0 * (1.0 - FX_FEE)
+    assert end == pytest.approx(expected, rel=0, abs=1e-4)
 
 
 def test_new_entry_is_halved_only_below_the_close_peak_line() -> None:
@@ -162,10 +289,14 @@ def _replay(
     iso_frac: float = 0.28,
     heat: float = 0.6,
     trace: np.ndarray | None = None,
+    qv: np.ndarray | None = None,
+    max_units: int = 3,
 ) -> tuple[float, float, int, int, int, int]:
     n = len(close)
     if trace is None:
         trace = np.empty((1, 4))
+    if qv is None:
+        qv = np.empty(1)
     return run(
         open_.astype(np.float64),
         high.astype(np.float64),
@@ -180,7 +311,7 @@ def _replay(
         0.032,
         0.16,
         0.05,
-        3,
+        max_units,
         risk,
         dd_flat,
         iso_frac,
@@ -197,7 +328,7 @@ def _replay(
         heat,
         0.0,
         np.ones(n, np.int8),
-        np.empty(1),
+        qv,
         np.empty(1),
         trace,
         np.empty(1),

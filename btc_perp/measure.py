@@ -7,7 +7,8 @@ print. Entries and pyramid adds are read on the completed hour (minute 59).
 Channel exits are checked on every minute close.
 
 Fee rates and the 82% entry-size cut live in ``btc_perp.costs``. The kernel
-is ``scripts.frontier.run``. See ``docs/btc_account.md``.
+is ``scripts.frontier.run``. Stop slippage uses the previous minute, and the
+USD/CNY fixing is applied only after its date. See ``docs/btc_account.md``.
 """
 
 from __future__ import annotations
@@ -116,9 +117,9 @@ def run_official(write_report: bool = True) -> dict:
             "slip_base": cfg.slip_base,
             "impact_y": cfg.impact_y,
             "fx_fee": cfg.fx_fee,
-            "funding": "binance vision plus premium-index September 2026",
+            "funding": "binance vision through 2026-08-31, premium-index September 2026, 2026-09-01 00:00 missing",
         },
-        "path": "1-minute OHLC in 5-second order, trail amends on new extremes, entries on completed hours",
+        "path": "1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
         "live_orders": False,
     }
     if write_report:
