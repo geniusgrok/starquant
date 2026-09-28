@@ -46,6 +46,13 @@
     "fx_fee": 0.0035,
     "funding": "binance vision through 2026-08-31, premium-index September 2026, 2026-09-01 00:00 missing"
   },
-  "path": "1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
+  "path": "successive manual sessions, one minute stepped when the session clock completes that minute; 1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
+  "sessions": {
+    "seconds": 300,
+    "poll_seconds": 5,
+    "count": 706752,
+    "polls": 42405120,
+    "closes": 97
+  },
   "live_orders": false
 }

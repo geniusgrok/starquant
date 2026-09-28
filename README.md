@@ -25,13 +25,13 @@ pip install -e . --no-deps
 python -m btc_perp --measure
 ```
 
-不带 `--measure` 只打印拒绝，然后退出。它不下单，也不启动会话。
+`--measure` 按配置把全样本拆成一段一段的手动会话：默认每段 300 秒、每 5 秒看一次，这一段返回之后才开始下一段。不带 `--measure` 只打印拒绝，然后退出。它不下单，也不启动会话。
 
 ## 目录
 
 | 路径 | 内容 |
 | --- | --- |
-| `btc_perp/` | 配置、费率、拒绝下单的接口、全样本入口 |
+| `btc_perp/` | 配置、费率、手动会话、拒绝下单的接口、全样本入口 |
 | `scripts/frontier.py` | 回放内核 |
 | `config/btc_account.yaml` | 这一份账户配置 |
 | `reports/btc_account_measure.json` | 已记录的全样本结果 |

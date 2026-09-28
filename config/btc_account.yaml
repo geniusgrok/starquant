@@ -2,7 +2,7 @@
 # Live trading is prohibited. live_orders is ignored; the adapter always refuses.
 # taker, slip_base, impact_y, fx_fee, and leverage are recorded here. The replay
 # reads btc_perp/costs.py. tests/test_btc_account.py fails if this copy drifts.
-# take_profit_multiple is unused. The exit that binds is the trailing stop.
+# take_profit_multiple is the far resting take-profit on the measurement venue.
 symbol: BTCUSDT
 margin_mode: isolated
 position_mode: one_way
@@ -29,7 +29,8 @@ cooldown_hours: 6
 ratchet_gain: 0.35
 ratchet_trail: 0.07
 heat: 0.6
-# Resting take-profit is far enough that the trailing stop is the exit that binds.
+# Far resting take-profit on the measurement venue. The replay exits with the
+# trailing stop and the channel. The simulator does not fill this price.
 take_profit_multiple: 10.0
 
 taker: 0.0004
