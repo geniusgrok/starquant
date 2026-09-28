@@ -1,4 +1,8 @@
-"""Start one finite session, or replay the full account measurement."""
+"""Replay the research measurement, or refuse to trade.
+
+``--measure`` runs the 1-minute account replay. Any other invocation prints a
+refusal and exits. It does not start ``Session`` and it does not send orders.
+"""
 
 from __future__ import annotations
 
@@ -24,8 +28,9 @@ def main() -> None:
     if venue.allowed():
         raise RuntimeError("live path is not wired; the gate should be closed")
     print(
-        "Live orders are off. One session would poll every "
-        f"{cfg.poll_seconds}s for {cfg.session_seconds}s and then exit. "
+        "Live orders are disabled. This project is private research and does not trade. "
+        f"A session object would poll every {cfg.poll_seconds}s for {cfg.session_seconds}s, "
+        "but this entry point does not start one. "
         "Run `python -m btc_perp --measure` to replay 2020-01-01 through 2026-09-20."
     )
 

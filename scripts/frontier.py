@@ -1,7 +1,11 @@
-"""Frontier search: turtle pyramid with path-ordered equity marks.
+"""Research replay: turtle pyramid with path-ordered equity marks.
 
-Stops are live. Peak and trough update in OHLC order, so a wick that does not
-trade through the stop still counts as floating drawdown.
+Private research only. See LICENSE. This module does not send orders.
+
+Stops are live on the assumed path inside each bar. Peak and trough update in
+that order, so a wick that does not trade through the stop still counts as
+floating drawdown. The published account measurement calls ``run`` from
+``btc_perp.measure``.
 """
 
 from __future__ import annotations
@@ -54,6 +58,7 @@ def _channels(h, l, entry_w, exit_w):
 
 
 def load_hourly():
+    # Absolute path: the measurement machine keeps the tape at /workspace/data.
     d = np.load("/workspace/data/btcusdt_1m.npz")
     ts, o, h, l, c = d["ts"], d["o"], d["h"], d["l"], d["c"]
     n = len(c) // 60
@@ -179,6 +184,8 @@ def run(
     post_scale: risk multiplier until a new equity peak after an equity flatten.
     """
     n = len(C)
+    # Measurement constants. config/btc_account.yaml repeats them today;
+    # editing the YAML does not change this replay.
     taker = 0.0004
     slip_b = 0.0001
     fx_fee = 0.0035
@@ -225,8 +232,9 @@ def run(
                 losses += 1
                 cool = i + cool_h
         if side != 0 and adverse == 1:
-            # 5-second sessions amend the trail as soon as a new extreme prints,
-            # then the rest of the bar can fill that stop. Bullish bar: O-L-H-C.
+            # No 5-second tape exists. A bullish bar is ordered open, low, high,
+            # close, so the low is tested before a new high tightens the stop.
+            # A bearish bar is open, high, low, close.
             bull = C[i] >= O[i]
             hit = False
             fill = 0.0
@@ -338,6 +346,7 @@ def run(
                         trailed = extreme * (1.0 + t_use)
                         if trailed < stop_px:
                             stop_px = trailed
+        # Channel exits are not limited to minute 59. Entries and adds are.
         if side > 0 and C[i] < xl[i]:
             fill = C[i] * (1.0 - slip_b)
             fee = qty * fill * taker
@@ -420,6 +429,7 @@ def run(
                 min_ratio = cny / peak
             if eq_out.shape[0] == n:
                 eq_out[i] = cny
+        # dd_flat blocks a new entry. It does not flatten the open position.
         if i < cool or ratio_c <= 1.0 - dd_flat:
             continue
         if gate.shape[0] == n and gate[i] == 0:
@@ -437,6 +447,9 @@ def run(
         if side == 0 and want != 0:
             px = C[i]
             dist = px * stop
+            # Close-to-close equity below 82% of the close peak halves a new
+            # entry. Adds ignore this factor. It is not a config field, and the
+            # published pass depends on it.
             scale = 0.5 if ratio_c < 0.82 else 1.0
             scale *= rscale
             q = np.floor(eq * risk * scale / dist * 1000.0) / 1000.0

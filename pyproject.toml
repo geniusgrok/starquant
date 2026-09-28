@@ -16,7 +16,7 @@ packages = [
 [project]
 name = "starquant"
 version = "0.1.0"
-description = "StarQuant — Alpha-First crypto perpetual-futures trading system (Binance USDⓈ-M, demo/testnet)"
+description = "StarQuant — private research on crypto perpetual futures. Proprietary. No live trading."
 readme = "README.md"
 license = {text = "Proprietary"}
 # Python 3.14 silently masked real failures in the past; keep the runtime pinned to 3.12/3.13.

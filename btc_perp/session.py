@@ -1,4 +1,10 @@
-"""One manually started session. It polls, then it exits. Nothing keeps running."""
+"""One manually started research session. It polls, then it exits.
+
+``python -m btc_perp`` does not construct this object, and ``--measure`` does
+not call it. The measurement is ``scripts.frontier.run``. Protections placed
+here live on the in-process ``SimExchange`` object. Nothing in this module
+sends a live order.
+"""
 
 from __future__ import annotations
 

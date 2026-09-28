@@ -1,4 +1,12 @@
-"""The one config for the one account."""
+"""The one config for the one research account.
+
+``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
+``dd_flat``, heat, ratchet, cooldown, and whether both sides are allowed).
+It does not read ``taker``, ``slip_base``, ``impact_y``, ``fx_fee``,
+``leverage``, or ``take_profit_multiple``. Those cost constants are hardcoded
+beside the replay, and the take-profit multiple is unused. ``live_orders``
+does not open a trading path.
+"""
 
 from __future__ import annotations
 

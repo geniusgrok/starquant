@@ -1,22 +1,16 @@
-# BTCUSDT account
+# BTCUSDT 账户
 
-One Binance USD-M BTCUSDT account. Isolated, one-way, leverage fixed at 20x.
-Starting capital 10,000 CNY, no deposits. The model may be long or short.
-A person starts a session (default 5 minutes). The session re-reads the market
-and the account every 5 seconds, then exits. After a fill, the exchange holds a
-stop and a take-profit for the filled quantity, including a partial fill, and
-those orders stay up after the process exits. If funds, orders, or protection
-are unclear, the session does not open new risk.
+私人研究。许可见 [`LICENSE`](LICENSE)：只有版权人本人可以使用，禁止实盘，禁止他人复制或二次创作。`vendor/backtest-guard/` 是第三方 MIT 代码，不受该声明约束。
 
-The full-sample replay is `python -m btc_perp --measure`. It walks
-2020-01-01 through 2026-09-20 (the end date is exclusive) on the 1-minute tape,
-with taker fees, slippage, bar-range impact, funding, liquidation capped at
-isolated margin, and CNY/USD conversion. Live orders stay off
-(`config/btc_account.yaml`) until that replay and the execution checks both pass.
-There is no API key in this tree, and the Binance adapter refuses to send orders.
+一个币安 BTCUSDT U 本位永续账户，起始 10,000 元人民币，中间不加钱，单向逐仓，保证金按 20 倍计算，可多可空。全样本复现：
 
-The older StarQuant packages are still in the tree. This account is the system
-the measurement refers to.
+```bash
+PYTHONPATH=. python -m btc_perp --measure
+```
+
+口径、配置里没有写出的减半规则，以及实盘拒绝，写在 [`docs/btc_account.md`](docs/btc_account.md)。不带 `--measure` 的入口不下单。树里没有 API key。
+
+旧的 StarQuant 包仍在仓库里。上面这条账户是测量所指的系统。
 
 # StarQuant — Alpha-First
 
@@ -146,12 +140,10 @@ pip install -e ".[dev]" && pytest -q
 
 ## License
 
-Proprietary — all rights reserved. Full terms in [`LICENSE`](LICENSE):
-**public visibility does not grant a license**; the repository is publicly
-readable on GitHub only for the author's own reference and collaboration.
+Proprietary — all rights reserved. Full terms in [`LICENSE`](LICENSE).
 
-Exception: `vendor/backtest-guard/` is a merged copy of two third-party MIT
-projects (backtest engineering review + strategy-logic adversarial review). It
-keeps the original MIT license inside that directory and is not covered by
-the paragraph above — `LICENSE` spells this out separately. It is the
-yardstick used when this repository is reviewed.
+The copyright holder may use this repository only for private research.
+Live trading is prohibited. No other person may copy, modify, or create
+derivative works. Being able to read a public checkout is not a license.
+`vendor/backtest-guard/` keeps the MIT licenses inside that directory and is
+not covered by that notice.

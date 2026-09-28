@@ -79,7 +79,7 @@ def test_unclear_protection_does_not_open_a_new_position():
 
 
 def test_binance_adapter_refuses_orders():
-    venue = BinanceExchange(False, True, True, "k")
+    venue = BinanceExchange(True, True, True, "k")
     assert venue.allowed() is False
     try:
         venue.submit_market(1, 0.01, 1.0, 2.0)
