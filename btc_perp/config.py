@@ -3,8 +3,10 @@
 ``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
 ``dd_flat``, heat, ratchet, cooldown, and whether both sides are allowed).
 Fee rates live in ``btc_perp.costs`` and are copied into the YAML. A test
-rejects a drift between the two. ``take_profit_multiple`` is unused.
-``live_orders`` does not open a trading path.
+rejects a drift between the two. ``take_profit_multiple`` is the far
+take-profit the measurement session rests on the venue. The replay still
+exits with the trailing stop and the channel. ``live_orders`` does not open
+a trading path.
 """
 
 from __future__ import annotations

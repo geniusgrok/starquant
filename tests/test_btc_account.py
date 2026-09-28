@@ -21,7 +21,7 @@ from btc_perp.costs import (
     new_entry_scale,
 )
 from btc_perp.exchange import BinanceExchange
-from scripts.frontier import _clamp_stop, _liq_from, _liq_price, _mmr_cum, _slip_amt, causal_fx, run
+from scripts.frontier import _clamp_stop, _liq_from, _liq_price, _mmr_cum, _realize, _slip_amt, causal_fx, run
 
 
 def test_market_files_are_read_from_the_repo_data_dir() -> None:
@@ -196,6 +196,43 @@ def test_stop_loss_matches_the_hand_ledger() -> None:
     assert n_long == 1
     assert n_stop == 1
     assert end == pytest.approx(_stopped_equity(), rel=0, abs=1e-6)
+
+
+def test_a_negative_posted_margin_is_not_returned_as_a_credit() -> None:
+    wallet, delta = _realize(1000.0, -5.0, 0.0, -10.0)
+    assert delta == 0.0
+    assert wallet == 1000.0
+    wallet, delta = _realize(1000.0, 5.0, 0.0, -10.0)
+    assert delta == 5.0
+    assert wallet == 1005.0
+    wallet, delta = _realize(1000.0, -80.0, 0.0, 50.0)
+    assert delta == -50.0
+    assert wallet == 950.0
+
+
+def test_a_gap_after_funding_has_used_the_margin_does_not_pay_a_credit() -> None:
+    # Floating profit keeps the position open through a funding charge larger
+    # than the posted margin. A later gap cannot turn that negative margin
+    # into income.
+    open_ = np.array([100.0, 101.0, 110.0, 110.0, 50.0])
+    close = open_.copy()
+    end, _ratio, n_long, _n_short, n_stop, _min_i = _replay(
+        open_, close, close, close, np.array([0.0, 0.0, 0.0, 0.08, 0.0]), max_units=1
+    )
+    assert n_long == 1
+    assert n_stop == 1
+    wallet0 = 10000.0 / (7.0 * (1.0 + FX_FEE))
+    q, fill_in, fee_in = _entry(wallet0, price=101.0)
+    pay = q * 110.0 * 0.08
+    fill_out = 50.0 * (1.0 - SLIP_BASE)
+    fee_out = q * fill_out * TAKER
+    raw = (fill_out - fill_in) * q - fee_out
+    assert raw < 0.0
+    wallet = wallet0 - fee_in - pay
+    expected = wallet * 7.0 * (1.0 - FX_FEE)
+    assert end == pytest.approx(expected, rel=0, abs=1e-4)
+    credited = (wallet + -(q * fill_in / LEVERAGE - pay)) * 7.0 * (1.0 - FX_FEE)
+    assert end < credited - 1.0
 
 
 def test_a_gap_through_the_stop_loses_only_isolated_margin() -> None:

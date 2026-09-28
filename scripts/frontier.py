@@ -6,8 +6,9 @@ Stops are live on the assumed path inside each bar. Peak and trough update in
 that order, so a wick that does not trade through the stop still counts as
 floating drawdown. A stop is pulled back to the safe side of the tiered
 liquidation price. Stop slippage uses the previous completed minute. The
-USD/CNY fixing for a date is applied only on later dates. The published
-account measurement calls ``run`` from ``btc_perp.measure``.
+USD/CNY fixing for a date is applied only on later dates. The published account measurement resumes this loop one minute at a time.
+``btc_perp.measure`` steps a minute only after a manual session's clock has
+completed that minute.
 """
 
 from __future__ import annotations
@@ -239,10 +240,17 @@ def _slip_amt(px, qty, hi, lo, qv_i):
 
 @njit(cache=True)
 def _realize(wallet, raw, pay, isolated):
-    """Apply price PnL and funding. The position cannot lose more than its margin."""
+    """Apply price PnL and funding. The position cannot lose more than its margin.
+
+    Posted margin is the isolated cash still on the position. Once funding has
+    reduced that below zero, a later price loss is already outside the posted
+    margin: it is not taken again, and the negative margin is not paid back
+    as a credit.
+    """
     delta = raw - pay
-    if delta < -isolated:
-        delta = -isolated
+    cap = isolated if isolated > 0.0 else 0.0
+    if delta < -cap:
+        delta = -cap
     return wallet + delta, delta
 
 
@@ -265,8 +273,41 @@ def _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail):
     return stop_px
 
 
+# Resume book. Integer fields stay on whole numbers, which float64 holds exactly
+# for this tape. 0 wallet, 1 side, 2 qty, 3 entry, 4 isolated, 5 stop, 6 extreme,
+# 7 units, 8 last_add, 9 cool, 10 peak, 11 peak_c, 12 min_ratio, 13 n_long,
+# 14 n_short, 15 n_stop, 16 min_i, 17 losses, 18 scale_hold.
+STATE_N = 19
+
+
 @njit(cache=True)
-def run(
+def _reset(state, fx0):
+    state[0] = START_CNY / (fx0 * (1.0 + FX_FEE))
+    state[1] = 0.0
+    state[2] = 0.0
+    state[3] = 0.0
+    state[4] = 0.0
+    state[5] = 0.0
+    state[6] = 0.0
+    state[7] = 0.0
+    state[8] = 0.0
+    state[9] = 0.0
+    state[10] = START_CNY
+    state[11] = START_CNY
+    state[12] = 1.0
+    state[13] = 0.0
+    state[14] = 0.0
+    state[15] = 0.0
+    state[16] = 0.0
+    state[17] = 0.0
+    state[18] = 1.0
+
+
+@njit(cache=True)
+def _loop(
+    state,
+    i0,
+    i1,
     O,
     H,
     L,
@@ -302,37 +343,33 @@ def run(
     trace,
     peak_out,
 ):
-    """streak_cut: after this many losing exits, risk halves until a win.
-    buf: close must clear the channel by this fraction.
-    adverse: 1 marks OHLC path extremes, 0 marks closes only.
-    post_scale: risk multiplier until a new equity peak after an equity flatten.
-    """
+    """Replay bars ``[i0, i1)`` and write the book back into ``state``."""
     n = len(C)
     # Fee inputs come from btc_perp.costs. The YAML copy is checked by a test.
     taker = TAKER
     slip_b = SLIP_BASE
     fx_fee = FX_FEE
     lev = LEVERAGE
-    wallet = START_CNY / (fx[0] * (1.0 + fx_fee))
-    side = 0
-    qty = 0.0
-    entry = 0.0
-    isolated = 0.0
-    stop_px = 0.0
-    extreme = 0.0
-    units = 0
-    last_add = 0.0
-    cool = 0
-    peak = START_CNY
-    peak_c = START_CNY
-    min_ratio = 1.0
-    nL = 0
-    nS = 0
-    nStop = 0
-    min_i = 0
-    losses = 0
-    scale_hold = 1.0
-    for i in range(n):
+    wallet = state[0]
+    side = int(state[1])
+    qty = state[2]
+    entry = state[3]
+    isolated = state[4]
+    stop_px = state[5]
+    extreme = state[6]
+    units = int(state[7])
+    last_add = state[8]
+    cool = int(state[9])
+    peak = state[10]
+    peak_c = state[11]
+    min_ratio = state[12]
+    nL = int(state[13])
+    nS = int(state[14])
+    nStop = int(state[15])
+    min_i = int(state[16])
+    losses = int(state[17])
+    scale_hold = state[18]
+    for i in range(i0, i1):
         # Stops can fill before this bar is finished, so impact uses the previous minute.
         if qv.shape[0] == n and qty > 0.0 and i > 0:
             slip_b = _slip_amt(C[i - 1], qty, H[i - 1], L[i - 1], qv[i - 1])
@@ -631,7 +668,8 @@ def run(
                     fill = px * (1.0 + es) if side > 0 else px * (1.0 - es)
                     fee = qadd * fill * taker
                     iso_add = qadd * fill / lev
-                    if wallet - isolated > iso_add + fee:
+                    posted = isolated if isolated > 0.0 else 0.0
+                    if wallet - posted > iso_add + fee:
                         wallet -= fee
                         entry = (entry * qty + fill * qadd) / (qty + qadd)
                         qty += qadd
@@ -660,6 +698,207 @@ def run(
             min_i = i
         if eq_out.shape[0] == n:
             eq_out[i] = cny_now
-    eq = wallet + ((C[-1] - entry) * qty * side if side != 0 else 0.0)
-    end = eq * fx[-1] * (1.0 - fx_fee)
-    return end, min_ratio, nL, nS, nStop, min_i
+    state[0] = wallet
+    state[1] = side
+    state[2] = qty
+    state[3] = entry
+    state[4] = isolated
+    state[5] = stop_px
+    state[6] = extreme
+    state[7] = units
+    state[8] = last_add
+    state[9] = cool
+    state[10] = peak
+    state[11] = peak_c
+    state[12] = min_ratio
+    state[13] = nL
+    state[14] = nS
+    state[15] = nStop
+    state[16] = min_i
+    state[17] = losses
+    state[18] = scale_hold
+    last = i1 - 1
+    eq = wallet + ((C[last] - entry) * qty * side if side != 0 else 0.0)
+    end = eq * fx[last] * (1.0 - fx_fee)
+    return end
+
+
+@njit(cache=True)
+def run(
+    O,
+    H,
+    L,
+    C,
+    fund,
+    fx,
+    hh,
+    ll,
+    xh,
+    xl,
+    stop,
+    trail,
+    add_step,
+    max_units,
+    risk,
+    dd_flat,
+    iso_frac,
+    long_only,
+    cool_h,
+    flatten_at,
+    ratchet_gain,
+    ratchet_trail,
+    trail_stride,
+    streak_cut,
+    buf,
+    adverse,
+    post_scale,
+    heat,
+    step,
+    gate,
+    qv,
+    eq_out,
+    trace,
+    peak_out,
+):
+    """streak_cut: after this many losing exits, risk halves until a win.
+    buf: close must clear the channel by this fraction.
+    adverse: 1 marks OHLC path extremes, 0 marks closes only.
+    post_scale: risk multiplier until a new equity peak after an equity flatten.
+    """
+    n = len(C)
+    state = np.empty(STATE_N, dtype=np.float64)
+    _reset(state, fx[0])
+    end = _loop(
+        state,
+        0,
+        n,
+        O,
+        H,
+        L,
+        C,
+        fund,
+        fx,
+        hh,
+        ll,
+        xh,
+        xl,
+        stop,
+        trail,
+        add_step,
+        max_units,
+        risk,
+        dd_flat,
+        iso_frac,
+        long_only,
+        cool_h,
+        flatten_at,
+        ratchet_gain,
+        ratchet_trail,
+        trail_stride,
+        streak_cut,
+        buf,
+        adverse,
+        post_scale,
+        heat,
+        step,
+        gate,
+        qv,
+        eq_out,
+        trace,
+        peak_out,
+    )
+    return end, state[12], int(state[13]), int(state[14]), int(state[15]), int(state[16])
+
+
+def initial_state(fx0: float) -> np.ndarray:
+    """Flat book, before any minute has been replayed."""
+    state = np.empty(STATE_N, dtype=np.float64)
+    _reset(state, fx0)
+    return state
+
+
+def resume(
+    state: np.ndarray,
+    i0: int,
+    i1: int,
+    O: np.ndarray,
+    H: np.ndarray,
+    L: np.ndarray,
+    C: np.ndarray,
+    fund: np.ndarray,
+    fx: np.ndarray,
+    hh: np.ndarray,
+    ll: np.ndarray,
+    xh: np.ndarray,
+    xl: np.ndarray,
+    stop: float,
+    trail: float,
+    add_step: float,
+    max_units: int,
+    risk: float,
+    dd_flat: float,
+    iso_frac: float,
+    long_only: int,
+    cool_h: int,
+    flatten_at: float,
+    ratchet_gain: float,
+    ratchet_trail: float,
+    trail_stride: int,
+    streak_cut: int,
+    buf: float,
+    adverse: int,
+    post_scale: float,
+    heat: float,
+    step: float,
+    gate: np.ndarray,
+    qv: np.ndarray,
+    eq_out: np.ndarray,
+    trace: np.ndarray,
+    peak_out: np.ndarray,
+) -> tuple[float, float, int, int, int, int]:
+    """Replay ``[i0, i1)`` on an existing book.
+
+    Index 0 rebuilds the starting wallet. A later slice keeps ``state``.
+    """
+    if i0 == 0:
+        _reset(state, float(fx[0]))
+    end = _loop(
+        state,
+        i0,
+        i1,
+        O,
+        H,
+        L,
+        C,
+        fund,
+        fx,
+        hh,
+        ll,
+        xh,
+        xl,
+        stop,
+        trail,
+        add_step,
+        max_units,
+        risk,
+        dd_flat,
+        iso_frac,
+        long_only,
+        cool_h,
+        flatten_at,
+        ratchet_gain,
+        ratchet_trail,
+        trail_stride,
+        streak_cut,
+        buf,
+        adverse,
+        post_scale,
+        heat,
+        step,
+        gate,
+        qv,
+        eq_out,
+        trace,
+        peak_out,
+    )
+    return float(end), float(state[12]), int(state[13]), int(state[14]), int(state[15]), int(state[16])

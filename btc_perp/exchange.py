@@ -10,7 +10,13 @@ from dataclasses import dataclass, field
 
 
 def _step(qty: float) -> float:
-    return float(int(qty * 1000.0 + 1e-9) / 1000.0)
+    # Lot size is 0.001. Truncate toward zero, but a value that is already on a
+    # lot can be a hair under that lot in float (0.008 * 1000 is not 8).
+    scaled = qty * 1000.0
+    nearest = round(scaled)
+    if abs(scaled - nearest) < 1e-4:
+        scaled = nearest
+    return float(int(scaled) / 1000.0)
 
 
 @dataclass
@@ -54,9 +60,13 @@ class SimExchange:
         return AccountView(self.connected, known, self.position_qty, tuple(self.protections), exposed)
 
     def protection_covers_position(self) -> bool:
+        # A remainder that has not printed yet is an open order. The book is
+        # not covered, long or flat, until that print arrives.
+        if self.late:
+            return False
         net = abs(self.position_qty)
         if net < 0.001:
-            return not self.protections and not self.late
+            return not self.protections
         stops = [p for p in self.protections if p.kind == "stop"]
         takes = [p for p in self.protections if p.kind == "take_profit"]
         if len(stops) != 1 or len(takes) != 1:

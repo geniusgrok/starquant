@@ -1,7 +1,8 @@
 """Replay the research measurement, or refuse to trade.
 
-``--measure`` runs the 1-minute account replay. Any other invocation prints a
-refusal and exits. It does not start ``Session`` and it does not send orders.
+``--measure`` walks the sample as successive manual sessions and prints the
+result. Any other invocation prints a refusal and exits. It does not start a
+session and it does not send orders.
 """
 
 from __future__ import annotations
@@ -28,9 +29,10 @@ def main() -> None:
     if venue.allowed():
         raise RuntimeError("live path is not wired; the gate should be closed")
     print(
-        "禁止实盘。这是私人研究，不会下单，也不会启动会话。"
-        f"配置里的轮询是每 {cfg.poll_seconds} 秒一次、最长 {cfg.session_seconds} 秒，本入口不用它。"
-        "重放全样本请运行 python -m btc_perp --measure。"
+        "禁止实盘。这是私人研究，不会下单，这个入口也不会启动会话。"
+        f"全样本测量会按配置一段一段手动启动会话，每段 {cfg.session_seconds} 秒、"
+        f"每 {cfg.poll_seconds} 秒看一次，每段结束就返回。"
+        "重放请运行 python -m btc_perp --measure。"
     )
 
 
