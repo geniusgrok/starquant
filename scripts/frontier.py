@@ -240,10 +240,17 @@ def _slip_amt(px, qty, hi, lo, qv_i):
 
 @njit(cache=True)
 def _realize(wallet, raw, pay, isolated):
-    """Apply price PnL and funding. The position cannot lose more than its margin."""
+    """Apply price PnL and funding. The position cannot lose more than its margin.
+
+    Posted margin is the isolated cash still on the position. Once funding has
+    reduced that below zero, a later price loss is already outside the posted
+    margin: it is not taken again, and the negative margin is not paid back
+    as a credit.
+    """
     delta = raw - pay
-    if delta < -isolated:
-        delta = -isolated
+    cap = isolated if isolated > 0.0 else 0.0
+    if delta < -cap:
+        delta = -cap
     return wallet + delta, delta
 
 
@@ -661,7 +668,8 @@ def _loop(
                     fill = px * (1.0 + es) if side > 0 else px * (1.0 - es)
                     fee = qadd * fill * taker
                     iso_add = qadd * fill / lev
-                    if wallet - isolated > iso_add + fee:
+                    posted = isolated if isolated > 0.0 else 0.0
+                    if wallet - posted > iso_add + fee:
                         wallet -= fee
                         entry = (entry * qty + fill * qadd) / (qty + qadd)
                         qty += qadd
