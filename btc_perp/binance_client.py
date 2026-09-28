@@ -185,6 +185,34 @@ class UsdMClient:
     def query_algo(self, client_id: str) -> dict[str, object]:
         return self._signed("/fapi/v1/algoOrder", {"clientAlgoId": client_id}, "GET")[1]
 
+    def create_listen_key(self) -> str:
+        parsed = self._listen("POST")
+        key = parsed.get("listenKey")
+        if not isinstance(key, str) or not key:
+            raise RuntimeError("listenKey 缺失")
+        return key
+
+    def keepalive_listen_key(self) -> None:
+        self._listen("PUT")
+
+    def close_listen_key(self) -> None:
+        self._listen("DELETE")
+
+    def _listen(self, method: str) -> dict[str, object]:
+        url = f"{self.base_url}/fapi/v1/listenKey"
+        try:
+            status, body = self.transport.request(method, url, {"X-MBX-APIKEY": self.api_key}, self.timeout)
+        except (TimeoutError, OSError) as exc:
+            raise RuntimeError(redact(str(exc), (self.api_key, self.api_secret))) from exc
+        text = redact(body.decode("utf-8", "replace"), (self.api_key, self.api_secret))
+        try:
+            parsed = json.loads(text) if text else {}
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("listenKey 响应无法解析") from exc
+        if not isinstance(parsed, dict) or status >= 400 or parsed.get("code") not in (None, 0):
+            raise RuntimeError("listenKey 请求失败")
+        return parsed
+
     def klines(self, interval: str, limit: int) -> list[object]:
         payload = self._public("/fapi/v1/klines", {"symbol": "BTCUSDT", "interval": interval, "limit": str(limit)})
         raw = payload.get("raw")

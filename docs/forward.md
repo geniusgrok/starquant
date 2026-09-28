@@ -77,13 +77,13 @@ python -m btc_perp takeover --environment demo --once
 
 替换止损时，先确认新止损已经挂上，再撤旧止损。保护被拒、过期、触发后执行失败或数量盖不住实仓时，停止加仓。实仓仍能读到时，补保护；裸露超过允许时间后只减仓退出。Demo 在限额文件没写裸露时间时，默认 120 秒。账户或网络状态未知时不反向开仓。
 
-用户流事件只当提示。断线、过期或漏事件之后，用 REST 快照对账。仓位不以内存里的两张单为准。
+`run`、`stop` 和 `flatten` 会申请 listenKey，并连接 `wss://<官方主机>/private/ws?listenKey=...&events=...`。这是 2026-04-23 之后的私有用户流路径，不再使用已经撤掉的 `/ws/<listenKey>`。Demo 主机是 `demo-fstream.binance.com`，不会改去 `fstream.binancefuture.com`。`ALGO_UPDATE` 读 `o.caid` 和状态 `X`，同时接受 `ao` 与 `ALGO_ORDER_UPDATE`。这些事件只写入流水并触发下一轮 REST 对账，不直接改仓位。断线、过期或握手失败时，本轮只信 REST 快照，并在 30 秒后再尝试连接。listenKey 不进日志。
 
 ## 限额
 
 `config/limits.yaml` 里的 `capital_usdt`、`max_notional_usdt`、`max_daily_loss_usdt`、`max_unprotected_seconds` 现在都是空的。空着时，生产入口拒绝增仓。研究里的 4.8% 单位风险、最多三档、约 3.75 倍名义，以及强平前 0.1% 的止损间距，不是生产安全保证。
 
-生产下单还要环境变量 `STARQUANT_ALLOW_PROD_ORDERS=yes`，并且命令行 `--max-notional-usdt` 为正、且不超过文件里的名义上限。本轮实施和验证不发送真实资金订单。
+生产下单还要环境变量 `STARQUANT_ALLOW_PROD_ORDERS=yes`，并且命令行 `--max-notional-usdt` 为正、且不超过文件里的名义上限。生产在发单前还会读 `https://api.binance.com/sapi/v1/account/apiRestrictions`。密钥开通了提币、内部划转或万向划转，或者这次读取失败，就拒绝下单。Demo 密钥不拿去打这个现货接口。本轮实施和验证不发送真实资金订单。
 
 ## 记录
 

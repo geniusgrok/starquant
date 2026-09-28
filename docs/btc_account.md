@@ -1,6 +1,6 @@
 # BTCUSDT 账户（私人研究）
 
-本文件说明模型、数据、账本和测量做不到的事。使用范围以仓库根目录的 [`LICENSE`](../LICENSE) 为准：只有版权人 geniusgrok 本人可以把它用于私人研究，禁止实盘，禁止他人复制或二次创作。当前结果和压力表在 [`PROJECT_STATE.md`](../PROJECT_STATE.md)，轮次在 [`measure_protocol.md`](measure_protocol.md)。
+本文件说明模型、数据、账本和测量做不到的事。使用范围以仓库根目录的 [`LICENSE`](../LICENSE) 为准：只有版权人本人可以先跑自己的 Demo，再在写明的上限内做小资金验证。第三方没有复制、修改、二次创作或交易的权利。生产增仓默认关闭。当前结果和压力表在 [`PROJECT_STATE.md`](../PROJECT_STATE.md)，轮次在 [`measure_protocol.md`](measure_protocol.md)。
 
 ## 运行
 

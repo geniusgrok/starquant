@@ -28,7 +28,7 @@
 
 ## 未完成
 
-- 真实 Demo 的开仓、保护触发、故障演练和连续 30 个自然日还没有做。本环境访问 `demo-fapi.binance.com` 和 `fapi.binance.com` 返回地区限制，也没有密钥。流水格式在 `state/<环境>/journal.jsonl`，文件不入库。结论是 DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO，见 `docs/forward_audit.md`。
+- 真实 Demo 的开仓、保护触发、故障演练和连续 30 个自然日还没有做。本环境访问 `demo-fapi.binance.com` 和 `fapi.binance.com` 返回地区限制，也没有密钥。用户流客户端和密钥权限检查已经在本地套接字上验证，没有远端回读。流水格式在 `state/<环境>/journal.jsonl`，文件不入库。结论是 DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO，见 `docs/forward_audit.md`。
 - 没有 5 秒成交。分钟内部用四段开高低收。前向进程停着的时候，通道和一半峰值平仓不会运行，只留下交易所上的止损和灾备止盈。
 - 150% 年化没有达到。因果对照没有用来改参数或改统计口径。
 - 小资金实盘门槛没有成立。`config/limits.yaml` 仍是空的。
