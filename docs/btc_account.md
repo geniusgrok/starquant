@@ -34,8 +34,8 @@ PYTHONPATH=. python -m btc_perp --measure
 
 这些行为决定测量结果。改 YAML 不会改掉前三项。
 
-1. 手续费、滑点底、冲击系数、换汇费和 20 倍杠杆写死在 `scripts/frontier.py` 的 `run` 里。YAML 里的同名字段目前与它们相同，回放不读取 YAML 的这几项。
-2. 收盘权益低于收盘峰值的 82% 时，新开仓的初始风险减半。加仓不减半。配置里没有这个参数。删掉这一行后，同一引擎的期末是 121,473 元，年化 45.0%，最低权益/峰值 0.476。
+1. 手续费、滑点底、冲击系数、换汇费和 20 倍杠杆定义在 `btc_perp/costs.py`。回放读取这份常量。YAML 里的同名字段必须与它一致，`tests/test_btc_account.py` 会核对。
+2. 收盘权益低于收盘峰值的 82% 时，新开仓的初始风险减半。加仓不减半。配置里没有这个参数，规则在 `btc_perp.costs.new_entry_scale`。删掉它之后，同一引擎的期末是 121,473 元，年化 45.0%，最低权益/峰值 0.476。
 3. `dd_flat: 0.47` 只在收盘权益/峰值降到 0.53 或更低时阻止新开仓。已经持有的仓位继续留着，代码不会在一半回撤处强平。
 4. `take_profit_multiple` 会读进配置，测量和会话都不用它。出场是移动止损和通道。
 5. 入场和加仓只在每小时第 59 分钟。通道出场在任意一分钟的收盘都可以发生。
@@ -52,3 +52,7 @@ PYTHONPATH=. python -m btc_perp --measure
 ## 实盘
 
 禁止。`btc_perp.exchange.BinanceExchange.allowed` 固定返回假，`submit_market` 固定拒绝。`config/btc_account.yaml` 里的 `live_orders` 不打开任何下单路径。
+
+## CI
+
+推送和 pull request 走 `.github/workflows/ci.yml` 里原有的四道门：格式、lint、类型、离线测试。账户账本的合成用例在 `tests/test_btc_account.py`，不依赖那份 1 分钟行情。全样本重放仍只在本地有 `data/btcusdt_1m.npz` 时运行。

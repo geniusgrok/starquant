@@ -6,23 +6,24 @@ The trail amends when a new extreme prints, and the stop can fill on the next
 print. Entries and pyramid adds are read on the completed hour (minute 59).
 Channel exits are checked on every minute close.
 
-Costs, the 20x margin divisor, and the 82% entry-size cut live in
-``scripts.frontier.run``. See ``docs/btc_account.md``.
+Fee rates and the 82% entry-size cut live in ``btc_perp.costs``. The kernel
+is ``scripts.frontier.run``. See ``docs/btc_account.md``.
 """
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import numpy as np
 
-from btc_perp.config import ROOT, load_config
+from btc_perp.config import ROOT, AccountConfig, load_config
 
 YEARS = 2454 / 365.25
 TARGET_CNY = 10000.0 * (2.0**YEARS)
 
 
-def _prepare(cfg):
+def _prepare(cfg: AccountConfig) -> tuple[Any, ...]:
     from scripts.frontier import _channels, load_hourly, run
 
     _open_h, h_h, l_h, c_h, fund_h, fx_h, days_h = load_hourly()

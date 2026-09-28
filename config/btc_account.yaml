@@ -1,7 +1,7 @@
 # One BTCUSDT USDT-M research account. Numbers are the measured configuration.
 # Live trading is prohibited. live_orders is ignored; the adapter always refuses.
 # taker, slip_base, impact_y, fx_fee, and leverage are recorded here. The replay
-# uses the matching constants in scripts/frontier.py and does not read these keys.
+# reads btc_perp/costs.py. tests/test_btc_account.py fails if this copy drifts.
 # take_profit_multiple is unused. The exit that binds is the trailing stop.
 symbol: BTCUSDT
 margin_mode: isolated

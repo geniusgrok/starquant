@@ -19,6 +19,8 @@ from pathlib import Path
 import numpy as np
 from numba import njit
 
+from btc_perp.costs import ENTRY_SCALE, ENTRY_SCALE_BELOW, FX_FEE, IMPACT_Y, LEVERAGE, SLIP_BASE, TAKER
+
 
 def rolling_max(a: np.ndarray, w: int) -> np.ndarray:
     out = np.empty_like(a)
@@ -119,7 +121,7 @@ def _slip_amt(px, qty, hi, lo, qv_i):
     if rng < 0.0:
         rng = 0.0
     denom = qv_i if qv_i > 1.0 else 1.0
-    return 0.0001 + 0.5 * rng * np.sqrt((qty * px) / denom)
+    return SLIP_BASE + IMPACT_Y * rng * np.sqrt((qty * px) / denom)
 
 
 @njit(cache=True)
@@ -184,12 +186,11 @@ def run(
     post_scale: risk multiplier until a new equity peak after an equity flatten.
     """
     n = len(C)
-    # Measurement constants. config/btc_account.yaml repeats them today;
-    # editing the YAML does not change this replay.
-    taker = 0.0004
-    slip_b = 0.0001
-    fx_fee = 0.0035
-    lev = 20.0
+    # Fee inputs come from btc_perp.costs. The YAML copy is checked by a test.
+    taker = TAKER
+    slip_b = SLIP_BASE
+    fx_fee = FX_FEE
+    lev = LEVERAGE
     wallet = 10000.0 / (fx[0] * (1.0 + fx_fee))
     side = 0
     qty = 0.0
@@ -213,7 +214,7 @@ def run(
         if qv.shape[0] == n and qty > 0.0:
             slip_b = _slip_amt(C[i], qty, H[i], L[i], qv[i])
         else:
-            slip_b = 0.0001
+            slip_b = SLIP_BASE
         if side != 0 and fund[i] != 0.0:
             pay = qty * O[i] * fund[i] * side
             wallet -= pay
@@ -447,10 +448,10 @@ def run(
         if side == 0 and want != 0:
             px = C[i]
             dist = px * stop
-            # Close-to-close equity below 82% of the close peak halves a new
-            # entry. Adds ignore this factor. It is not a config field, and the
-            # published pass depends on it.
-            scale = 0.5 if ratio_c < 0.82 else 1.0
+            # Same rule as btc_perp.costs.new_entry_scale. Inlined because this
+            # loop is compiled. Adds below do not apply it. The published pass
+            # depends on it; the rule is not a config field.
+            scale = ENTRY_SCALE if ratio_c < ENTRY_SCALE_BELOW else 1.0
             scale *= rscale
             q = np.floor(eq * risk * scale / dist * 1000.0) / 1000.0
             capn = eq * iso_frac * lev
@@ -461,7 +462,7 @@ def run(
             if q * px > capn:
                 q = np.floor(capn / px * 1000.0) / 1000.0
             if q >= 0.001 and q * px >= 100.0:
-                es = _slip_amt(px, q, H[i], L[i], qv[i]) if qv.shape[0] == n else 0.0001
+                es = _slip_amt(px, q, H[i], L[i], qv[i]) if qv.shape[0] == n else SLIP_BASE
                 fill = px * (1.0 + es) if want > 0 else px * (1.0 - es)
                 fee = q * fill * taker
                 iso = q * fill / lev

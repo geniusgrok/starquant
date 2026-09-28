@@ -1,8 +1,7 @@
 """Exchange surface for one one-way isolated BTCUSDT account.
 
 The simulator is the stand-in used for fill, protection, disconnect, and late-fill
-checks. The Binance adapter does not send orders: live trading stays closed until
-the full-sample measurement and these checks have both passed, and a key exists.
+checks. The Binance adapter never sends orders: live trading is prohibited.
 """
 
 from __future__ import annotations

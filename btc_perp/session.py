@@ -8,6 +8,7 @@ sends a live order.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from btc_perp.exchange import AccountView, SimExchange
@@ -51,7 +52,7 @@ class Session:
         self.halted = False
         self.polls = 0
 
-    def run(self, decide) -> AccountView:
+    def run(self, decide: Callable[[AccountView], Intent | None]) -> AccountView:
         deadline = self.clock.now() + self.duration_s
         while self.clock.now() < deadline:
             self.polls += 1
@@ -60,7 +61,7 @@ class Session:
         # Protections are exchange orders. Leaving the process does not cancel them.
         return self.exchange.view()
 
-    def _poll(self, decide) -> None:
+    def _poll(self, decide: Callable[[AccountView], Intent | None]) -> None:
         if not self.exchange.healthy():
             self.halted = True
             return
