@@ -1,5 +1,8 @@
-# One BTCUSDT USDT-M account. Numbers are the measured configuration.
-# Live orders stay off until the full-sample replay and the execution checks both pass.
+# One BTCUSDT USDT-M research account. Numbers are the measured configuration.
+# Live trading is prohibited. live_orders is ignored; the adapter always refuses.
+# taker, slip_base, impact_y, fx_fee, and leverage are recorded here. The replay
+# reads btc_perp/costs.py. tests/test_btc_account.py fails if this copy drifts.
+# take_profit_multiple is unused. The exit that binds is the trailing stop.
 symbol: BTCUSDT
 margin_mode: isolated
 position_mode: one_way
@@ -16,6 +19,10 @@ trail: 0.16
 add_step: 0.05
 max_units: 3
 risk: 0.048
+# Blocks a new entry when close-to-close equity/peak is at or below 1 - dd_flat.
+# An open position is left in place. A separate cut in scripts/frontier.py halves
+# a new entry once that ratio is below 0.82. Adds are not halved. Neither rule is
+# a hard flatten at a 50% drawdown.
 dd_flat: 0.47
 iso_frac: 0.28
 cooldown_hours: 6

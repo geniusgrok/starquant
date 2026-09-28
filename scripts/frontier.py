@@ -1,7 +1,11 @@
-"""Frontier search: turtle pyramid with path-ordered equity marks.
+"""Research replay: turtle pyramid with path-ordered equity marks.
 
-Stops are live. Peak and trough update in OHLC order, so a wick that does not
-trade through the stop still counts as floating drawdown.
+Private research only. See LICENSE. This module does not send orders.
+
+Stops are live on the assumed path inside each bar. Peak and trough update in
+that order, so a wick that does not trade through the stop still counts as
+floating drawdown. The published account measurement calls ``run`` from
+``btc_perp.measure``.
 """
 
 from __future__ import annotations
@@ -14,6 +18,8 @@ from pathlib import Path
 
 import numpy as np
 from numba import njit
+
+from btc_perp.costs import ENTRY_SCALE, ENTRY_SCALE_BELOW, FX_FEE, IMPACT_Y, LEVERAGE, SLIP_BASE, TAKER
 
 
 def rolling_max(a: np.ndarray, w: int) -> np.ndarray:
@@ -54,6 +60,7 @@ def _channels(h, l, entry_w, exit_w):
 
 
 def load_hourly():
+    # Absolute path: the measurement machine keeps the tape at /workspace/data.
     d = np.load("/workspace/data/btcusdt_1m.npz")
     ts, o, h, l, c = d["ts"], d["o"], d["h"], d["l"], d["c"]
     n = len(c) // 60
@@ -114,7 +121,7 @@ def _slip_amt(px, qty, hi, lo, qv_i):
     if rng < 0.0:
         rng = 0.0
     denom = qv_i if qv_i > 1.0 else 1.0
-    return 0.0001 + 0.5 * rng * np.sqrt((qty * px) / denom)
+    return SLIP_BASE + IMPACT_Y * rng * np.sqrt((qty * px) / denom)
 
 
 @njit(cache=True)
@@ -179,10 +186,11 @@ def run(
     post_scale: risk multiplier until a new equity peak after an equity flatten.
     """
     n = len(C)
-    taker = 0.0004
-    slip_b = 0.0001
-    fx_fee = 0.0035
-    lev = 20.0
+    # Fee inputs come from btc_perp.costs. The YAML copy is checked by a test.
+    taker = TAKER
+    slip_b = SLIP_BASE
+    fx_fee = FX_FEE
+    lev = LEVERAGE
     wallet = 10000.0 / (fx[0] * (1.0 + fx_fee))
     side = 0
     qty = 0.0
@@ -206,7 +214,7 @@ def run(
         if qv.shape[0] == n and qty > 0.0:
             slip_b = _slip_amt(C[i], qty, H[i], L[i], qv[i])
         else:
-            slip_b = 0.0001
+            slip_b = SLIP_BASE
         if side != 0 and fund[i] != 0.0:
             pay = qty * O[i] * fund[i] * side
             wallet -= pay
@@ -225,8 +233,9 @@ def run(
                 losses += 1
                 cool = i + cool_h
         if side != 0 and adverse == 1:
-            # 5-second sessions amend the trail as soon as a new extreme prints,
-            # then the rest of the bar can fill that stop. Bullish bar: O-L-H-C.
+            # No 5-second tape exists. A bullish bar is ordered open, low, high,
+            # close, so the low is tested before a new high tightens the stop.
+            # A bearish bar is open, high, low, close.
             bull = C[i] >= O[i]
             hit = False
             fill = 0.0
@@ -338,6 +347,7 @@ def run(
                         trailed = extreme * (1.0 + t_use)
                         if trailed < stop_px:
                             stop_px = trailed
+        # Channel exits are not limited to minute 59. Entries and adds are.
         if side > 0 and C[i] < xl[i]:
             fill = C[i] * (1.0 - slip_b)
             fee = qty * fill * taker
@@ -420,6 +430,7 @@ def run(
                 min_ratio = cny / peak
             if eq_out.shape[0] == n:
                 eq_out[i] = cny
+        # dd_flat blocks a new entry. It does not flatten the open position.
         if i < cool or ratio_c <= 1.0 - dd_flat:
             continue
         if gate.shape[0] == n and gate[i] == 0:
@@ -437,7 +448,10 @@ def run(
         if side == 0 and want != 0:
             px = C[i]
             dist = px * stop
-            scale = 0.5 if ratio_c < 0.82 else 1.0
+            # Same rule as btc_perp.costs.new_entry_scale. Inlined because this
+            # loop is compiled. Adds below do not apply it. The published pass
+            # depends on it; the rule is not a config field.
+            scale = ENTRY_SCALE if ratio_c < ENTRY_SCALE_BELOW else 1.0
             scale *= rscale
             q = np.floor(eq * risk * scale / dist * 1000.0) / 1000.0
             capn = eq * iso_frac * lev
@@ -448,7 +462,7 @@ def run(
             if q * px > capn:
                 q = np.floor(capn / px * 1000.0) / 1000.0
             if q >= 0.001 and q * px >= 100.0:
-                es = _slip_amt(px, q, H[i], L[i], qv[i]) if qv.shape[0] == n else 0.0001
+                es = _slip_amt(px, q, H[i], L[i], qv[i]) if qv.shape[0] == n else SLIP_BASE
                 fill = px * (1.0 + es) if want > 0 else px * (1.0 - es)
                 fee = q * fill * taker
                 iso = q * fill / lev

@@ -1,8 +1,7 @@
 """Exchange surface for one one-way isolated BTCUSDT account.
 
 The simulator is the stand-in used for fill, protection, disconnect, and late-fill
-checks. The Binance adapter does not send orders: live trading stays closed until
-the full-sample measurement and these checks have both passed, and a key exists.
+checks. The Binance adapter never sends orders: live trading is prohibited.
 """
 
 from __future__ import annotations
@@ -124,7 +123,12 @@ class SimExchange:
 
 
 class BinanceExchange:
-    """No live orders from this process. The gate is the default, not a flag to flip."""
+    """Research adapter. It never sends an order.
+
+    The constructor still accepts the old gate flags so existing call sites keep
+    working. ``allowed`` does not consult them: live trading is prohibited by
+    LICENSE, not deferred until a later check.
+    """
 
     def __init__(self, live_orders: bool, measurement_passed: bool, checks_passed: bool, api_key: str | None):
         self.live_orders = live_orders
@@ -133,10 +137,7 @@ class BinanceExchange:
         self.api_key = api_key
 
     def allowed(self) -> bool:
-        return bool(self.live_orders and self.measurement_passed and self.checks_passed and self.api_key)
+        return False
 
     def submit_market(self, side: int, qty: float, stop: float, take_profit: float) -> float:
-        raise RuntimeError(
-            "live orders are disabled until the 2020-01-01..2026-09-20 measurement "
-            "and the fill, protection, disconnect, and late-fill checks have both passed"
-        )
+        raise RuntimeError("live orders are disabled: this project is private research and must not send live orders")

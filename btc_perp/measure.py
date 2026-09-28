@@ -1,24 +1,29 @@
-"""Full-sample measurement of the one account.
+"""Full-sample research measurement of the one account.
 
-The path inside each minute is the 5-second session schedule the tape supports:
-bullish minutes go open, low, high, close; bearish minutes go open, high, low, close.
-The trail amends when a new extreme prints, and the stop is live on the next print.
-Signals and pyramid adds are read only on the completed hour.
+Each minute is four OHLC prints, not a 5-second tape. A bullish minute is
+ordered open, low, high, close; a bearish minute is open, high, low, close.
+The trail amends when a new extreme prints, and the stop can fill on the next
+print. Entries and pyramid adds are read on the completed hour (minute 59).
+Channel exits are checked on every minute close.
+
+Fee rates and the 82% entry-size cut live in ``btc_perp.costs``. The kernel
+is ``scripts.frontier.run``. See ``docs/btc_account.md``.
 """
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import numpy as np
 
-from btc_perp.config import ROOT, load_config
+from btc_perp.config import ROOT, AccountConfig, load_config
 
 YEARS = 2454 / 365.25
 TARGET_CNY = 10000.0 * (2.0**YEARS)
 
 
-def _prepare(cfg):
+def _prepare(cfg: AccountConfig) -> tuple[Any, ...]:
     from scripts.frontier import _channels, load_hourly, run
 
     _open_h, h_h, l_h, c_h, fund_h, fx_h, days_h = load_hourly()

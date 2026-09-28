@@ -138,6 +138,8 @@ jobs:
 
       # 不要给这一步加 `--cov`：那会改变所有人（包括本地和其它并行工作）跑测试时的行为。
       # 覆盖率是按需跑的，命令写在 `pyproject.toml` 的 dev extras 注释里。
+      # 账户账本的合成测试（tests/test_btc_account.py）在这一步里跑，不需要 data/ 里的行情。
+      # 全样本重放仍然只在本地有磁带时跑。numba 在 requirements.lock 里，供这些合成测试编译内核。
       - name: Tests (offline)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pytest -m "not network"

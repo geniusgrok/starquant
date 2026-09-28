@@ -1,4 +1,11 @@
-"""The one config for the one account."""
+"""The one config for the one research account.
+
+``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
+``dd_flat``, heat, ratchet, cooldown, and whether both sides are allowed).
+Fee rates live in ``btc_perp.costs`` and are copied into the YAML. A test
+rejects a drift between the two. ``take_profit_multiple`` is unused.
+``live_orders`` does not open a trading path.
+"""
 
 from __future__ import annotations
 

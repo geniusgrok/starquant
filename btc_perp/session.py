@@ -1,7 +1,14 @@
-"""One manually started session. It polls, then it exits. Nothing keeps running."""
+"""One manually started research session. It polls, then it exits.
+
+``python -m btc_perp`` does not construct this object, and ``--measure`` does
+not call it. The measurement is ``scripts.frontier.run``. Protections placed
+here live on the in-process ``SimExchange`` object. Nothing in this module
+sends a live order.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from btc_perp.exchange import AccountView, SimExchange
@@ -45,7 +52,7 @@ class Session:
         self.halted = False
         self.polls = 0
 
-    def run(self, decide) -> AccountView:
+    def run(self, decide: Callable[[AccountView], Intent | None]) -> AccountView:
         deadline = self.clock.now() + self.duration_s
         while self.clock.now() < deadline:
             self.polls += 1
@@ -54,7 +61,7 @@ class Session:
         # Protections are exchange orders. Leaving the process does not cancel them.
         return self.exchange.view()
 
-    def _poll(self, decide) -> None:
+    def _poll(self, decide: Callable[[AccountView], Intent | None]) -> None:
         if not self.exchange.healthy():
             self.halted = True
             return
