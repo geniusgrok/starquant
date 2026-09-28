@@ -1,4 +1,4 @@
-# StarQuant — 密钥扫描配置
+# 密钥扫描配置
 #
 # 这个文件存在的理由，写在最前面，免得下次有人把它当成「把检查关小一点」的开关：
 #
@@ -21,7 +21,7 @@
 #   2. **放行一个形态要写清楚它为什么不可能是密钥。**  没写理由的放行，下一个人无法判断该不该
 #      收回，于是它永远留着。
 
-title = "starquant secret scanning"
+title = "secret scanning"
 
 [extend]
 useDefault = true

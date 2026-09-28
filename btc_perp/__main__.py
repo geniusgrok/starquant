@@ -28,10 +28,9 @@ def main() -> None:
     if venue.allowed():
         raise RuntimeError("live path is not wired; the gate should be closed")
     print(
-        "Live orders are disabled. This project is private research and does not trade. "
-        f"A session object would poll every {cfg.poll_seconds}s for {cfg.session_seconds}s, "
-        "but this entry point does not start one. "
-        "Run `python -m btc_perp --measure` to replay 2020-01-01 through 2026-09-20."
+        "禁止实盘。这是私人研究，不会下单，也不会启动会话。"
+        f"配置里的轮询是每 {cfg.poll_seconds} 秒一次、最长 {cfg.session_seconds} 秒，本入口不用它。"
+        "重放全样本请运行 python -m btc_perp --measure。"
     )
 
 

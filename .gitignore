@@ -8,34 +8,13 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
-.hypothesis/
 .coverage
 coverage.xml
 build/
 dist/
 *.egg-info/
 
-# runtime state and daily live reports (never commit); research validation reports ARE committed as registry evidence
-.starquant/
-reports/daily/
-# `reports/weekly/` joined it 2026-09-16, found by running `starquant report weekly` during a repo review:
-# the command writes `<reports_dir>/weekly/<date>.{json,md}` (live_cmd.py) and NOTHING ignored it, so a
-# generated report sat in `git status` looking like an unfinished edit.  Same rule as the daily one and
-# for the same reason the rule below gives: the cost is not the noise, it is that a real stray file
-# stops being visible among them.
-reports/weekly/
-*.log
-
-# 凭据。2026-09-19 从两行扩到这一节，起因是发现仓库**从创建起就是公开的**。
-#
-# 这一节挡不住多少东西——它只认得出名字，一个叫 `config_local.py` 的文件里写着 key
-# 它一无所知。真正拦截的是 `.gitleaks.toml` 那套按**形态**扫描的规则（pre-commit hook
-# 与 CI 的 Secrets 门都用它）。这里列出来的价值在于：这些名字一旦出现在工作树里，
-# `git status` 里不该看见它们，于是也就不会有人顺手 `git add .` 把它们带进去。
-#
-# `env.sh` 特别点名：`deploy/run_live.sh` 读的就是这个文件名
-# （`~/Library/Application Support/starquant/env.sh`），那份在仓库之外，但有人把它复制
-# 一份到仓库里调试是完全可以想象的事。
+# credentials
 .env
 .env.*
 env.sh
@@ -55,34 +34,5 @@ credentials.*
 *_secret.*
 *_credentials.*
 
-# scratchpad scripts ARE committed (they reproduce adoption decisions); their outputs are not
-scratchpad/*.json
-# ...and that rule only ever matched the TOP LEVEL, so an output written into a subdirectory was
-# untracked-but-not-ignored and sat in every `git status` looking like someone's unfinished work.
-# Three of them did exactly that on 2026-09-14 (`da-report/`, `paper-state/`, `paper-state2/`) while
-# two sessions asked each other whose they were - the cost is not the noise, it is that a real stray
-# file stops being visible among them.  Scripts stay committed: what is ignored is directories.
-scratchpad/*/
-
-# OS
+*.log
 .DS_Store
-
-# agent worktrees and session scratch live outside this repo; scratchpad scripts stay committed.
-# vendored third-party MIT content is tracked on purpose (see `vendor/backtest-guard/` and LICENSE).
-
-# The autonomy switch is per-CHECKOUT runtime state, not code: `governance/ENABLED` says THIS working
-# copy may write the registry.  Committing it would turn autonomy on in every clone and every
-# worktree by checkout, which is the one decision the design insists a person takes deliberately.
-#
-# The SWITCH only.  The first version of this rule ignored the whole directory and took the
-# transaction chain and the lifecycle state with it - the chain is what proves no registry change
-# happened outside a transaction (`closed(log)`), and `probe_entries` is R7's lifetime count, which
-# nothing else can reconstruct.  A record that is not in the repo is a record one disk failure from
-# never having existed.  What happens when two machines write them is AR-17's question, not a reason
-# to keep them untracked on the one machine there is.
-governance/ENABLED
-
-# 候选前向板的日读数。派生物，不是证据：板文件（`reports/research/forward_board.jsonl`）加数据就能
-# 完全复现，而 launchd 每天写一份。`reports/research/` 里的报告是计过费的证据，要进版本库；这些不是。
-# 不 ignore 的代价很具体：一年 365 个未跟踪文件把 `git status` 淹掉，掩盖真正的新证据。
-reports/forward-board/

@@ -14,12 +14,14 @@ import datetime as dt
 import json
 import zipfile
 from collections import deque
-from pathlib import Path
 
 import numpy as np
 from numba import njit
 
+from btc_perp.config import ROOT
 from btc_perp.costs import ENTRY_SCALE, ENTRY_SCALE_BELOW, FX_FEE, IMPACT_Y, LEVERAGE, SLIP_BASE, TAKER
+
+DATA_DIR = ROOT / "data"
 
 
 def rolling_max(a: np.ndarray, w: int) -> np.ndarray:
@@ -60,8 +62,8 @@ def _channels(h, l, entry_w, exit_w):
 
 
 def load_hourly():
-    # Absolute path: the measurement machine keeps the tape at /workspace/data.
-    d = np.load("/workspace/data/btcusdt_1m.npz")
+    """Hourly bars, funding, and USD/CNY from ``data/`` next to the repository."""
+    d = np.load(DATA_DIR / "btcusdt_1m.npz")
     ts, o, h, l, c = d["ts"], d["o"], d["h"], d["l"], d["c"]
     n = len(c) // 60
     O = o[::60].astype(np.float64)
@@ -69,9 +71,9 @@ def load_hourly():
     L = l.reshape(n, 60).min(1).astype(np.float64)
     C = c[59::60].astype(np.float64)
     TS = ts[::60]
-    fund_z = np.load("/workspace/data/funding.npz")
+    fund_z = np.load(DATA_DIR / "funding.npz")
     pairs = [(int(t), float(r)) for t, r in zip(fund_z["ts"], fund_z["rate"])]
-    for f in sorted(Path("/workspace/data/premium").glob("*.zip")):
+    for f in sorted((DATA_DIR / "premium").glob("*.zip")):
         with zipfile.ZipFile(f) as z:
             with z.open(z.namelist()[0]) as fh:
                 for line in fh:
@@ -86,7 +88,7 @@ def load_hourly():
     for t, r in pairs:
         fmap[int(round(t / (8 * 3600 * 1000)) * 8 * 3600 * 1000)] = r
     fund = np.array([fmap.get(int(t), 0.0) for t in TS], np.float64)
-    raw = json.loads(Path("/workspace/data/usdcny_frankfurter.json").read_text())
+    raw = json.loads((DATA_DIR / "usdcny_frankfurter.json").read_text())
     rates = {dt.date.fromisoformat(k): float(v["CNY"]) for k, v in raw["rates"].items()}
     fx = np.empty(n)
     last = 6.9615
@@ -528,173 +530,3 @@ def run(
     eq = wallet + ((C[-1] - entry) * qty * side if side != 0 else 0.0)
     end = eq * fx[-1] * (1.0 - fx_fee)
     return end, min_ratio, nL, nS, nStop, min_i
-
-
-def report(tag, end, ratio, nL, nS, nStop, years, eq, days):
-    g = (end / 10000.0) ** (1 / years) - 1 if end > 0 else -1
-    print(f"{tag} cagr={g:.3f} end={end:,.0f} ratio={ratio:.3f} L={nL} S={nS} stops={nStop}")
-    if eq.shape[0] > 1:
-        # year-end equity
-        seen = {}
-        for i, d in enumerate(days):
-            seen[int(d) // 10000] = eq[i]
-        prev = 10000.0
-        for y in sorted(seen):
-            e = seen[y]
-            print(f"  {y} {e:,.0f} {(e / prev - 1):.1%}")
-            prev = e
-        imin = int(np.argmin(eq / np.maximum.accumulate(eq)))
-        print(f"  min_i={imin} day={int(days[imin])} eq={eq[imin]:,.0f} peak={np.maximum.accumulate(eq)[imin]:,.0f}")
-
-
-def main():
-    O, H, L, C, fund, fx, days = load_hourly()
-    years = 2454 / 365.25
-    print("hours", len(C), "fund_nz", int(np.count_nonzero(fund)))
-    cache = {}
-
-    def channels(entry_h, exit_h):
-        key = (entry_h, exit_h)
-        if key not in cache:
-            cache[key] = _channels(H, L, entry_h, exit_h)
-        return cache[key]
-
-    # Reproduce the known hourly neighborhood, close-only vs adverse.
-    base = dict(
-        stop=0.032,
-        trail=0.16,
-        add=0.05,
-        units=3,
-        risk=0.05,
-        dd=0.495,
-        iso=0.22,
-        long_only=0,
-        cool=6,
-        flat=0.0,
-        rg=0.45,
-        rt=0.08,
-        stride=1,
-        streak=0,
-        buf=0.0,
-        post=1.0,
-    )
-    for eh, xh in ((984, 192), (960, 192), (1008, 192), (720, 192)):
-        hh, ll, xh_a, xl = channels(eh, xh)
-        for adverse in (0, 1):
-            eq = np.empty(len(C))
-            end, ratio, nL, nS, nStop, min_i = run(
-                O,
-                H,
-                L,
-                C,
-                fund,
-                fx,
-                hh,
-                ll,
-                xh_a,
-                xl,
-                base["stop"],
-                base["trail"],
-                base["add"],
-                base["units"],
-                base["risk"],
-                base["dd"],
-                base["iso"],
-                base["long_only"],
-                base["cool"],
-                base["flat"],
-                base["rg"],
-                base["rt"],
-                base["stride"],
-                base["streak"],
-                base["buf"],
-                adverse,
-                base["post"],
-                0.0,
-                0.0,
-                np.empty(1, np.int8),
-                np.empty(1),
-                eq,
-                np.empty((1, 4)),
-                np.empty(1),
-            )
-            report(f"eh={eh} adv={adverse}", end, ratio, nL, nS, nStop, years, eq, days)
-            print(f"  path_min_i={min_i} day={int(days[min_i])}")
-
-    print("--- heat / trail / risk ---")
-    rows = []
-    grid = []
-    for eh in (960, 1008, 840, 720):
-        for risk in (0.045, 0.055, 0.07, 0.09):
-            for trail in (0.10, 0.12, 0.16):
-                for heat in (0.0, 0.28, 0.36, 0.45):
-                    for rg, rt in ((0.35, 0.06), (0.45, 0.08), (0.25, 0.05)):
-                        grid.append((eh, risk, trail, heat, rg, rt))
-    print("grid", len(grid))
-    for eh, risk, trail, heat, rg, rt in grid:
-        hh, ll, xh_a, xl = channels(eh, 192)
-        end, ratio, nL, nS, nStop, min_i = run(
-            O,
-            H,
-            L,
-            C,
-            fund,
-            fx,
-            hh,
-            ll,
-            xh_a,
-            xl,
-            0.032,
-            trail,
-            0.05,
-            3,
-            risk,
-            0.48,
-            0.25,
-            0,
-            6,
-            0.0,
-            rg,
-            rt,
-            1,
-            0,
-            0.0,
-            1,
-            1.0,
-            heat,
-            0.0,
-            np.empty(1, np.int8),
-            np.empty(1),
-            np.empty(1),
-            np.empty((1, 4)),
-            np.empty(1),
-        )
-        g = (end / 10000.0) ** (1 / years) - 1 if end > 0 else -1
-        rows.append((g, end, ratio, nL, nS, nStop, min_i, eh, risk, trail, heat, rg, rt))
-    rows.sort(key=lambda r: (r[2] > 0.5 and r[0] >= 1.0, r[0]), reverse=True)
-    valid = [r for r in rows if r[2] > 0.5 and r[0] >= 1.0]
-    print("valid", len(valid), "of", len(rows))
-    print("BEST ANY")
-    for r in sorted(rows, reverse=True)[:6]:
-        print(
-            f"cagr={r[0]:.3f} end={r[1]:,.0f} ratio={r[2]:.3f} L={r[3]} S={r[4]} "
-            f"day={int(days[r[6]])} eh={r[7]} risk={r[8]} trail={r[9]} heat={r[10]} rg={r[11]} rt={r[12]}"
-        )
-    print("BEST RATIO>0.5")
-    ok = [r for r in rows if r[2] > 0.5]
-    ok.sort(reverse=True)
-    for r in ok[:8]:
-        print(
-            f"cagr={r[0]:.3f} end={r[1]:,.0f} ratio={r[2]:.3f} L={r[3]} S={r[4]} "
-            f"day={int(days[r[6]])} eh={r[7]} risk={r[8]} trail={r[9]} heat={r[10]} rg={r[11]} rt={r[12]}"
-        )
-    print("VALID")
-    for r in valid[:8]:
-        print(
-            f"cagr={r[0]:.3f} end={r[1]:,.0f} ratio={r[2]:.3f} L={r[3]} S={r[4]} "
-            f"day={int(days[r[6]])} eh={r[7]} risk={r[8]} trail={r[9]} heat={r[10]} rg={r[11]} rt={r[12]}"
-        )
-
-
-if __name__ == "__main__":
-    main()

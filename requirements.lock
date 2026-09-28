@@ -1,115 +1,30 @@
-# ==============================================================================
-# StarQuant — 依赖锚（requirements.lock）
-# ==============================================================================
+# Dependencies for the BTCUSDT account research.
 #
-# 这是什么
-# --------
-# `pyproject.toml` 里的依赖写的是**范围**（`pandas>=2.2`、`mypy>=1.10`），范围是给库使用者的。
-# 但 CI 与本地开发不该每次重新解析到"当天的最新版"——2026-09-09 就是这么炸的：
-# `mypy>=1.10` 解析到了 2.x，收窄规则变严，30 个错误一次冒出来，CI 连续 23 次失败 4 天，
-# 期间 `pytest` 那一步**一次都没跑过**。本文件把那次事故的缺口堵上：CI 与开发环境按这里的
-# 精确版本安装，版本的升级从此是一次**显式的提交**，而不是某天早上的意外。
+# CI installs this file exactly (`pip install -r requirements.lock`) and does not
+# re-resolve ranges from pyproject.toml. Versions below were already pinned in
+# this repository; this cleanup dropped packages the account code does not import.
 #
-# ⚠️ 时间边界：这是**从 2026-09-13 起**的锚，**不是**对此前证据的追溯声明
-# ------------------------------------------------------------------------------
-# `reports/research/` 里那几十份逐位可复现的报告，其数值取决于**当时解析到的** pandas/numpy。
-# 那是哪一版，仓库里**没有任何记录**——`pyproject.toml` 只写了 `pandas>=2.2` / `numpy>=1.26`，
-# 没有 lockfile，报告本身也没有记录 `pandas.__version__`。
-# 所以：**不要**把这个文件读成"历史证据都是在 pandas 3.0.5 / numpy 2.5.2 下跑出来的"。
-# 那是一个会误导人的推论。正确的读法是：
-#   · 2026-09-13 之后新产生的证据，可以声称是在这套版本下跑的；
-#   · 2026-09-13 之前的证据，版本未知，若要与新证据做逐位比对，必须重跑，不能靠这个文件背书。
-# （补 validate 报告里记录 `pandas.__version__` / `numpy.__version__` 是另一件事，
-#   与 registry 指纹、construction_fingerprint 同一条理由，不在本文件范围内。）
-#
-# 怎么来的
-# --------
-# 锚点是 2026-09-13 当天本机 `.venv`（CPython 3.12.14）已解析出的版本。做法不是整个
-# `pip freeze`——那个 venv 里还有 bandit / black / pre-commit / psycopg 等与本项目无关的
-# 顺手装的工具——而是从 `pyproject.toml` 声明的根依赖出发，按 `importlib.metadata` 走**传递闭包**，
-# 再用 venv 里的实际版本钉住。环境标记（marker）按 CPython 3.12 + linux/darwin 取并集求值，
-# 所以 `tomli`（py<3.11）、`colorama`（win32）、`tzdata`（win32/emscripten）都不在这里，是对的。
-#
-# 怎么用
-# ------
 #   pip install -r requirements.lock
-#   pip install -e . --no-deps          # 项目自身，不让它再去解析依赖
-# CI（`.github/workflows/ci.yml`）就是这两行。
-#
-# 怎么升级
-# --------
-# 不要手改单行版本号。在一个干净的 3.12 venv 里 `pip install -e ".[dev]"` 让它重新解析，
-# 重跑闭包，把结果整体替换进来，**并在同一个提交里跑完 `ruff` / `mypy` / `pytest -m "not network"`**。
-# 升级 pandas/numpy 的提交要在 commit message 里写明：此后的证据与此前的证据不再逐位可比。
-#
-# 不在这里的东西
-# --------------
-# · research extras（scipy / statsmodels / matplotlib）：CI 不装，本机 `.venv` 当前也没装，
-#   所以本文件没有它们的版本可锚。若将来要锚，单开 `requirements-research.lock`，
-#   不要混进这里——混进来会让 CI 的安装面无谓地扩大一倍。
-# · 哈希（`--require-hashes`）：本文件只钉版本，不钉哈希。钉哈希要求所有间接依赖都带 hash，
-#   且与 `pip install -e .` 不兼容（editable 装不了 hash 校验），留给以后真要做供应链校验时再说。
-# · 项目自身 `starquant`：由 `pip install -e . --no-deps` 安装，不出现在锁里。
-#
-# ==============================================================================
+#   pip install -e . --no-deps
 
-
-# ------------------------------------------------------------------------------
-# 运行时依赖（pyproject `[project].dependencies` 的传递闭包）
-# 这 14 个决定了回测与实盘的**数值**。改动其中任何一个都可能让证据不可比，尤其是
-# numpy / pandas：pandas 3.0 改了 copy-on-write 与默认字符串 dtype 等语义。
-# ------------------------------------------------------------------------------
+# runtime
 numpy==2.5.2
-pandas==3.0.5
-pyarrow==25.0.1
-httpx==0.28.1
 PyYAML==6.0.3
-click==8.5.0
-
-# 上面 6 个的间接依赖
-anyio==4.14.2               # <- httpx
-certifi==2026.7.22          # <- httpx, httpcore
-h11==0.16.0                 # <- httpcore
-httpcore==1.0.9             # <- httpx
-idna==3.19                  # <- httpx, anyio
-python-dateutil==2.9.0.post0  # <- pandas
-six==1.17.0                 # <- python-dateutil
-typing_extensions==4.16.0   # <- anyio, pytest-asyncio(py<3.13)
-
-
-# ------------------------------------------------------------------------------
-# 开发/CI 工具（pyproject `[project.optional-dependencies].dev` 的传递闭包）
-# 这些不影响回测数值，但影响**门的严格程度**——所以同样必须钉住：
-# 一个没钉住的检查器等于一道会自己变松或自己变严的门，2026-09-09 变严的那次
-# 让整条治理线（预登记 → 证据 → registry 启动门）在 4 天里失去了机械检查这一层。
-# ------------------------------------------------------------------------------
-pytest==9.1.1
-pytest-asyncio==1.4.0
-pytest-cov==7.1.0
-hypothesis==6.167.1
-ruff==0.16.5
-mypy==2.3.1
-pandas-stubs==3.0.5.260730
-types-PyYAML==6.0.12.20260815
-# Account replay kernel. Pinned from the environment that produced
-# reports/btc_account_measure.json (numba 0.67.0). CI accounting tests import it.
 numba==0.67.0
 llvmlite==0.49.0            # <- numba
 
-# 上面 8 个的间接依赖
+# dev / CI
+pytest==9.1.1
+ruff==0.16.5
+mypy==2.3.1
+types-PyYAML==6.0.12.20260815
+
+# indirect
 ast_serialize==0.9.0        # <- mypy
-coverage==7.16.0            # <- pytest-cov
 iniconfig==2.3.0            # <- pytest
 librt==0.15.0               # <- mypy
 mypy_extensions==1.1.0      # <- mypy
 packaging==26.3             # <- pytest
 pathspec==1.1.1             # <- mypy
-pluggy==1.6.0               # <- pytest, pytest-cov
+pluggy==1.6.0               # <- pytest
 Pygments==2.21.0            # <- pytest
-sortedcontainers==2.4.0     # <- hypothesis
-
-# 关于 mypy==2.3.1 的一句说明：
-# 这里钉的是**当前**解析到的 2.x，不是回退到 1.x。回退能让 CI 立刻变绿，但那是把已经暴露出来的
-# 三处真实契约漏洞（engine.py 越过 SignalModel 端口读 entries、reports.py 的 wakes 类型自相矛盾、
-# risk_budget.py 在 `Mapping | None` 上直接 .get）重新盖回去。这些正由另外的改动逐个修；
-# 本文件的职责只是让"用哪个 mypy"这件事不再每天变一次。

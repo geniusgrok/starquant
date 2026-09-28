@@ -84,6 +84,6 @@ def test_binance_adapter_refuses_orders():
     try:
         venue.submit_market(1, 0.01, 1.0, 2.0)
     except RuntimeError as exc:
-        assert "live orders are disabled" in str(exc)
+        assert "禁止实盘" in str(exc)
     else:
         raise AssertionError("expected a refusal")

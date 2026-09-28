@@ -5,14 +5,14 @@
 ## 运行
 
 ```bash
-PYTHONPATH=. python -m btc_perp --measure
+python -m btc_perp --measure
 ```
 
-这会读取 `config/btc_account.yaml` 里的策略字段，在本地 `data/btcusdt_1m.npz` 上重放 2020-01-01 00:00 UTC 到 2026-09-20 00:00 UTC（结束日不含，最后一根是 2026-09-19 23:59），并把结果写入 `reports/btc_account_measure.json`。
+先按仓库根目录的 README 装好环境。这会读取 `config/btc_account.yaml` 里的策略字段，在本地 `data/` 上重放 2020-01-01 00:00 UTC 到 2026-09-20 00:00 UTC（结束日不含，最后一根是 2026-09-19 23:59），并把结果写入 `reports/btc_account_measure.json`。行情、资金费和汇率都从仓库旁的 `data/` 读取，不使用写死的绝对路径。
 
 不带 `--measure` 的 `python -m btc_perp` 只打印一句拒绝，然后退出。它不启动会话，也不下单。
 
-行情、资金费和汇率文件在 `data/`，已被 `.gitignore` 排除。没有这些文件时，全样本测试会跳过。
+`data/` 已被 `.gitignore` 排除。没有这些文件时，全样本测试会跳过。
 
 ## 已记录的结果
 
@@ -32,7 +32,7 @@ PYTHONPATH=. python -m btc_perp --measure
 
 ## 配置文件没有写出的行为
 
-这些行为决定测量结果。改 YAML 不会改掉前三项。
+这些行为决定测量结果。回放不读取 YAML 里的费率、82% 减半和 `dd_flat` 的“只挡新开仓”这三件事。费率以 `btc_perp/costs.py` 为准，YAML 里的副本必须相同，否则测试失败。
 
 1. 手续费、滑点底、冲击系数、换汇费和 20 倍杠杆定义在 `btc_perp/costs.py`。回放读取这份常量。YAML 里的同名字段必须与它一致，`tests/test_btc_account.py` 会核对。
 2. 收盘权益低于收盘峰值的 82% 时，新开仓的初始风险减半。加仓不减半。配置里没有这个参数，规则在 `btc_perp.costs.new_entry_scale`。删掉它之后，同一引擎的期末是 121,473 元，年化 45.0%，最低权益/峰值 0.476。

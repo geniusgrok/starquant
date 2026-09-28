@@ -20,6 +20,13 @@ from btc_perp.exchange import BinanceExchange
 from scripts.frontier import run
 
 
+def test_market_files_are_read_from_the_repo_data_dir() -> None:
+    from btc_perp.config import ROOT
+    from scripts.frontier import DATA_DIR
+
+    assert DATA_DIR == ROOT / "data"
+
+
 def test_yaml_fees_match_the_replay_constants() -> None:
     cfg = load_config()
     assert cfg.taker == TAKER
