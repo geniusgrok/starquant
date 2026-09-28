@@ -1,42 +1,42 @@
 {
   "passed": true,
   "start_cny": 10000.0,
-  "end_cny": 1416356.3099964834,
+  "end_cny": 1418948.9964408106,
   "target_cny": 1053236.6589794934,
-  "cagr": 1.0901505693883822,
-  "min_equity_over_peak": 0.5274705527515675,
+  "cagr": 1.0907195960712919,
+  "min_equity_over_peak": 0.5261241215529376,
   "min_day": 20210519,
   "n_long": 61,
   "n_short": 36,
   "n_stop": 83,
   "yearly": {
     "2020": {
-      "equity_cny": 120206.88961167146,
-      "return": 11.020688961167146
+      "equity_cny": 119850.58058981273,
+      "return": 10.985058058981274
     },
     "2021": {
-      "equity_cny": 108348.88982535948,
-      "return": -0.09864659026299794
+      "equity_cny": 108747.7696125051,
+      "return": -0.09263877507032592
     },
     "2022": {
-      "equity_cny": 232761.8869695401,
-      "return": 1.1482627772625436
+      "equity_cny": 233022.52302712522,
+      "return": 1.1427797908632193
     },
     "2023": {
-      "equity_cny": 437022.5647530182,
-      "return": 0.8775520788341447
+      "equity_cny": 437576.1461817906,
+      "return": 0.8778276902050972
     },
     "2024": {
-      "equity_cny": 848246.5754577467,
-      "return": 0.9409674553924472
+      "equity_cny": 849524.5852228819,
+      "return": 0.941432577245533
     },
     "2025": {
-      "equity_cny": 816075.5328317028,
-      "return": -0.03792652225997273
+      "equity_cny": 816735.9047784297,
+      "return": -0.0385965056395039
     },
     "2026": {
-      "equity_cny": 1416356.3099964834,
-      "return": 0.7355701194494393
+      "equity_cny": 1418948.9964408106,
+      "return": 0.7373412729121465
     }
   },
   "costs": {
@@ -44,8 +44,8 @@
     "slip_base": 0.0001,
     "impact_y": 0.5,
     "fx_fee": 0.0035,
-    "funding": "binance vision plus premium-index September 2026"
+    "funding": "binance vision through 2026-08-31, premium-index September 2026, 2026-09-01 00:00 missing"
   },
-  "path": "1-minute OHLC in 5-second order, trail amends on new extremes, entries on completed hours",
+  "path": "1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
   "live_orders": false
 }
