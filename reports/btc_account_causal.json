@@ -38,14 +38,23 @@
     "missing_slot": true,
     "note": "缺失槽位在回放里按 0 计，没有官方结算价验证；proxy 槽位来自溢价指数估算，不是官方结算价。"
   },
+  "lockout": {
+    "locked_at_end": false,
+    "close_ratio_at_end": 0.7838310430674719,
+    "lock_threshold": 0.53,
+    "flat_days_at_end": 15.434027777777779,
+    "last_position_day": 20260904,
+    "flat_minutes_below_lock": 0,
+    "note": "flat below the lock line means no new entry for the rest of the run"
+  },
   "provenance": {
-    "git_head": "d35cb982ae3384954b65cf52d8b5bb3a2dab6075",
+    "git_head": "508ad58148d7bcf24c068735372acaaa5d957843",
     "git_dirty": false,
     "files_sha256": {
       "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
-      "scripts/frontier.py": "ced5eec56062d457d78ccb074acf1412a5b0f54578a7fe3faf34e639c35bcb3c",
-      "btc_perp/causal.py": "f7c20ed16483579c0606bfd7754991cc2da101caa09e5df004449f63f6904f87"
+      "scripts/frontier.py": "58a4f2abfa4bb566d52dab14f4fc5e52cfed9fca1b3e81e62512fc98aa77a281",
+      "btc_perp/causal.py": "487c7c058b671a4f9b5b93c041768d1a59e8a85a95f89f3ccedb84508300f0cd"
     },
     "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
   },
