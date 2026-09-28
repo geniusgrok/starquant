@@ -823,8 +823,8 @@
     "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
   },
   "provenance": {
-    "git_head": "7fbcb43d2581ae4b29686e1c415763f7972b6874",
-    "git_dirty": true,
+    "git_head": "79d18c418d9af59208bafd04ad9be5d9daddfa5a",
+    "git_dirty": false,
     "files_sha256": {
       "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
