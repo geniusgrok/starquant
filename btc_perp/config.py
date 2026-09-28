@@ -1,12 +1,11 @@
 """The one config for the one research account.
 
 ``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
-``dd_flat``, heat, ratchet, cooldown, and whether both sides are allowed).
-Fee rates live in ``btc_perp.costs`` and are copied into the YAML. A test
-rejects a drift between the two. ``take_profit_multiple`` is the far
-take-profit the measurement session rests on the venue. The replay still
-exits with the trailing stop and the channel. ``live_orders`` does not open
-a trading path.
+``dd_flat``, heat, ratchet, and cooldown). Fee rates live in
+``btc_perp.costs`` and are copied into the YAML. A test rejects a drift
+between the two. ``take_profit_multiple`` is the far take-profit the
+measurement session rests on the venue. The replay still exits with the
+trailing stop and the channel. This package does not send orders.
 """
 
 from __future__ import annotations
@@ -47,8 +46,6 @@ class AccountConfig:
     slip_base: float
     impact_y: float
     fx_fee: float
-    long_and_short: bool
-    live_orders: bool
 
 
 def load_config(path: Path | None = None) -> AccountConfig:
@@ -79,6 +76,4 @@ def load_config(path: Path | None = None) -> AccountConfig:
         slip_base=float(raw["slip_base"]),
         impact_y=float(raw["impact_y"]),
         fx_fee=float(raw["fx_fee"]),
-        long_and_short=bool(raw["long_and_short"]),
-        live_orders=bool(raw["live_orders"]),
     )

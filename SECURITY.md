@@ -2,7 +2,7 @@
 
 许可见仓库根目录的 [`LICENSE`](LICENSE)：仅版权人本人研究，禁止实盘，禁止他人复制或二次创作。公开可见不构成使用许可。
 
-**禁止实盘。** 不要把本仓库接到真实账户的下单接口。`btc_perp.exchange.BinanceExchange` 会拒绝下单；`config/btc_account.yaml` 里的 `live_orders` 打不开这条路径。研究回放使用本地行情，不需要交易所密钥。
+**禁止实盘。** 不要把本仓库接到真实账户的下单接口。`btc_perp.exchange.BinanceExchange` 会拒绝下单。研究回放使用本地行情，不需要交易所密钥。
 
 ## 不进仓库的东西
 

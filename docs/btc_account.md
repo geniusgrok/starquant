@@ -61,7 +61,7 @@ python -m btc_perp --measure
 
 ## 实盘
 
-禁止。`btc_perp.exchange.BinanceExchange.allowed` 固定返回假，`submit_market` 固定拒绝。`config/btc_account.yaml` 里的 `live_orders` 不打开任何下单路径。
+禁止。`btc_perp.exchange.BinanceExchange.allowed` 固定返回假，`submit_market` 固定拒绝。配置里没有打开下单的开关。
 
 ## CI
 

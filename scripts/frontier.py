@@ -276,8 +276,8 @@ def _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail):
 # Resume book. Integer fields stay on whole numbers, which float64 holds exactly
 # for this tape. 0 wallet, 1 side, 2 qty, 3 entry, 4 isolated, 5 stop, 6 extreme,
 # 7 units, 8 last_add, 9 cool, 10 peak, 11 peak_c, 12 min_ratio, 13 n_long,
-# 14 n_short, 15 n_stop, 16 min_i, 17 losses, 18 scale_hold.
-STATE_N = 19
+# 14 n_short, 15 n_stop, 16 min_i.
+STATE_N = 17
 
 
 @njit(cache=True)
@@ -299,8 +299,6 @@ def _reset(state, fx0):
     state[14] = 0.0
     state[15] = 0.0
     state[16] = 0.0
-    state[17] = 0.0
-    state[18] = 1.0
 
 
 @njit(cache=True)
@@ -325,23 +323,14 @@ def _loop(
     risk,
     dd_flat,
     iso_frac,
-    long_only,
     cool_h,
-    flatten_at,
     ratchet_gain,
     ratchet_trail,
-    trail_stride,
-    streak_cut,
-    buf,
-    adverse,
-    post_scale,
     heat,
-    step,
     gate,
     qv,
     eq_out,
     trace,
-    peak_out,
 ):
     """Replay bars ``[i0, i1)`` and write the book back into ``state``."""
     n = len(C)
@@ -367,8 +356,6 @@ def _loop(
     nS = int(state[14])
     nStop = int(state[15])
     min_i = int(state[16])
-    losses = int(state[17])
-    scale_hold = state[18]
     for i in range(i0, i1):
         # Stops can fill before this bar is finished, so impact uses the previous minute.
         if qv.shape[0] == n and qty > 0.0 and i > 0:
@@ -388,11 +375,7 @@ def _loop(
                 fill = O[i] * (1.0 - slip_b) if side > 0 else O[i] * (1.0 + slip_b)
                 fee = qty * fill * taker
                 raw = (fill - entry) * qty * side - fee
-                wallet, delta = _realize(wallet, raw, pay, isolated)
-                if delta < 0.0:
-                    losses += 1
-                else:
-                    losses = 0
+                wallet, _delta = _realize(wallet, raw, pay, isolated)
                 isolated = 0.0
                 qty = 0.0
                 side = 0
@@ -403,22 +386,13 @@ def _loop(
             else:
                 wallet -= pay
                 isolated -= pay
-        if side != 0 and adverse == 1:
+        if side != 0:
             # No 5-second tape exists. A bullish bar is ordered open, low, high,
             # close, so the low is tested before a new high tightens the stop.
             # A bearish bar is open, high, low, close.
             bull = C[i] >= O[i]
             hit = False
             fill = 0.0
-            # Negative trail_stride trails the close only, on bars where i % stride == 0.
-            close_only = trail_stride < 0
-            stride = -trail_stride if close_only else trail_stride
-            if stride <= 1:
-                allow = True
-            elif close_only:
-                allow = (i % stride) == (stride - 1)
-            else:
-                allow = (i % stride) == 0
             for k in range(4):
                 if k == 0:
                     px = O[i]
@@ -437,22 +411,16 @@ def _loop(
                     hit = True
                     fill = (px if k == 0 else stop_px) * (1.0 + slip_b)
                     break
-                track = (k == 3) if close_only else True
-                if track and side > 0 and px > extreme and (step <= 0.0 or px >= extreme * (1.0 + step)):
+                if side > 0 and px > extreme:
                     extreme = px
-                elif track and side < 0 and px < extreme and (step <= 0.0 or px <= extreme * (1.0 - step)):
+                elif side < 0 and px < extreme:
                     extreme = px
-                if track and allow:
-                    stop_px = _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail)
+                stop_px = _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail)
                 peak, min_ratio, min_i = _mark(px, wallet, entry, qty, side, fx[i], fx_fee, peak, min_ratio, min_i, i)
             if hit:
                 fee = qty * fill * taker
                 raw = (fill - entry) * qty * side - fee
-                wallet, raw = _realize(wallet, raw, 0.0, isolated)
-                if raw < 0.0:
-                    losses += 1
-                else:
-                    losses = 0
+                wallet, _delta = _realize(wallet, raw, 0.0, isolated)
                 isolated = 0.0
                 qty = 0.0
                 side = 0
@@ -461,60 +429,6 @@ def _loop(
                 nStop += 1
                 cool = i + cool_h
                 peak, min_ratio, min_i = _mark(0.0, wallet, 0.0, 0.0, 0, fx[i], fx_fee, peak, min_ratio, min_i, i)
-        elif side != 0:
-            hit = False
-            fill = 0.0
-            stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, O[i])
-            if side > 0:
-                if O[i] <= stop_px:
-                    hit = True
-                    fill = O[i] * (1.0 - slip_b)
-                elif L[i] <= stop_px:
-                    hit = True
-                    fill = stop_px * (1.0 - slip_b)
-            else:
-                if O[i] >= stop_px:
-                    hit = True
-                    fill = O[i] * (1.0 + slip_b)
-                elif H[i] >= stop_px:
-                    hit = True
-                    fill = stop_px * (1.0 + slip_b)
-            if hit:
-                fee = qty * fill * taker
-                raw = (fill - entry) * qty * side - fee
-                wallet, raw = _realize(wallet, raw, 0.0, isolated)
-                if raw < 0.0:
-                    losses += 1
-                else:
-                    losses = 0
-                isolated = 0.0
-                qty = 0.0
-                side = 0
-                units = 0
-                stop_px = 0.0
-                nStop += 1
-                cool = i + cool_h
-            else:
-                if side > 0 and H[i] > extreme:
-                    extreme = H[i]
-                elif side < 0 and L[i] < extreme:
-                    extreme = L[i]
-                if trail_stride <= 1 or (i % trail_stride) == 0:
-                    if side > 0:
-                        t_use = trail
-                        if ratchet_gain > 0.0 and entry > 0.0 and extreme / entry - 1.0 >= ratchet_gain:
-                            t_use = ratchet_trail
-                        trailed = extreme * (1.0 - t_use)
-                        if trailed > stop_px:
-                            stop_px = trailed
-                    elif side < 0:
-                        t_use = trail
-                        if ratchet_gain > 0.0 and extreme > 0.0 and entry / extreme - 1.0 >= ratchet_gain:
-                            t_use = ratchet_trail
-                        trailed = extreme * (1.0 + t_use)
-                        if trailed < stop_px:
-                            stop_px = trailed
-                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, C[i])
         # Channel exits are not limited to minute 59. Entries and adds are.
         # The close is known, so this fill can use the completed minute.
         if side > 0 and C[i] < xl[i]:
@@ -522,11 +436,7 @@ def _loop(
             fill = C[i] * (1.0 - slip_x)
             fee = qty * fill * taker
             raw = (fill - entry) * qty * side - fee
-            wallet, raw = _realize(wallet, raw, 0.0, isolated)
-            if raw < 0.0:
-                losses += 1
-            else:
-                losses = 0
+            wallet, _delta = _realize(wallet, raw, 0.0, isolated)
             isolated = 0.0
             qty = 0.0
             side = 0
@@ -536,11 +446,7 @@ def _loop(
             fill = C[i] * (1.0 + slip_x)
             fee = qty * fill * taker
             raw = (fill - entry) * qty * side - fee
-            wallet, raw = _realize(wallet, raw, 0.0, isolated)
-            if raw < 0.0:
-                losses += 1
-            else:
-                losses = 0
+            wallet, _delta = _realize(wallet, raw, 0.0, isolated)
             isolated = 0.0
             qty = 0.0
             side = 0
@@ -551,7 +457,6 @@ def _loop(
             peak = cny
         if cny > peak_c:
             peak_c = cny
-            scale_hold = 1.0
         ratio_c = cny / peak_c if peak_c > 0.0 else 1.0
         if cny / peak < min_ratio:
             min_ratio = cny / peak
@@ -564,50 +469,16 @@ def _loop(
             trace[i, 2] = stop_px
             trace[i, 3] = wallet
             trace[i, 4] = entry
-        if peak_out.shape[0] == n:
-            peak_out[i] = peak
-        if side != 0 and flatten_at > 0.0 and ratio_c <= 1.0 - flatten_at:
-            slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
-            fill = C[i] * (1.0 - slip_x) if side > 0 else C[i] * (1.0 + slip_x)
-            fee = qty * fill * taker
-            raw = (fill - entry) * qty * side - fee
-            wallet, raw = _realize(wallet, raw, 0.0, isolated)
-            if raw < 0.0:
-                losses += 1
-            isolated = 0.0
-            qty = 0.0
-            side = 0
-            units = 0
-            stop_px = 0.0
-            cool = i + cool_h
-            scale_hold = post_scale
-            eq = wallet
-            cny = eq * fx[i] * (1.0 - fx_fee)
-            if cny > peak:
-                peak = cny
-            if cny > peak_c:
-                peak_c = cny
-                scale_hold = 1.0
-            ratio_c = cny / peak_c if peak_c > 0.0 else 1.0
-            if cny / peak < min_ratio:
-                min_ratio = cny / peak
-            if eq_out.shape[0] == n:
-                eq_out[i] = cny
         # dd_flat blocks a new entry. It does not flatten the open position.
         if i < cool or ratio_c <= 1.0 - dd_flat:
             continue
         if gate.shape[0] == n and gate[i] == 0:
             continue
         want = 0
-        up = hh[i] * (1.0 + buf)
-        dn = ll[i] * (1.0 - buf)
-        if C[i] > up:
+        if C[i] > hh[i]:
             want = 1
-        elif C[i] < dn and long_only == 0:
+        elif C[i] < ll[i]:
             want = -1
-        rscale = scale_hold
-        if streak_cut > 0 and losses >= streak_cut:
-            rscale *= 0.5
         if side == 0 and want != 0:
             px = C[i]
             dist = px * stop
@@ -615,7 +486,6 @@ def _loop(
             # loop is compiled. Adds below do not apply it. The published pass
             # depends on it; the rule is not a config field.
             scale = ENTRY_SCALE if ratio_c < ENTRY_SCALE_BELOW else 1.0
-            scale *= rscale
             q = np.floor(eq * risk * scale / dist * 1000.0) / 1000.0
             capn = eq * iso_frac * lev
             if heat > 0.0:
@@ -652,7 +522,7 @@ def _loop(
             if trig:
                 dist = max(px * stop, px * 0.005)
                 eq_now = wallet + (px - entry) * qty * side
-                qadd = np.floor(eq_now * risk * rscale / dist * 1000.0) / 1000.0
+                qadd = np.floor(eq_now * risk / dist * 1000.0) / 1000.0
                 capn = eq_now * iso_frac * lev
                 if heat > 0.0:
                     heat_n = eq_now * heat / trail
@@ -715,8 +585,6 @@ def _loop(
     state[14] = nS
     state[15] = nStop
     state[16] = min_i
-    state[17] = losses
-    state[18] = scale_hold
     last = i1 - 1
     eq = wallet + ((C[last] - entry) * qty * side if side != 0 else 0.0)
     end = eq * fx[last] * (1.0 - fx_fee)
@@ -742,29 +610,16 @@ def run(
     risk,
     dd_flat,
     iso_frac,
-    long_only,
     cool_h,
-    flatten_at,
     ratchet_gain,
     ratchet_trail,
-    trail_stride,
-    streak_cut,
-    buf,
-    adverse,
-    post_scale,
     heat,
-    step,
     gate,
     qv,
     eq_out,
     trace,
-    peak_out,
 ):
-    """streak_cut: after this many losing exits, risk halves until a win.
-    buf: close must clear the channel by this fraction.
-    adverse: 1 marks OHLC path extremes, 0 marks closes only.
-    post_scale: risk multiplier until a new equity peak after an equity flatten.
-    """
+    """Replay the whole tape from a flat book."""
     n = len(C)
     state = np.empty(STATE_N, dtype=np.float64)
     _reset(state, fx[0])
@@ -789,23 +644,14 @@ def run(
         risk,
         dd_flat,
         iso_frac,
-        long_only,
         cool_h,
-        flatten_at,
         ratchet_gain,
         ratchet_trail,
-        trail_stride,
-        streak_cut,
-        buf,
-        adverse,
-        post_scale,
         heat,
-        step,
         gate,
         qv,
         eq_out,
         trace,
-        peak_out,
     )
     return end, state[12], int(state[13]), int(state[14]), int(state[15]), int(state[16])
 
@@ -838,23 +684,14 @@ def resume(
     risk: float,
     dd_flat: float,
     iso_frac: float,
-    long_only: int,
     cool_h: int,
-    flatten_at: float,
     ratchet_gain: float,
     ratchet_trail: float,
-    trail_stride: int,
-    streak_cut: int,
-    buf: float,
-    adverse: int,
-    post_scale: float,
     heat: float,
-    step: float,
     gate: np.ndarray,
     qv: np.ndarray,
     eq_out: np.ndarray,
     trace: np.ndarray,
-    peak_out: np.ndarray,
 ) -> tuple[float, float, int, int, int, int]:
     """Replay ``[i0, i1)`` on an existing book.
 
@@ -883,22 +720,13 @@ def resume(
         risk,
         dd_flat,
         iso_frac,
-        long_only,
         cool_h,
-        flatten_at,
         ratchet_gain,
         ratchet_trail,
-        trail_stride,
-        streak_cut,
-        buf,
-        adverse,
-        post_scale,
         heat,
-        step,
         gate,
         qv,
         eq_out,
         trace,
-        peak_out,
     )
     return float(end), float(state[12]), int(state[13]), int(state[14]), int(state[15]), int(state[16])

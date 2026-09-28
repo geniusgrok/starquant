@@ -192,7 +192,7 @@ def test_the_default_entry_refuses_and_does_not_run_a_session(capsys):
 
 
 def test_binance_adapter_refuses_orders():
-    venue = BinanceExchange(True, True, True, "k")
+    venue = BinanceExchange()
     assert venue.allowed() is False
     try:
         venue.submit_market(1, 0.01, 1.0, 2.0)

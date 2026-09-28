@@ -1,8 +1,8 @@
-# One BTCUSDT USDT-M research account. Numbers are the measured configuration.
-# Live trading is prohibited. live_orders is ignored; the adapter always refuses.
-# taker, slip_base, impact_y, fx_fee, and leverage are recorded here. The replay
-# reads btc_perp/costs.py. tests/test_btc_account.py fails if this copy drifts.
-# take_profit_multiple is the far resting take-profit on the measurement venue.
+# One BTCUSDT USDT-M research account. It trades both sides. Live orders are not
+# a setting: the adapter always refuses. taker, slip_base, impact_y, fx_fee, and
+# leverage are recorded here. The replay reads btc_perp/costs.py.
+# tests/test_btc_account.py fails if this copy drifts. take_profit_multiple is
+# the far resting take-profit on the measurement venue.
 symbol: BTCUSDT
 margin_mode: isolated
 position_mode: one_way
@@ -37,5 +37,3 @@ taker: 0.0004
 slip_base: 0.0001
 impact_y: 0.5
 fx_fee: 0.0035
-long_and_short: true
-live_orders: false

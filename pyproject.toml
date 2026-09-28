@@ -72,5 +72,4 @@ python_files = ["test_*.py"]
 addopts = ["-q", "--strict-markers", "-p", "no:cacheprovider"]
 markers = [
     "network: tests that reach the public internet (deselected by default in CI)",
-    "slow: slow tests",
 ]
