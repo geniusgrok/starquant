@@ -6,8 +6,10 @@ capital cap refuses production entries. Nothing in this module sends an order.
 
 from __future__ import annotations
 
+import math
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -43,9 +45,11 @@ def assert_host_matches(environment: str, base_url: str) -> None:
     official, _ws = hosts(environment)
     if base_url.rstrip("/") == official:
         return
-    if base_url.startswith("http://127.0.0.1") or base_url.startswith("http://localhost"):
+    parts = urlsplit(base_url)
+    loopback = {"127.0.0.1", "localhost", "::1"}
+    if parts.scheme == "http" and parts.hostname in loopback and parts.username is None and parts.password is None:
         return
-    raise RuntimeError("只允许官方域名或本机测试桩")
+    raise RuntimeError("只允许官方域名或本机回环测试桩")
 
 
 def load_limits(path: Path | None = None) -> Limits:
@@ -58,9 +62,16 @@ def load_limits(path: Path | None = None) -> Limits:
         value = raw.get(key)
         if value is None or value == "":
             return None
-        return float(value)
+        if isinstance(value, bool):
+            raise ValueError(f"{key} 必须是数字")
+        number = float(value)
+        if not math.isfinite(number) or number < 0:
+            raise ValueError(f"{key} 必须是有限的非负数")
+        return number
 
     seconds = raw.get("max_unprotected_seconds")
+    if isinstance(seconds, bool) or (seconds not in (None, "") and int(seconds) < 0):
+        raise ValueError("max_unprotected_seconds 必须是非负整数")
     return Limits(
         capital_usdt=num("capital_usdt"),
         max_notional_usdt=num("max_notional_usdt"),
@@ -112,3 +123,16 @@ def reducing_block_reason(environment: str, *, prod_enabled: bool) -> str:
     if environment not in {DEMO, PROD}:
         return "未知环境"
     return ""
+
+
+def notional_cap(cli: float | None, limits: Limits) -> float | None:
+    """The smaller positive of the command-line cap and the file cap."""
+    caps = [value for value in (cli, limits.max_notional_usdt) if value is not None and value > 0]
+    return min(caps) if caps else None
+
+
+def risk_equity(equity_usdt: float, limits: Limits) -> float:
+    """Sizing never uses more than the owner's stated capital."""
+    if limits.capital_usdt is not None and limits.capital_usdt > 0:
+        return min(equity_usdt, limits.capital_usdt)
+    return equity_usdt

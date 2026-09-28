@@ -1,6 +1,8 @@
 # 版权人自己的资金限额。空着的时候，生产入口拒绝增仓。
 # 研究里的 4.8% 单位风险、三档和约 3.75 倍名义不是这里的安全保证。
-# 填正数之后，命令行的 --max-notional-usdt 还不能高于 max_notional_usdt。
+# 填正数之后，名义上限取命令行 --max-notional-usdt 和 max_notional_usdt 的较小值。
+# capital_usdt 同时限制仓位权益：min(账户权益, capital_usdt)。
+# max_daily_loss_usdt 只冻结新增风险，不平仓。
 capital_usdt: null
 max_notional_usdt: null
 max_daily_loss_usdt: null

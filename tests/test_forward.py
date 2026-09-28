@@ -211,32 +211,92 @@ def test_a_long_entry_rests_a_stop_and_a_disaster_take(tmp_path: Path) -> None:
         store.close()
 
 
-def test_timeout_retries_the_same_client_id(tmp_path: Path) -> None:
+def _run(store: Store, venue: FakeVenue, bar: MinuteBar, now: int, **kwargs: object):
+    args: dict[str, object] = {
+        "environment": "demo",
+        "limits": Limits(None, None, None, None),
+        "max_notional": 200.0,
+        "cfg": load_config(),
+        "now_ms": now,
+        "bars": (bar,),
+        "channels": _channels(bar.open_ms, 50.0, 1.0, 1.0e9, 1.0),
+        "fx": 7.0,
+        "mode": "run",
+        "prod_enabled": False,
+    }
+    args.update(kwargs)
+    return run_cycle(store, venue, **args)  # type: ignore[arg-type]
+
+
+def test_an_unanswered_entry_is_never_sent_twice(tmp_path: Path) -> None:
     bar, now = _bar(100.0)
     venue = FakeVenue(_snap(server_time_ms=now))
     venue.fail_market = UnknownExecution("timed out")
     store, first = _cycle(tmp_path, venue, (bar,), now)
     try:
         assert first.position_qty == 0
-        assert len(venue.market_ids) == 1
-        assert store.intents()[0].phase == "unknown"
         held = venue.market_ids[0]
-        second = run_cycle(
-            store,
-            venue,
-            environment="demo",
-            limits=Limits(None, None, None, None),
-            max_notional=200.0,
-            cfg=load_config(),
-            now_ms=now,
-            bars=(bar,),
-            channels=_channels(bar.open_ms, 50.0, 1.0, 1.0e9, 1.0),
-            fx=7.0,
-            mode="run",
-            prod_enabled=False,
-        )
-        assert venue.market_ids == [held, held]
-        assert second.position_qty == pytest.approx(2.0)
+        assert store.intents()[0].phase == "unknown"
+        for step in range(4):
+            _run(store, venue, bar, now + step)
+        assert venue.market_ids == [held]
+        assert store.intents()[0].phase == "unknown"
+        assert store.intents()[0].attempts == 1
+    finally:
+        store.close()
+
+
+def test_an_entry_that_did_fill_is_found_by_the_original_id(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now))
+    venue.fail_market = UnknownExecution("timed out")
+    store, _first = _cycle(tmp_path, venue, (bar,), now)
+    try:
+        held = venue.market_ids[0]
+        venue.orders[held] = {"status": "FILLED", "executedQty": "2.0"}
+        venue.snap = dataclasses.replace(venue.snap, position_qty=2.0, entry_price=100.0)
+        _run(store, venue, bar, now)
+        assert venue.market_ids == [held]
+        assert next(item for item in store.intents() if item.client_id == held).phase == "filled"
+        assert store.load_book().manual is False
+        assert store.load_book().qty == pytest.approx(2.0)
+    finally:
+        store.close()
+
+
+def test_an_unanswered_reduce_is_resent_once_with_the_same_id(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now, position_qty=0.01, entry_price=100.0))
+    store = Store(tmp_path, "demo")
+    store.insert_intent(
+        Intent("rdresend0000000000001", "reduce", "unknown", "SELL", "0.010", True, False, "", "demo", now, "timeout")
+    )
+    book = store.load_book()
+    book.side, book.qty, book.entry, book.units = 1, 0.01, 100.0, 1
+    store.save_book(book)
+    try:
+        for step in range(3):
+            _run(store, venue, bar, now + step, mode="flatten")
+        assert venue.market_ids == ["rdresend0000000000001"]
+        item = next(item for item in store.intents() if item.client_id == "rdresend0000000000001")
+        assert item.attempts == 2
+        assert item.phase == "filled"
+    finally:
+        store.close()
+
+
+def test_a_note_cannot_reopen_the_retry_budget(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now, position_qty=0.01, entry_price=100.0))
+    store = Store(tmp_path, "demo")
+    store.insert_intent(
+        Intent("enfixed00000000000001", "enter", "unknown", "BUY", "0.010", False, False, "", "demo", now, "retried")
+    )
+    store.mark_intent("enfixed00000000000001", "unknown", "anything-else")
+    try:
+        for step in range(3):
+            _run(store, venue, bar, now + step)
+        assert "enfixed00000000000001" not in venue.market_ids
     finally:
         store.close()
 
@@ -371,17 +431,34 @@ def test_a_flat_book_cancels_the_leftover_protection(tmp_path: Path) -> None:
         "stleftover0000000000001", "STOP_MARKET", "SELL", 90.0, True, False, 0.0, "NEW", "CONTRACT_PRICE"
     )
     venue = FakeVenue(_snap(server_time_ms=now, algos=(leftover,)))
-    store, _report = _cycle(tmp_path, venue, (), now)
+    store = Store(tmp_path, "demo")
+    store.insert_intent(
+        Intent(leftover.client_algo_id, "stop", "acked", "SELL", "", False, True, "90.0", "demo", now, "")
+    )
     try:
+        _run(store, venue, _bar(100.0)[0], now, bars=(), channels=None)
         assert leftover.client_algo_id in venue.cancels
         assert all(algo.status != "NEW" for algo in venue.snap.algos)
     finally:
         store.close()
 
 
+def test_a_flat_book_leaves_a_foreign_conditional_order_alone(tmp_path: Path) -> None:
+    _bar_unused, now = _bar(100.0)
+    foreign = AlgoOrder("someone-elses-stop", "STOP_MARKET", "SELL", 90.0, True, False, 0.0, "NEW", "CONTRACT_PRICE")
+    venue = FakeVenue(_snap(server_time_ms=now, algos=(foreign,)))
+    store = Store(tmp_path, "demo")
+    try:
+        report = _run(store, venue, _bar(100.0)[0], now, bars=(), channels=None)
+        assert venue.cancels == []
+        assert report.frozen
+    finally:
+        store.close()
+
+
 def test_stop_cancels_risk_orders_and_keeps_protection(tmp_path: Path) -> None:
     _bar_unused, now = _bar(100.0)
-    stop = AlgoOrder("stkeep000000000000000001", "STOP_MARKET", "SELL", 90.0, True, False, 0.0, "NEW", "CONTRACT_PRICE")
+    stop = AlgoOrder("stkeep000000000000000001", "STOP_MARKET", "SELL", 96.8, True, False, 0.0, "NEW", "CONTRACT_PRICE")
     take = AlgoOrder(
         "tpkeep000000000000000001", "TAKE_PROFIT_MARKET", "SELL", 1000.0, True, False, 0.0, "NEW", "CONTRACT_PRICE"
     )
@@ -390,6 +467,11 @@ def test_stop_cancels_risk_orders_and_keeps_protection(tmp_path: Path) -> None:
         _snap(server_time_ms=now, position_qty=0.01, entry_price=100.0, orders=(plain,), algos=(stop, take))
     )
     store = Store(tmp_path, "demo")
+    store.insert_intent(Intent(plain.client_id, "enter", "acked", "BUY", "1.0", False, False, "", "demo", now, ""))
+    for algo in (stop, take):
+        store.insert_intent(
+            Intent(algo.client_algo_id, "stop", "acked", "SELL", "", False, True, "90.0", "demo", now, "")
+        )
     try:
         report = run_cycle(
             store,
@@ -516,7 +598,7 @@ def test_reverse_waits_until_the_old_position_is_flat(tmp_path: Path) -> None:
     book.units = 1
     book.extreme = 100.0
     book.last_add = 100.0
-    book.stop = 96.0
+    book.stop = 85.0
     store.save_book(book)
     try:
         report = run_cycle(

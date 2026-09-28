@@ -1,13 +1,16 @@
 """Causal economics: a signal is known after the close and fills at the next open.
 
 ``python -m btc_perp measure`` still fills on the same close. This module does
-not overwrite that file. A missing tape is reported as unverified.
+not overwrite that file. A missing or invalid tape is reported as unverified
+in a separate file and never replaces the last verified report.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -57,26 +60,42 @@ def validate_minutes(
     return problems
 
 
-def _turnover(trace: np.ndarray, close: np.ndarray) -> tuple[float, float]:
-    signed = trace[:, 0] * trace[:, 1]
-    delta = np.abs(np.diff(signed, prepend=0.0))
-    return float(delta.sum()), float((delta * close).sum())
+def _provenance() -> dict[str, Any]:
+    """Which source and configuration produced a report."""
 
+    def git(*args: str) -> str | None:
+        try:
+            out = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=10, check=True)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return out.stdout.strip()
 
-def _funding_gap(ts: np.ndarray, fund: np.ndarray) -> dict[str, Any]:
-    import datetime as dt
-
-    target = int(dt.datetime(2026, 9, 1, tzinfo=dt.UTC).timestamp() * 1000)
-    hit = np.flatnonzero(ts.astype(np.int64) == target)
-    if len(hit) == 0:
-        return {"present": False, "rate": None, "note": "磁带里没有 2026-09-01 00:00 UTC"}
-    rate = float(fund[int(hit[0])])
-    return {
-        "present": True,
-        "rate": rate,
-        "missing_slot": rate == 0.0,
-        "note": "2026-09-01 00:00 UTC 的资金费槽位为 0，这一档未用官方结算价验证",
+    status = git("status", "--porcelain", "--untracked-files=no")
+    files = {
+        "config/btc_account.yaml": ROOT / "config" / "btc_account.yaml",
+        "btc_perp/costs.py": ROOT / "btc_perp" / "costs.py",
+        "scripts/frontier.py": ROOT / "scripts" / "frontier.py",
+        "btc_perp/causal.py": Path(__file__),
     }
+    return {
+        "git_head": git("rev-parse", "HEAD"),
+        "git_dirty": None if status is None else bool(status),
+        "files_sha256": {name: _sha256(path) for name, path in files.items() if path.exists()},
+        "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve",
+    }
+
+
+def _funding_gap(hour_ts: np.ndarray) -> dict[str, Any]:
+    from scripts.frontier import funding_coverage
+
+    coverage: dict[str, Any] = funding_coverage(hour_ts)
+    coverage["missing_slot"] = coverage["missing_filled_with_zero"] > 0
+    coverage["note"] = (
+        "缺失槽位在回放里按 0 计，没有官方结算价验证；proxy 槽位来自溢价指数估算，不是官方结算价。"
+        if coverage["missing_slot"] or coverage["proxy_from_premium"]
+        else "所有槽位都有官方结算价"
+    )
+    return coverage
 
 
 def run_causal(write_report: bool = True) -> dict[str, Any]:
@@ -161,14 +180,14 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
         1,
     )
     cagr = (end / cfg.start_cny) ** (1.0 / YEARS) - 1.0 if end > 0 else -1.0
-    btc_turn, usdt_turn = _turnover(trace, c)
+    btc_turn, usdt_turn = float(state[20]), float(state[21])
     previous = json.loads(previous_path.read_text()) if previous_path.exists() else None
-    gap = _funding_gap(raw["ts"], fund)
+    gap = _funding_gap(raw["ts"][::60])
     meets_100 = bool(cagr >= 1.0 and ratio > 0.5 and end >= TARGET_CNY and n_long > 0 and n_short > 0)
     meets_150 = bool(cagr >= 1.5 and ratio > 0.5 and end >= TARGET_150 and n_long > 0 and n_short > 0)
     report = {
         "verified": True,
-        "funding_gap_unverified": bool(gap.get("missing_slot")),
+        "funding_gap_unverified": bool(gap.get("missing_slot") or gap.get("proxy_from_premium")),
         "fills": "signal after the minute close, fill at the next bar open; stops still use the intrabar path",
         "start_cny": cfg.start_cny,
         "end_cny": float(end),
@@ -180,6 +199,7 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
         "n_stop": int(n_stop),
         "turnover_btc": btc_turn,
         "turnover_usdt": usdt_turn,
+        "turnover_note": "every simulated fill, including entries and exits inside one minute",
         "target_cny_100": TARGET_CNY,
         "target_cny_150": TARGET_150,
         "meets_100": meets_100,
@@ -191,6 +211,7 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
             "usdcny_frankfurter.json": _sha256(fx_path),
         },
         "funding_gap": gap,
+        "provenance": _provenance(),
         "previous_same_bar": None
         if previous is None
         else {
@@ -210,6 +231,14 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
 
 
 def _write(report: dict[str, Any]) -> None:
-    path = ROOT / "reports" / "btc_account_causal.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    """Publish a verified report atomically. Anything else goes beside it and replaces nothing."""
+    directory = ROOT / "reports"
+    directory.mkdir(parents=True, exist_ok=True)
+    verified = bool(report.get("verified"))
+    path = directory / ("btc_account_causal.json" if verified else "btc_account_causal.unverified.json")
+    temporary = path.with_suffix(f".tmp{os.getpid()}")
+    try:
+        temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)

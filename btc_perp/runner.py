@@ -8,16 +8,19 @@ by host, keys, state directory, and the production gate.
 from __future__ import annotations
 
 import datetime as dt
+import math
 import time
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Protocol
 
 from btc_perp.bars import BarStatus, MinuteBar, inspect_bars
-from btc_perp.binance_client import AlgoEndpointRequired, UnknownExecution, account_problems
+from btc_perp.binance_client import AlgoEndpointRequired, UnknownExecution, WriteRefused, account_problems
 from btc_perp.config import AccountConfig
-from btc_perp.gates import entry_block_reason, reducing_block_reason
+from btc_perp.gates import entry_block_reason, notional_cap, reducing_block_reason, risk_equity
 from btc_perp.machine import (
+    OPEN_PHASES,
+    POSITION_ACTIONS,
     apply_takeover,
     foreign_ids,
     freeze_for_manual,
@@ -27,13 +30,21 @@ from btc_perp.machine import (
     protections_cover,
     quantize_down,
     sibling_cancels,
+    triggered_with_position,
 )
 from btc_perp.model import Action, Book, Command, Intent, Limits, Snapshot
 from btc_perp.policy import _qty, decide, disaster_take, initial_stop
 from btc_perp.store import Store
 
 DRIFT_MS = 2_000
+MAX_RTT_MS = 5_000
 NAKED_DEFAULT_SECONDS = 120
+STALE_SIGNAL_MS = 90_000
+PLANNED_MAX_AGE_MS = 120_000
+MISSING_ENTRY_EXPIRE_MS = 600_000
+_OPEN = tuple(sorted(OPEN_PHASES))
+_ENTRY_ACTIONS = frozenset({"enter", "add"})
+_RISK_DOWN_ACTIONS = frozenset({"reduce", "flatten", "stop", "take"})
 
 
 class Venue(Protocol):
@@ -80,6 +91,7 @@ class CycleReport:
     alerts: tuple[str, ...]
     dry_run: bool = False
     would_send: tuple[str, ...] = ()
+    settled: bool = False
 
 
 def readiness(snapshot: Snapshot) -> str:
@@ -101,15 +113,16 @@ def readiness(snapshot: Snapshot) -> str:
     return ""
 
 
-def interpret_body(body: dict[str, object]) -> str:
+def interpret_body(body: dict[str, object], *, cancel: bool = False) -> str:
+    """Map one exchange answer onto an intent phase. Anything unrecognised is ``unknown``."""
     code = body.get("code")
-    if code not in (None, 0):
+    if code not in (None, 0, 200):
         try:
             number = int(str(code))
         except ValueError:
             return "unknown"
         msg = str(body.get("msg", "")).lower()
-        if number in {-1007, -1001, -1008, -1021}:
+        if number in {-1007, -1006, -1001, -1008, -1021}:
             return "unknown"
         if number in {-2013, -2011}:
             return "missing"
@@ -117,6 +130,8 @@ def interpret_body(body: dict[str, object]) -> str:
             return "unknown"
         return "rejected"
     status = str(body.get("status") or body.get("algoStatus") or "")
+    if not status and cancel and code in (0, 200):
+        return "canceled"
     return {
         "NEW": "acked",
         "PARTIALLY_FILLED": "partial",
@@ -128,6 +143,20 @@ def interpret_body(body: dict[str, object]) -> str:
         "TRIGGERED": "acked",
         "FINISHED": "filled",
     }.get(status, "unknown")
+
+
+def _drift(snap: Snapshot, now_ms: int) -> str:
+    if snap.server_time_ms <= 0:
+        return "交易所时间未知"
+    if snap.clock_offset_ms is not None and snap.clock_rtt_ms is not None:
+        if snap.clock_rtt_ms > MAX_RTT_MS:
+            return "网络往返过慢，时间读数不可信"
+        if abs(snap.clock_offset_ms) > DRIFT_MS:
+            return "本机时钟和交易所相差超过 2 秒"
+        return ""
+    if abs(now_ms - snap.server_time_ms) > DRIFT_MS:
+        return "时间漂移或交易所时间未知"
+    return ""
 
 
 def run_cycle(
@@ -148,6 +177,7 @@ def run_cycle(
     stream_expired: bool = False,
     hour_rows: tuple[tuple[int, float, float], ...] | None = None,
 ) -> CycleReport:
+    """One pass. ``check`` and ``takeover`` never write to the exchange."""
     book = store.load_book()
     sent: list[str] = []
     would: list[str] = []
@@ -159,8 +189,11 @@ def run_cycle(
     if stream_expired:
         alerts.append("用户流过期或断开，本轮只采用 REST 快照")
         store.append_event("stream", "rest-snapshot")
+    cap = notional_cap(max_notional, limits)
+    writes = not dry_run and mode in {"run", "stop", "flatten"}
 
     snap = venue.snapshot()
+    marker = len(sent)
     if not snap.known:
         book.entries_frozen = True
         book.freeze_reason = snap.reason or "账户未知"
@@ -169,26 +202,38 @@ def run_cycle(
         store.append_event("freeze", book.freeze_reason)
         return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would)
 
-    _reconcile(store, venue, book, sent, alerts, dry_run)
-    if sent and not dry_run:
+    allow = "none"
+    if writes:
+        allow = "all" if mode == "run" else "reduce"
+    _reconcile(store, venue, snap, book, sent, alerts, allow=allow, now_ms=now_ms, dry_run=dry_run)
+    if sent:
         snap = venue.snapshot()
+        marker = len(sent)
         if not snap.known:
             book.entries_frozen = True
             book.freeze_reason = snap.reason or "账户未知"
             _save(store, book, dry_run)
             return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would)
-    intents = store.intents()
+
+    def resnap() -> Snapshot:
+        nonlocal snap, marker
+        if not dry_run and len(sent) != marker:
+            snap = venue.snapshot()
+            marker = len(sent)
+        return snap
+
     fx_used = fx if fx is not None and fx > 0 else 1.0
     if fx is None:
         alerts.append("未提供汇率，峰值按 USDT 记")
+    peak_problem = _init_peaks(book, snap, fx, fx_used)
 
-    drift = snap.server_time_ms <= 0 or abs(now_ms - snap.server_time_ms) > DRIFT_MS
+    drift = _drift(snap, now_ms)
     problem = readiness(snap)
-    foreign = foreign_ids(snap, _known_ids(store, book))
-    mismatch = freeze_for_manual(book, snap, intents)
+    foreign = foreign_ids(snap, store.all_client_ids() | _swap_ids(book))
+    mismatch = freeze_for_manual(book, snap, store.intents())
     if mode == "takeover":
         apply_takeover(book, snap)
-        alerts.append("已接管实仓，仍不自动加仓")
+        alerts.append("已接管实仓，仍不自动加仓；保护由下一轮 run 补齐")
         mismatch = ""
     if mismatch:
         book.entries_frozen = True
@@ -197,10 +242,13 @@ def run_cycle(
     else:
         if drift:
             book.entries_frozen = True
-            book.freeze_reason = "时间漂移或交易所时间未知"
+            book.freeze_reason = drift
         elif problem:
             book.entries_frozen = True
             book.freeze_reason = problem
+        elif peak_problem:
+            book.entries_frozen = True
+            book.freeze_reason = peak_problem
         elif foreign:
             book.entries_frozen = True
             book.freeze_reason = "存在未知外来订单：" + ",".join(foreign[:5])
@@ -210,34 +258,44 @@ def run_cycle(
         else:
             book.entries_frozen = False
             book.freeze_reason = ""
-        _absorb(book, snap, cfg)
+        _sync_book(store, book, snap, cfg, now_ms)
         if book.freeze_reason:
             alerts.append(book.freeze_reason)
+    _track_naked(book, snap, now_ms)
 
-    if mode == "check":
+    if mode in {"check", "takeover"}:
         covered, why = protections_cover(snap)
         if why:
             alerts.append(why)
         _save(store, book, dry_run)
         return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered)
 
+    owned = not mismatch or book.manual
+
     if mode == "stop":
         _safe_stop(store, venue, snap, book, sent, would, alerts, dry_run)
-        snap = venue.snapshot() if not dry_run else snap
+        if owned and not dry_run:
+            resnap()
+            _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms)
+        settled = _stop_settled(store, resnap()) if not dry_run else False
+        snap = resnap()
         _save(store, book, dry_run)
         covered, _why = protections_cover(snap)
-        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered)
+        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered, settled)
 
     if mode == "flatten":
         book.entries_frozen = True
         book.freeze_reason = "只减仓停机"
         _flatten(store, venue, snap, book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
-        snap = venue.snapshot() if not dry_run else snap
-        if not book.manual and snap.known:
-            _absorb(book, snap, cfg)
+        resnap()
+        _sync_book(store, book, snap, cfg, now_ms)
+        settled = snap.known and abs(snap.position_qty) < 1e-8 and not dry_run
+        if settled and writes:
+            _clear_own_orders(store, venue, snap, sent, alerts)
+            resnap()
         _save(store, book, dry_run)
         covered, _why = protections_cover(snap)
-        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered)
+        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered, settled)
 
     loss = _loss_block(book, snap, limits, now_ms)
     if loss:
@@ -248,6 +306,12 @@ def run_cycle(
         book.entries_frozen = True
         book.freeze_reason = "强平距离过近"
         alerts.append(book.freeze_reason)
+
+    if writes and owned:
+        if _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms):
+            _flatten(store, venue, resnap(), book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
+            book.cooldown_until_ms = now_ms + cfg.cooldown_hours * 3_600_000
+        resnap()
 
     status = inspect_bars(bars, now_ms, book.cursor_ms)
     action_note = ""
@@ -264,7 +328,7 @@ def run_cycle(
             hour_rows,
             cfg,
             fx_used,
-            max_notional,
+            cap,
             now_ms,
             store,
             venue,
@@ -280,13 +344,15 @@ def run_cycle(
         alerts.append(action_note)
 
     if not dry_run:
-        snap = venue.snapshot()
+        snap = resnap()
         if snap.known:
             _siblings(store, venue, snap, sent, alerts)
-            snap = venue.snapshot()
-        if snap.known and not book.manual and freeze_for_manual(book, snap, store.intents()) == "":
+            if triggered_with_position(snap):
+                alerts.append("有保护单已触发但仍有实仓，保留另一张保护，等待成交结算")
+            snap = resnap()
+        if snap.known and not book.manual:
             before = book.qty
-            _absorb(book, snap, cfg)
+            _sync_book(store, book, snap, cfg, now_ms)
             if (
                 before > 1e-8
                 and book.qty < 1e-8
@@ -294,16 +360,20 @@ def run_cycle(
             ):
                 book.cooldown_until_ms = now_ms + cfg.cooldown_hours * 3_600_000
         _maybe_open_after_flat(
-            store, venue, snap, book, cfg, environment, limits, max_notional, prod_enabled, sent, alerts, now_ms
+            store, venue, snap, book, cfg, environment, limits, cap, max_notional, prod_enabled, sent, alerts, now_ms
         )
-        snap = venue.snapshot()
-        if snap.known and not book.manual and freeze_for_manual(book, snap, store.intents()) == "":
-            _absorb(book, snap, cfg)
+        snap = resnap()
         if snap.known:
-            _protect(store, venue, snap, book, cfg, sent, alerts)
-            snap = venue.snapshot()
-            _naked(store, venue, snap, book, limits, environment, prod_enabled, now_ms, sent, alerts)
-            snap = venue.snapshot()
+            _sync_book(store, book, snap, cfg, now_ms)
+            _track_naked(book, snap, now_ms)
+            if owned:
+                if _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms):
+                    _flatten(
+                        store, venue, resnap(), book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms
+                    )
+                snap = resnap()
+                _naked(store, venue, snap, book, limits, environment, prod_enabled, now_ms, sent, alerts)
+                snap = resnap()
     else:
         _describe_protection(snap, book, cfg, would)
 
@@ -328,8 +398,9 @@ def _finish(
     dry_run: bool,
     would: list[str],
     covered: bool | None = None,
+    settled: bool = False,
 ) -> CycleReport:
-    report = _report(mode, book, snap, sent, alerts, dry_run, would, covered)
+    report = _report(mode, book, snap, sent, alerts, dry_run, would, covered, settled)
     store.append_journal(
         {
             "ts_ms": now_ms,
@@ -348,6 +419,7 @@ def _finish(
             "funding_ok": snap.funding_ok,
             "covered": report.covered,
             "cursor_ms": book.cursor_ms,
+            "settled": settled,
             "server_time_ms": snap.server_time_ms,
             "sent": list(sent),
             "would": list(would),
@@ -380,6 +452,7 @@ def _report(
     dry_run: bool,
     would: list[str],
     covered: bool | None = None,
+    settled: bool = False,
 ) -> CycleReport:
     if covered is None:
         covered = protections_cover(snap)[0] if snap.known else False
@@ -393,21 +466,74 @@ def _report(
         alerts=tuple(alerts),
         dry_run=dry_run,
         would_send=tuple(would),
+        settled=settled,
     )
 
 
-def _known_ids(store: Store, book: Book) -> set[str]:
-    found = {item.client_id for item in store.intents()}
-    for key, value in book.swaps.items():
-        if key.endswith("_id") or key.endswith("_next"):
-            found.add(value)
-    return found
+def _swap_ids(book: Book) -> set[str]:
+    return {value for key, value in book.swaps.items() if key.endswith("_id") or key.endswith("_next")}
 
 
-def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig) -> None:
+def _equity_now(snap: Snapshot) -> float:
+    equity = snap.wallet_usdt
+    if snap.mark_price > 0 and snap.entry_price > 0 and abs(snap.position_qty) > 0:
+        equity += (snap.mark_price - snap.entry_price) * snap.position_qty
+    return equity
+
+
+def _init_peaks(book: Book, snap: Snapshot, fx: float | None, fx_used: float) -> str:
+    """Peaks start from the account's own equity and keep one pricing unit.
+
+    Nothing here compares a small live account with the 10,000 CNY research
+    start. Switching between USDT and CNY re-expresses the peaks instead of
+    resetting the loss history.
+    """
+    unit = "CNY" if fx is not None and fx > 0 else "USDT"
+    equity = _equity_now(snap) * fx_used
+    if equity <= 0:
+        return "" if book.peak_equity_cny > 0 else "账户权益不是正数，无法建立峰值"
+    if book.peak_equity_cny <= 0 or book.close_peak_cny <= 0:
+        start = max(book.peak_equity_cny, book.close_peak_cny, equity)
+        book.peak_equity_cny = start
+        book.close_peak_cny = start
+        book.swaps["peak_unit"] = unit
+        if unit == "CNY":
+            book.swaps["peak_fx"] = repr(fx_used)
+        return ""
+    previous = book.swaps.get("peak_unit", "")
+    if previous and previous != unit:
+        if unit == "CNY":
+            scale = fx_used
+        else:
+            old_fx = float(book.swaps.get("peak_fx", "0") or "0")
+            if old_fx <= 0:
+                return "峰值原按人民币记，现在没有汇率，无法换算"
+            scale = 1.0 / old_fx
+        book.peak_equity_cny *= scale
+        book.close_peak_cny *= scale
+    book.swaps["peak_unit"] = unit
+    if unit == "CNY":
+        book.swaps["peak_fx"] = repr(fx_used)
+    return ""
+
+
+def _sync_book(store: Store, book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int) -> None:
+    """Follow the exchange position only when our own orders explain it."""
+    if not snap.known or book.manual:
+        return
+    intents = store.intents()
+    if freeze_for_manual(book, snap, intents) != "":
+        return
+    _absorb(book, snap, cfg, now_ms)
+    if not any(item.action in POSITION_ACTIONS and item.phase in OPEN_PHASES for item in intents):
+        store.settle_absorbed()
+
+
+def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int = 0) -> None:
     if not snap.known:
         return
     previous = book.qty
+    previous_entry = book.entry
     book.side = snap.position_side
     book.qty = abs(snap.position_qty)
     if book.qty < 1e-8:
@@ -416,54 +542,110 @@ def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig) -> None:
         book.extreme = 0.0
         book.stop = 0.0
         book.last_add = 0.0
+        for key in ("pos_since_ms", "unit_from", "unit_counted", "pre_qty", "pre_entry"):
+            book.swaps.pop(key, None)
         return
     book.entry = snap.entry_price
     if previous < 1e-8:
         book.units = max(book.units, 1)
         book.extreme = snap.entry_price
         book.last_add = snap.entry_price
+        book.swaps["pos_since_ms"] = str(now_ms)
+        book.swaps["unit_counted"] = book.swaps.get("unit_from", "")
         if book.stop <= 0:
             book.stop = initial_stop(book.side, snap.entry_price, cfg.stop, snap.liquidation_price, snap.mark_price)
-    elif book.qty > previous + 1e-6:
-        book.units += 1
-        book.last_add = snap.entry_price
+        return
+    if book.qty > previous + 1e-6:
+        marker = book.swaps.get("unit_from", "")
+        if marker and marker != book.swaps.get("unit_counted", ""):
+            book.units += 1
+            book.swaps["unit_counted"] = marker
+            book.swaps["pre_qty"] = repr(previous)
+            book.swaps["pre_entry"] = repr(previous_entry)
+        pre_qty = float(book.swaps.get("pre_qty", "0") or "0")
+        pre_entry = float(book.swaps.get("pre_entry", "0") or "0")
+        added = book.qty - pre_qty
+        if marker and marker == book.swaps.get("unit_counted", "") and added > 1e-9 and pre_qty > 0:
+            book.last_add = (snap.entry_price * book.qty - pre_entry * pre_qty) / added
+
+
+def _track_naked(book: Book, snap: Snapshot, now_ms: int) -> None:
+    """The clock starts when a bare position is first seen and only a covered or flat account stops it."""
+    if not snap.known:
+        return
+    if abs(snap.position_qty) < 1e-8 or protections_cover(snap)[0]:
+        book.unprotected_since_ms = None
+    elif book.unprotected_since_ms is None:
+        book.unprotected_since_ms = now_ms
+
+
+def _may_send(action: str, allow: str) -> bool:
+    if allow == "all":
+        return True
+    return allow == "reduce" and action in _RISK_DOWN_ACTIONS
 
 
 def _reconcile(
     store: Store,
     venue: Venue,
+    snap: Snapshot,
     book: Book,
     sent: list[str],
     alerts: list[str],
+    *,
+    allow: str,
+    now_ms: int,
     dry_run: bool,
 ) -> None:
+    """Settle stored intents against the exchange.
+
+    ``allow`` says what may be sent: ``none`` (queries only), ``reduce``
+    (protection and reduce-only orders), or ``all``. Risk-increasing orders are
+    never sent a second time; an unanswered entry stays unknown.
+    """
     if dry_run:
         return
+    live_algos = {algo.client_algo_id for algo in snap.algos if algo.status == "NEW"}
     for intent in list(store.open_intents()):
+        is_entry = intent.action in _ENTRY_ACTIONS
         if intent.phase == "planned":
+            if not _may_send(intent.action, allow):
+                if allow != "none":
+                    store.mark_intent(intent.client_id, "canceled", "not-sent-in-this-mode")
+                continue
+            if is_entry and intent.created_ms and now_ms - intent.created_ms > PLANNED_MAX_AGE_MS:
+                store.mark_intent(intent.client_id, "canceled", "stale-plan")
+                continue
             _transmit(store, venue, intent, sent, alerts)
             continue
-        if intent.phase not in {"sent", "unknown"}:
+        if intent.phase == "acked" and _is_algo(intent) and intent.client_id in live_algos:
             continue
         try:
             body = venue.query_algo(intent.client_id) if _is_algo(intent) else venue.query_order(intent.client_id)
-        except UnknownExecution:
-            store.mark_intent(intent.client_id, "unknown", "query-timeout")
-            alerts.append("查询原订单超时")
+        except (UnknownExecution, WriteRefused, OSError, RuntimeError):
+            store.mark_intent(intent.client_id, "unknown", "query-failed")
+            alerts.append("查询原订单失败")
             continue
         phase = interpret_body(body)
-        if phase == "missing":
-            if "retried" in intent.note:
-                store.mark_intent(intent.client_id, "unknown", "still-missing")
-                alerts.append("原订单仍查不到，不会换一个新身份重发")
-                continue
-            store.mark_intent(intent.client_id, "sent", "retried")
+        if phase != "missing":
+            store.mark_intent(intent.client_id, phase, intent.note)
+            continue
+        if is_entry:
+            store.mark_intent(intent.client_id, "unknown", "missing-not-resent")
+            alerts.append("原入场单查不到，不会重发；十分钟内仓位不变才会放行")
+            unchanged = abs(abs(snap.position_qty) - book.qty) < 1e-6
+            if intent.created_ms and now_ms - intent.created_ms > MISSING_ENTRY_EXPIRE_MS and unchanged:
+                store.mark_intent(intent.client_id, "expired", "missing-10min-flat-position")
+                store.mark_absorbed(intent.client_id)
+            continue
+        if intent.attempts < 2 and _may_send(intent.action, allow):
+            store.mark_intent(intent.client_id, "sent", "resend-same-id", attempts=intent.attempts + 1)
             refreshed = _reload(store, intent.client_id)
             if refreshed is not None:
                 _transmit(store, venue, refreshed, sent, alerts)
             continue
-        store.mark_intent(intent.client_id, phase, intent.note)
-        _ = book
+        store.mark_intent(intent.client_id, "unknown", "still-missing")
+        alerts.append("原订单仍查不到，不会换一个新身份重发")
 
 
 def _walk_bars(
@@ -474,7 +656,7 @@ def _walk_bars(
     hour_rows: tuple[tuple[int, float, float], ...] | None,
     cfg: AccountConfig,
     fx: float,
-    max_notional: float | None,
+    cap: float | None,
     now_ms: int,
     store: Store,
     venue: Venue,
@@ -487,11 +669,17 @@ def _walk_bars(
     dry_run: bool,
 ) -> str:
     table = _channel_table(hour_rows, cfg.entry_hours, cfg.exit_hours) if hour_rows else {}
+    since = int(book.swaps.get("pos_since_ms", "0") or "0")
     for bar in status.new_bars:
         hh, ll, xh, xl = _levels_for_bar(bar, channels, table)
+        held_then = book.side == 0 or since <= 0 or bar.open_ms + 60_000 > since
+        if held_then and book.side > 0 and bar.high > book.extreme:
+            book.extreme = bar.high
+        elif held_then and book.side < 0 and (book.extreme == 0.0 or bar.low < book.extreme):
+            book.extreme = bar.low
         favorable, adverse = _marks(book, bar)
-        close_usd = _equity_usd(snap, book, bar.close)
-        fav_cny = _equity_usd(snap, book, favorable) * fx
+        close_usd = _equity_usd(snap, book, bar.close, held_then)
+        fav_cny = _equity_usd(snap, book, favorable, held_then) * fx
         if fav_cny > book.peak_equity_cny:
             book.peak_equity_cny = fav_cny
         if close_usd * fx > book.close_peak_cny:
@@ -507,18 +695,24 @@ def _walk_bars(
             xh=xh,
             xl=xl,
             equity_cny=close_usd * fx,
-            equity_usd=close_usd,
+            equity_usd=risk_equity(close_usd, limits),
             now_ms=now_ms,
             cfg=cfg,
-            hard_notional=max_notional or 0.0,
+            hard_notional=cap or 0.0,
             gate_open=gate,
-            adverse_cny=_equity_usd(snap, book, adverse) * fx,
+            adverse_cny=_equity_usd(snap, book, adverse, held_then) * fx,
         )
         if action.stop > 0 and book.side != 0:
             book.stop = action.stop
         book.cursor_ms = bar.open_ms
         if action.kind in {"hold", "update_stop"}:
             continue
+        if now_ms - (bar.open_ms + 60_000) > STALE_SIGNAL_MS:
+            # A backlog minute still updates memory. It does not open new risk at today's price.
+            if action.kind in {"enter", "add"}:
+                continue
+            if action.kind == "reverse":
+                action = Action("exit", action.side, action.qty, action.stop, action.disaster_take, action.reason)
         return _act(
             action,
             store,
@@ -528,7 +722,7 @@ def _walk_bars(
             cfg,
             environment,
             limits,
-            max_notional,
+            cap,
             prod_enabled,
             sent,
             would,
@@ -545,18 +739,22 @@ def _levels_for_bar(
     channels: tuple[float, float, float, float, int] | None,
     table: dict[int, tuple[float, float, float, float]],
 ) -> tuple[float, float, float, float]:
-    """Levels known at this minute's close. A later hour is not visible yet."""
+    """Levels from hours that had finished before this minute's hour began.
+
+    The research tape reads the window that ends one hour before the current
+    hour. A minute inside hour H therefore sees hours up to H-1 and never its
+    own hour, so a close can exceed the level.
+    """
     blank = (float("inf"), float("-inf"), float("inf"), float("-inf"))
-    close_ms = bar.open_ms + 60_000
     if table:
-        known = [stamp for stamp in table if stamp <= close_ms]
+        known = [stamp for stamp in table if stamp <= bar.open_ms]
         if not known:
             return blank
         return table[max(known)]
     if channels is None:
         return blank
     hh, ll, xh, xl, hour_open = channels
-    if hour_open + 3_600_000 > close_ms:
+    if hour_open + 3_600_000 > bar.open_ms:
         return blank
     return hh, ll, xh, xl
 
@@ -582,9 +780,13 @@ def _channel_table(
     if len(ordered) >= entry_hours:
         hh = rolling_max(high, entry_hours)
         ll = rolling_min(low, entry_hours)
+        hh[: entry_hours - 1] = np.inf
+        ll[: entry_hours - 1] = -np.inf
     if len(ordered) >= exit_hours:
         xh = rolling_max(high, exit_hours)
         xl = rolling_min(low, exit_hours)
+        xh[: exit_hours - 1] = np.inf
+        xl[: exit_hours - 1] = -np.inf
     return {
         ordered[i][0] + 3_600_000: (float(hh[i]), float(ll[i]), float(xh[i]), float(xl[i])) for i in range(len(ordered))
     }
@@ -604,7 +806,7 @@ def _act(
     cfg: AccountConfig,
     environment: str,
     limits: Limits,
-    max_notional: float | None,
+    cap: float | None,
     prod_enabled: bool,
     sent: list[str],
     would: list[str],
@@ -616,18 +818,20 @@ def _act(
     if action.kind in {"enter", "add"}:
         if book.entries_frozen or book.manual:
             return "增仓已冻结：" + book.freeze_reason
-        blocked = entry_block_reason(environment, limits, max_notional, prod_enabled=prod_enabled)
+        blocked = entry_block_reason(environment, limits, cap, prod_enabled=prod_enabled)
         if blocked:
             return blocked
         if _blocking_entry(store):
             return "已有未完成订单，不会再发一张增仓单"
+        if abs(snap.position_qty) >= 1e-8 and not protections_cover(snap)[0]:
+            return "现有仓位保护不完整，先补保护，不加仓"
         price = snap.mark_price or snap.last_price
-        qty = _fit_qty(action.qty, snap, price, False, max_notional or 0.0)
+        qty = _fit_qty(action.qty, snap, price, False, cap or 0.0)
         if qty is None:
             return "数量不满足交易所过滤器或名义上限"
         side = "BUY" if action.side > 0 else "SELL"
         _queue_market(
-            store, venue, environment, action.kind, side, qty, False, "", sent, would, alerts, dry_run, now_ms
+            store, venue, book, environment, action.kind, side, qty, False, sent, would, alerts, dry_run, now_ms
         )
         return action.reason
     if action.kind in {"exit", "reverse"}:
@@ -641,11 +845,11 @@ def _act(
             book.swaps["after_flat_ms"] = str(bar_open_ms)
             book.swaps["after_scale"] = str(action.scale)
         price = snap.mark_price or snap.last_price
-        qty = _fit_qty(abs(snap.position_qty), snap, price, True, max_notional or 0.0)
+        qty = _fit_qty(abs(snap.position_qty), snap, price, True, 0.0)
         if qty is None:
             return "实仓数量无法量化"
         side = "SELL" if snap.position_qty > 0 else "BUY"
-        _queue_market(store, venue, environment, "reduce", side, qty, True, "", sent, would, alerts, dry_run, now_ms)
+        _queue_market(store, venue, book, environment, "reduce", side, qty, True, sent, would, alerts, dry_run, now_ms)
         return action.reason
     _ = cfg
     return ""
@@ -659,7 +863,8 @@ def _maybe_open_after_flat(
     cfg: AccountConfig,
     environment: str,
     limits: Limits,
-    max_notional: float | None,
+    cap: float | None,
+    cli_cap: float | None,
     prod_enabled: bool,
     sent: list[str],
     alerts: list[str],
@@ -682,14 +887,13 @@ def _maybe_open_after_flat(
         return
     if book.entries_frozen or book.manual:
         return
-    blocked = entry_block_reason(environment, limits, max_notional, prod_enabled=prod_enabled)
+    blocked = entry_block_reason(environment, limits, cli_cap, prod_enabled=prod_enabled)
     if blocked or _blocking_entry(store):
         alerts.append(blocked or "反向开仓还在等上一张单")
         return
     price = snap.mark_price or snap.last_price
-    equity = snap.wallet_usdt
     raw = _qty(
-        equity,
+        risk_equity(_equity_now(snap), limits),
         price,
         cfg.stop,
         cfg.risk,
@@ -698,19 +902,19 @@ def _maybe_open_after_flat(
         cfg.heat,
         cfg.trail,
         cfg.leverage,
-        max_notional or 0.0,
+        cap or 0.0,
     )
-    qty = _fit_qty(raw, snap, price, False, max_notional or 0.0)
+    qty = _fit_qty(raw, snap, price, False, cap or 0.0)
     if qty is None:
         alerts.append("反向开仓数量不满足过滤器")
         return
-    _queue_market(store, venue, environment, "enter", side, qty, False, "", sent, [], alerts, False, now_ms)
+    _queue_market(store, venue, book, environment, "enter", side, qty, False, sent, [], alerts, False, now_ms)
     book.swaps.pop("after_flat", None)
     book.swaps.pop("after_flat_ms", None)
     book.swaps.pop("after_scale", None)
 
 
-def _protect(
+def _keep_protected(
     store: Store,
     venue: Venue,
     snap: Snapshot,
@@ -718,9 +922,11 @@ def _protect(
     cfg: AccountConfig,
     sent: list[str],
     alerts: list[str],
-) -> None:
+    now_ms: int,
+) -> bool:
+    """Place or replace protection. ``True`` means the stop is already behind the last price."""
     if not snap.known or abs(snap.position_qty) < 1e-8:
-        return
+        return False
     side = snap.position_side
     entry = snap.entry_price
     if book.side == side and book.stop > 0:
@@ -733,32 +939,49 @@ def _protect(
     filters = snap.filters
     if filters is None:
         alerts.append("没有价格精度，不能挂保护")
-        return
+        return False
+    if snap.last_price <= 0:
+        alerts.append("现价未知，本轮不改保护")
+        return False
     stop_px = _tick(stop_source, filters.tick_size)
     take_px = _tick(take, filters.tick_size)
-    if not _trigger_ok(side, "stop", stop_px, snap.last_price) or not _trigger_ok(
-        side, "take", take_px, snap.last_price
-    ):
-        alerts.append("保护触发价落在现价的错误一侧")
+    stop_ok = _trigger_ok(side, "stop", stop_px, snap.last_price)
+    take_ok = _trigger_ok(side, "take", take_px, snap.last_price)
+    if not stop_ok and take_ok:
+        alerts.append("止损价已被现价越过，改为只减仓退出")
+        return True
+    if not (stop_ok and take_ok) or not _in_band(filters.min_price, filters.max_price, stop_px, take_px):
+        alerts.append("保护触发价落在现价的错误一侧或价格带外")
         book.entries_frozen = True
         book.freeze_reason = "保护触发价无效"
-        return
+        return False
+    for kind in ("stop", "take"):
+        nxt = book.swaps.get(f"{kind}_next", "")
+        item = _reload(store, nxt) if nxt else None
+        live = any(algo.client_algo_id == nxt and algo.status == "NEW" for algo in snap.algos)
+        if item is not None and item.phase in {"rejected", "expired", "canceled", "filled"} and not live:
+            book.swaps.pop(f"{kind}_next", None)
     commands, swaps = plan_protection(snap, book.swaps, stop_price=stop_px, take_price=take_px)
     book.swaps = swaps
     for command in commands:
-        _queue_algo(store, venue, store.environment, command, sent, alerts)
+        _queue_algo(store, venue, store.environment, command, sent, alerts, now_ms)
     if commands:
         snap = venue.snapshot()
-    cancels, swaps = promote_protection(snap, book.swaps)
+    cancels, swaps = promote_protection(snap, book.swaps, store.all_client_ids())
     book.swaps = swaps
     for command in cancels:
         _cancel(store, venue, command, sent, alerts)
+    return False
+
+
+def _in_band(low: float, high: float, *prices: float) -> bool:
+    return all((low <= 0 or price >= low) and (high <= 0 or price <= high) for price in prices)
 
 
 def _siblings(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
     if not snap.known:
         return
-    for command in sibling_cancels(snap):
+    for command in sibling_cancels(snap, store.all_client_ids()):
         _cancel(store, venue, command, sent, alerts)
 
 
@@ -774,12 +997,8 @@ def _naked(
     sent: list[str],
     alerts: list[str],
 ) -> None:
-    covered, _why = protections_cover(snap) if snap.known else (False, "")
-    if not snap.known or abs(snap.position_qty) < 1e-8 or covered:
-        book.unprotected_since_ms = None
+    if not snap.known or abs(snap.position_qty) < 1e-8 or book.unprotected_since_ms is None:
         return
-    if book.unprotected_since_ms is None:
-        book.unprotected_since_ms = now_ms
     cap = limits.max_unprotected_seconds or NAKED_DEFAULT_SECONDS
     if now_ms - book.unprotected_since_ms < cap * 1000:
         return
@@ -787,6 +1006,16 @@ def _naked(
     book.entries_frozen = True
     book.freeze_reason = "保护覆盖超时"
     _flatten(store, venue, snap, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
+
+
+def _clear_own_orders(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
+    """Cancel the entry orders and leftover protection that this program created."""
+    known = store.all_client_ids()
+    for order in snap.orders:
+        if order.status in {"NEW", "PARTIALLY_FILLED"} and not order.reduce_only and order.client_id in known:
+            _cancel(store, venue, Command("cancel_order", order.client_id), sent, alerts)
+        elif order.status in {"NEW", "PARTIALLY_FILLED"} and order.client_id not in known:
+            alerts.append("外来订单没有被撤销：" + (order.client_id or "无编号"))
 
 
 def _safe_stop(
@@ -801,23 +1030,47 @@ def _safe_stop(
 ) -> None:
     book.entries_frozen = True
     book.freeze_reason = "安全停机"
+    known = store.all_client_ids()
     for order in snap.orders:
-        if order.status in {"NEW", "PARTIALLY_FILLED"} and not order.reduce_only:
-            command = Command("cancel_order", order.client_id)
-            if dry_run:
-                would.append("cancel " + order.client_id)
-            else:
-                _cancel(store, venue, command, sent, alerts)
+        if order.status not in {"NEW", "PARTIALLY_FILLED"} or order.reduce_only:
+            continue
+        if order.client_id not in known:
+            alerts.append("外来订单没有被撤销：" + (order.client_id or "无编号"))
+            continue
+        if dry_run:
+            would.append("cancel " + order.client_id)
+        else:
+            _cancel(store, venue, Command("cancel_order", order.client_id), sent, alerts)
     if abs(snap.position_qty) < 1e-8:
         for algo in snap.algos:
-            if algo.status == "NEW":
-                command = Command("cancel_algo", algo.client_algo_id)
-                if dry_run:
-                    would.append("cancel " + algo.client_algo_id)
-                else:
-                    _cancel(store, venue, command, sent, alerts)
+            if algo.status != "NEW":
+                continue
+            if algo.client_algo_id not in known:
+                alerts.append("外来条件单没有被撤销：" + (algo.client_algo_id or "无编号"))
+            elif dry_run:
+                would.append("cancel " + algo.client_algo_id)
+            else:
+                _cancel(store, venue, Command("cancel_algo", algo.client_algo_id), sent, alerts)
     else:
         alerts.append("停机保留已有实仓的保护单")
+
+
+def _stop_settled(store: Store, snap: Snapshot) -> bool:
+    if not snap.known:
+        return False
+    known = store.all_client_ids()
+    own_entry_orders = [
+        order
+        for order in snap.orders
+        if order.status in {"NEW", "PARTIALLY_FILLED"} and not order.reduce_only and order.client_id in known
+    ]
+    open_entries = [
+        item for item in store.open_intents() if item.action in _ENTRY_ACTIONS or item.action in {"reduce", "flatten"}
+    ]
+    if own_entry_orders or open_entries:
+        return False
+    covered, _why = protections_cover(snap)
+    return covered
 
 
 def _flatten(
@@ -833,6 +1086,11 @@ def _flatten(
     dry_run: bool,
     now_ms: int,
 ) -> None:
+    if not snap.known:
+        return
+    if not dry_run:
+        # An entry that fills after the flatten would reopen the risk just removed.
+        _clear_own_orders(store, venue, snap, sent, alerts)
     if abs(snap.position_qty) < 1e-8:
         alerts.append("当前没有实仓")
         return
@@ -843,14 +1101,15 @@ def _flatten(
     if _blocking_reduce(store):
         alerts.append("已有未完成的平仓单")
         return
+    if any(item.action in _ENTRY_ACTIONS and item.phase in OPEN_PHASES for item in store.intents()):
+        alerts.append("还有未结清的入场意图，平仓后需要再核对仓位")
     price = snap.mark_price or snap.last_price
     qty = _fit_qty(abs(snap.position_qty), snap, price, True, 0.0)
     if qty is None:
         alerts.append("实仓数量无法量化")
         return
     side = "SELL" if snap.position_qty > 0 else "BUY"
-    _queue_market(store, venue, environment, "flatten", side, qty, True, "", sent, would, alerts, dry_run, now_ms)
-    _ = book
+    _queue_market(store, venue, book, environment, "flatten", side, qty, True, sent, would, alerts, dry_run, now_ms)
 
 
 def _describe_protection(snap: Snapshot, book: Book, cfg: AccountConfig, would: list[str]) -> None:
@@ -866,12 +1125,12 @@ def _describe_protection(snap: Snapshot, book: Book, cfg: AccountConfig, would: 
 def _queue_market(
     store: Store,
     venue: Venue,
+    book: Book,
     environment: str,
     action: str,
     side: str,
     qty: str,
     reduce_only: bool,
-    note: str,
     sent: list[str],
     would: list[str],
     alerts: list[str],
@@ -894,9 +1153,12 @@ def _queue_market(
         trigger_price="",
         environment=environment,
         created_ms=now_ms,
-        note=note,
+        note="",
+        absorbed=False,
     )
     store.insert_intent(intent)
+    if action in _ENTRY_ACTIONS:
+        book.swaps["unit_from"] = client_id
     store.mark_intent(client_id, "sent", "before-transport")
     intent.phase = "sent"
     _transmit(store, venue, intent, sent, alerts)
@@ -909,11 +1171,14 @@ def _queue_algo(
     command: Command,
     sent: list[str],
     alerts: list[str],
+    now_ms: int,
 ) -> None:
-    if any(item.client_id == command.client_id for item in store.intents()):
-        intent = _reload(store, command.client_id)
-        if intent is None or intent.phase not in {"planned", "rejected", "expired"}:
+    existing = _reload(store, command.client_id)
+    if existing is not None:
+        # An id keeps the meaning it was created with. Only an unsent plan is sent.
+        if existing.phase != "planned":
             return
+        intent = existing
     else:
         intent = Intent(
             client_id=command.client_id,
@@ -922,18 +1187,15 @@ def _queue_algo(
             side=command.side,
             qty=command.qty,
             reduce_only=command.reduce_only,
-            close_position=command.close_position,
+            close_position=True,
             trigger_price=command.trigger_price,
             environment=environment,
-            created_ms=0,
+            created_ms=now_ms,
             note="",
         )
         store.insert_intent(intent)
     store.mark_intent(intent.client_id, "sent", "before-transport")
     intent.phase = "sent"
-    intent.side = command.side
-    intent.trigger_price = command.trigger_price
-    intent.close_position = True
     _transmit(store, venue, intent, sent, alerts)
 
 
@@ -960,13 +1222,21 @@ def _transmit(store: Store, venue: Venue, intent: Intent, sent: list[str], alert
         alerts.append("执行结果未知，保留原客户端身份 " + intent.client_id)
         _transmit_journal(store, intent, "unknown", started)
         return
+    except WriteRefused as exc:
+        store.mark_intent(intent.client_id, "rejected", "not-sent")
+        store.mark_absorbed(intent.client_id)
+        alerts.append(str(exc)[:160])
+        _transmit_journal(store, intent, "not-sent", started)
+        return
     except AlgoEndpointRequired:
         store.mark_intent(intent.client_id, "rejected", "algo-endpoint")
+        store.mark_absorbed(intent.client_id)
         alerts.append("条件单被普通订单接口拒绝，不会改域名重试")
         _transmit_journal(store, intent, "rejected", started)
         return
     except (ValueError, RuntimeError) as exc:
         store.mark_intent(intent.client_id, "rejected", "error")
+        store.mark_absorbed(intent.client_id)
         alerts.append(str(exc)[:160])
         _transmit_journal(store, intent, "rejected", started)
         return
@@ -974,6 +1244,8 @@ def _transmit(store: Store, venue: Venue, intent: Intent, sent: list[str], alert
     if phase == "missing":
         phase = "unknown"
     store.mark_intent(intent.client_id, phase, intent.note)
+    if phase == "rejected":
+        store.mark_absorbed(intent.client_id)
     sent.append(intent.client_id)
     _transmit_journal(store, intent, phase, started)
     if phase == "rejected":
@@ -994,6 +1266,8 @@ def _transmit_journal(store: Store, intent: Intent, phase: str, started: float) 
 
 
 def _cancel(store: Store, venue: Venue, command: Command, sent: list[str], alerts: list[str]) -> None:
+    """Cancel one of our own orders. The answer is recorded as it came, never as a success it was not."""
+    known = _reload(store, command.client_id)
     try:
         if command.op == "cancel_algo":
             body = venue.cancel_algo(command.client_id)
@@ -1002,28 +1276,30 @@ def _cancel(store: Store, venue: Venue, command: Command, sent: list[str], alert
     except UnknownExecution:
         alerts.append("撤单结果未知 " + command.client_id)
         store.append_event("cancel-unknown", command.client_id)
+        if known is not None:
+            store.mark_intent(command.client_id, "unknown", "cancel-unknown")
         return
-    phase = interpret_body(body)
-    if any(item.client_id == command.client_id for item in store.intents()):
-        store.mark_intent(
-            command.client_id, "canceled" if phase in {"canceled", "filled", "missing"} else phase, "cancel"
-        )
+    except WriteRefused as exc:
+        alerts.append(str(exc)[:160])
+        return
+    phase = interpret_body(body, cancel=True)
+    if known is not None:
+        if phase == "missing":
+            store.mark_intent(command.client_id, "expired", "cancel-target-missing")
+        else:
+            store.mark_intent(command.client_id, phase, "cancel")
     sent.append(command.client_id)
     store.append_event("cancel", command.client_id)
 
 
 def _blocking_entry(store: Store) -> bool:
     return any(
-        item.phase in {"planned", "sent", "unknown", "partial"} and item.action in {"enter", "add", "reverse"}
-        for item in store.intents()
+        item.phase in OPEN_PHASES and item.action in {"enter", "add", "reverse"} for item in store.intents(_OPEN)
     )
 
 
 def _blocking_reduce(store: Store) -> bool:
-    return any(
-        item.phase in {"planned", "sent", "unknown"} and item.action in {"reduce", "flatten"}
-        for item in store.intents()
-    )
+    return any(item.phase in OPEN_PHASES and item.action in {"reduce", "flatten"} for item in store.intents(_OPEN))
 
 
 def _is_algo(intent: Intent) -> bool:
@@ -1037,27 +1313,32 @@ def _reload(store: Store, client_id: str) -> Intent | None:
     return None
 
 
-def _fit_qty(raw: float, snap: Snapshot, price: float, reduce_only: bool, max_notional: float) -> str | None:
+def _fit_qty(raw: float, snap: Snapshot, price: float, reduce_only: bool, cap: float) -> str | None:
     filters = snap.filters
-    if filters is None or filters.step_size <= 0 or raw <= 0:
-        return None
-    qty_text = quantize_down(raw, filters.step_size)
-    qty = float(qty_text)
-    if qty < filters.min_qty:
+    if filters is None or filters.step_size <= 0 or raw <= 0 or not math.isfinite(raw):
         return None
     if reduce_only:
-        return qty_text
-    if price <= 0:
+        if filters.max_qty > 0 and raw > filters.max_qty:
+            raw = filters.max_qty
+        qty_text = quantize_down(raw, filters.step_size)
+        return qty_text if float(qty_text) >= filters.min_qty else None
+    if price <= 0 or not math.isfinite(price):
         return None
-    if max_notional > 0 and abs(snap.position_qty) * price + qty * price > max_notional:
-        room = (max_notional - abs(snap.position_qty) * price) / price
+    if filters.max_qty > 0 and raw > filters.max_qty:
+        raw = filters.max_qty
+    qty_text = quantize_down(raw, filters.step_size)
+    qty = float(qty_text)
+    if cap > 0 and abs(snap.position_qty) * price + qty * price > cap:
+        room = (cap - abs(snap.position_qty) * price) / price
         if room <= 0:
             return None
         qty_text = quantize_down(room, filters.step_size)
         qty = float(qty_text)
     if qty < filters.min_qty or qty * price < filters.min_notional:
         return None
-    if qty * price / 20.0 > snap.available_usdt:
+    leverage = float(snap.leverage) if snap.leverage > 0 else 20.0
+    fee = snap.fee_taker if snap.fee_taker is not None else 0.0005
+    if qty * price * (1.0 / leverage + 2.0 * fee) > snap.available_usdt:
         return None
     return qty_text
 
@@ -1077,8 +1358,8 @@ def _trigger_ok(side: int, kind: str, price: float, last: float) -> bool:
     return price > last if side > 0 else price < last
 
 
-def _equity_usd(snap: Snapshot, book: Book, price: float) -> float:
-    if book.side == 0 or book.qty <= 0:
+def _equity_usd(snap: Snapshot, book: Book, price: float, held: bool = True) -> float:
+    if book.side == 0 or book.qty <= 0 or not held:
         return snap.wallet_usdt
     return snap.wallet_usdt + (price - book.entry) * book.qty * book.side
 
@@ -1092,19 +1373,23 @@ def _marks(book: Book, bar: MinuteBar) -> tuple[float, float]:
 
 
 def _loss_block(book: Book, snap: Snapshot, limits: Limits, now_ms: int) -> str:
+    """Freeze new risk once today's equity is down by the cap. It does not close positions.
+
+    The day starts from wallet plus unrealised PnL at the first look of the UTC
+    day. A deposit raises equity and cannot trip the cap; a withdrawal looks
+    like a loss and can, which is the safe direction.
+    """
     if limits.max_daily_loss_usdt is None or limits.max_daily_loss_usdt <= 0:
         return ""
     day = dt.datetime.fromtimestamp(now_ms / 1000, dt.UTC).strftime("%Y-%m-%d")
+    equity = _equity_now(snap)
     if book.day_key != day:
         book.day_key = day
-        book.swaps["day_wallet"] = f"{snap.wallet_usdt:.8f}"
-    start = float(book.swaps.get("day_wallet", snap.wallet_usdt))
-    equity = snap.wallet_usdt
-    if snap.mark_price > 0 and snap.entry_price > 0 and abs(snap.position_qty) > 0:
-        equity = snap.wallet_usdt + (snap.mark_price - snap.entry_price) * snap.position_qty
+        book.swaps["day_equity"] = repr(equity)
+    start = float(book.swaps.get("day_equity", equity))
     book.day_realized_usdt = equity - start
     if start - equity >= limits.max_daily_loss_usdt:
-        return "已到单日损失上限"
+        return "已到单日损失上限，只停止新增风险"
     return ""
 
 

@@ -107,18 +107,15 @@ def _bucket8h(ts_ms: int) -> int:
     return int(round(ts_ms / step) * step)
 
 
-def load_hourly():
-    """Hourly bars, funding, and USD/CNY from ``data/`` next to the repository."""
-    d = np.load(DATA_DIR / "btcusdt_1m.npz")
-    ts, o, h, l, c = d["ts"], d["o"], d["h"], d["l"], d["c"]
-    n = len(c) // 60
-    O = o[::60].astype(np.float64)
-    H = h.reshape(n, 60).max(1).astype(np.float64)
-    L = l.reshape(n, 60).min(1).astype(np.float64)
-    C = c[59::60].astype(np.float64)
-    TS = ts[::60]
-    # Premium approximation is written first. Official prints overwrite it.
+def funding_map() -> tuple[dict[int, float], set[int]]:
+    """Funding rate by 8-hour slot, and the slots that come from official prints.
+
+    The premium approximation is written first; official prints overwrite it.
+    A slot in neither source is absent here. ``load_hourly`` still fills it
+    with 0.0 for the replay, and ``funding_coverage`` reports it.
+    """
     fmap: dict[int, float] = {}
+    official: set[int] = set()
     for f in sorted((DATA_DIR / "premium").glob("*.zip")):
         with zipfile.ZipFile(f) as z:
             with z.open(z.namelist()[0]) as fh:
@@ -133,7 +130,47 @@ def load_hourly():
                     fmap[_bucket8h(ot + 8 * 3600 * 1000)] = rate
     fund_z = np.load(DATA_DIR / "funding.npz")
     for t, r in zip(fund_z["ts"], fund_z["rate"], strict=True):
-        fmap[_bucket8h(int(t))] = float(r)
+        key = _bucket8h(int(t))
+        fmap[key] = float(r)
+        official.add(key)
+    return fmap, official
+
+
+def funding_coverage(hour_ts: np.ndarray) -> dict:
+    """Which 8-hour settlement slots on the tape have an official print, a proxy, or nothing."""
+    fmap, official = funding_map()
+    step = 8 * 3600 * 1000
+    slots = [int(t) for t in hour_ts if int(t) % step == 0]
+    missing = [t for t in slots if t not in fmap]
+    proxy = [t for t in slots if t in fmap and t not in official]
+
+    def iso(t: int) -> str:
+        return dt.datetime.fromtimestamp(t / 1000, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    return {
+        "slots": len(slots),
+        "official": len(slots) - len(missing) - len(proxy),
+        "proxy_from_premium": len(proxy),
+        "missing_filled_with_zero": len(missing),
+        "missing_first": iso(missing[0]) if missing else None,
+        "missing_last": iso(missing[-1]) if missing else None,
+        "missing_sample": [iso(t) for t in missing[:10]],
+        "proxy_first": iso(proxy[0]) if proxy else None,
+        "proxy_last": iso(proxy[-1]) if proxy else None,
+    }
+
+
+def load_hourly():
+    """Hourly bars, funding, and USD/CNY from ``data/`` next to the repository."""
+    d = np.load(DATA_DIR / "btcusdt_1m.npz")
+    ts, o, h, l, c = d["ts"], d["o"], d["h"], d["l"], d["c"]
+    n = len(c) // 60
+    O = o[::60].astype(np.float64)
+    H = h.reshape(n, 60).max(1).astype(np.float64)
+    L = l.reshape(n, 60).min(1).astype(np.float64)
+    C = c[59::60].astype(np.float64)
+    TS = ts[::60]
+    fmap, _official = funding_map()
     fund = np.array([fmap.get(int(t), 0.0) for t in TS], np.float64)
     raw = json.loads((DATA_DIR / "usdcny_frankfurter.json").read_text())
     rates = {dt.date.fromisoformat(k): float(v["CNY"]) for k, v in raw["rates"].items()}
@@ -286,7 +323,8 @@ def _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail):
 # 17 pending signal (0 none, 1 entry, 2 add, 3 channel exit, 4 reverse),
 # 18 pending side, 19 pending entry scale. Used when defer=1: the signal is
 # known at the close and the fill waits for the next bar's open.
-STATE_N = 20
+# 20 traded BTC and 21 traded USDT, every simulated fill, including intrabar round trips.
+STATE_N = 22
 
 
 @njit(cache=True)
@@ -311,6 +349,8 @@ def _reset(state, fx0):
     state[17] = 0.0
     state[18] = 0.0
     state[19] = 1.0
+    state[20] = 0.0
+    state[21] = 0.0
 
 
 @njit(cache=True)
@@ -379,6 +419,8 @@ def _loop(
     pending = state[17]
     pending_side = state[18]
     pending_scale = state[19]
+    turn_b = state[20]
+    turn_u = state[21]
     for i in range(i0, i1):
         # Stops can fill before this bar is finished, so impact uses the previous minute.
         if qv.shape[0] == n and qty > 0.0 and i > 0:
@@ -397,6 +439,8 @@ def _loop(
             if isolated + upnl - pay <= maint:
                 fill = O[i] * (1.0 - slip_b) if side > 0 else O[i] * (1.0 + slip_b)
                 fee = qty * fill * taker
+                turn_b += qty
+                turn_u += qty * fill
                 raw = (fill - entry) * qty * side - fee
                 wallet, _delta = _realize(wallet, raw, pay, isolated)
                 isolated = 0.0
@@ -421,6 +465,8 @@ def _loop(
                 if through or pending == 3.0 or pending == 4.0:
                     fill = O[i] * (1.0 - slip_b) if side > 0 else O[i] * (1.0 + slip_b)
                     fee = qty * fill * taker
+                    turn_b += qty
+                    turn_u += qty * fill
                     raw = (fill - entry) * qty * side - fee
                     wallet, _delta = _realize(wallet, raw, 0.0, isolated)
                     was_reverse = pending == 4.0 and not through
@@ -462,6 +508,8 @@ def _loop(
                     iso = q * fill / lev
                     if iso + fee < wallet * (1.0 - CASH_BUFFER):
                         wallet -= fee
+                        turn_b += q
+                        turn_u += q * fill
                         side = want_e
                         qty = q
                         entry = fill
@@ -500,6 +548,8 @@ def _loop(
                     posted = isolated if isolated > 0.0 else 0.0
                     if wallet - posted > iso_add + fee:
                         wallet -= fee
+                        turn_b += qadd
+                        turn_u += qadd * fill
                         entry = (entry * qty + fill * qadd) / (qty + qadd)
                         qty += qadd
                         isolated += iso_add
@@ -573,6 +623,8 @@ def _loop(
                 peak, min_ratio, min_i = _mark(px, wallet, entry, qty, side, fx[i], fx_fee, peak, min_ratio, min_i, i)
             if hit:
                 fee = qty * fill * taker
+                turn_b += qty
+                turn_u += qty * fill
                 raw = (fill - entry) * qty * side - fee
                 wallet, _delta = _realize(wallet, raw, 0.0, isolated)
                 isolated = 0.0
@@ -596,6 +648,8 @@ def _loop(
                 slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
                 fill = C[i] * (1.0 - slip_x)
                 fee = qty * fill * taker
+                turn_b += qty
+                turn_u += qty * fill
                 raw = (fill - entry) * qty * side - fee
                 wallet, _delta = _realize(wallet, raw, 0.0, isolated)
                 isolated = 0.0
@@ -606,6 +660,8 @@ def _loop(
                 slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
                 fill = C[i] * (1.0 + slip_x)
                 fee = qty * fill * taker
+                turn_b += qty
+                turn_u += qty * fill
                 raw = (fill - entry) * qty * side - fee
                 wallet, _delta = _realize(wallet, raw, 0.0, isolated)
                 isolated = 0.0
@@ -670,6 +726,8 @@ def _loop(
                 iso = q * fill / lev
                 if iso + fee < wallet * (1.0 - CASH_BUFFER):
                     wallet -= fee
+                    turn_b += q
+                    turn_u += q * fill
                     side = want
                     qty = q
                     entry = fill
@@ -712,6 +770,8 @@ def _loop(
                     posted = isolated if isolated > 0.0 else 0.0
                     if wallet - posted > iso_add + fee:
                         wallet -= fee
+                        turn_b += qadd
+                        turn_u += qadd * fill
                         entry = (entry * qty + fill * qadd) / (qty + qadd)
                         qty += qadd
                         isolated += iso_add
@@ -759,6 +819,8 @@ def _loop(
     state[17] = pending
     state[18] = pending_side
     state[19] = pending_scale
+    state[20] = turn_b
+    state[21] = turn_u
     last = i1 - 1
     eq = wallet + ((C[last] - entry) * qty * side if side != 0 else 0.0)
     end = eq * fx[last] * (1.0 - fx_fee)

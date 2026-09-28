@@ -10,8 +10,9 @@
   "n_long": 57,
   "n_short": 35,
   "n_stop": 80,
-  "turnover_btc": 511.774,
-  "turnover_usdt": 27773928.92993,
+  "turnover_btc": 511.77400000000017,
+  "turnover_usdt": 27753078.461764857,
+  "turnover_note": "every simulated fill, including entries and exits inside one minute",
   "target_cny_100": 1053236.6589794934,
   "target_cny_150": 4716652.688753132,
   "meets_100": true,
@@ -23,10 +24,30 @@
     "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
   },
   "funding_gap": {
-    "present": true,
-    "rate": 0.0,
+    "slots": 7362,
+    "official": 7305,
+    "proxy_from_premium": 56,
+    "missing_filled_with_zero": 1,
+    "missing_first": "2026-09-01T00:00:00Z",
+    "missing_last": "2026-09-01T00:00:00Z",
+    "missing_sample": [
+      "2026-09-01T00:00:00Z"
+    ],
+    "proxy_first": "2026-09-01T08:00:00Z",
+    "proxy_last": "2026-09-19T16:00:00Z",
     "missing_slot": true,
-    "note": "2026-09-01 00:00 UTC 的资金费槽位为 0，这一档未用官方结算价验证"
+    "note": "缺失槽位在回放里按 0 计，没有官方结算价验证；proxy 槽位来自溢价指数估算，不是官方结算价。"
+  },
+  "provenance": {
+    "git_head": "518ca6c31095135ec7ec61d52d39a45498189e64",
+    "git_dirty": true,
+    "files_sha256": {
+      "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
+      "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+      "scripts/frontier.py": "ced5eec56062d457d78ccb074acf1412a5b0f54578a7fe3faf34e639c35bcb3c",
+      "btc_perp/causal.py": "f7c20ed16483579c0606bfd7754991cc2da101caa09e5df004449f63f6904f87"
+    },
+    "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
   },
   "previous_same_bar": {
     "end_cny": 2029866.4296051874,

@@ -8,17 +8,20 @@ order. Production entries stay closed unless the environment variable and
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import signal
 import sys
 import time
 from pathlib import Path
 
 from btc_perp.bars import bars_from_kline_rows, completed_hour_channels
 from btc_perp.binance_client import UrllibTransport, UsdMClient
-from btc_perp.config import ROOT, load_config
+from btc_perp.config import ROOT, AccountConfig, load_config
 from btc_perp.gates import DEMO, PROD, load_limits, prod_orders_allowed
+from btc_perp.model import Limits
 from btc_perp.permissions import prod_permission_block
-from btc_perp.runner import run_cycle
+from btc_perp.runner import CycleReport, run_cycle
 from btc_perp.store import Store
 from btc_perp.user_stream import UserStream
 
@@ -75,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
         ("stop", "撤销会加仓的挂单，保留实仓保护", "python -m btc_perp stop --environment demo"),
         ("flatten", "只减仓平掉实仓", "python -m btc_perp flatten --environment demo --once"),
         ("takeover", "按实仓接管并继续冻结加仓", "python -m btc_perp takeover --environment demo --once"),
+        ("resume", "清除 stop/flatten 请求文件，让 run 恢复正常", "python -m btc_perp resume --environment demo"),
     ):
         cmd = sub.add_parser(name, help=help_text, epilog=example, formatter_class=argparse.RawDescriptionHelpFormatter)
         cmd.add_argument("--environment", required=True, choices=(DEMO, PROD))
@@ -93,7 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"passed={report['passed']} cagr={report['cagr']:.3f} "
             f"end={report['end_cny']:,.0f} ratio={report['min_equity_over_peak']:.3f} "
-            f"long={report['n_long']} short={report['n_short']}"
+            f"long={report['n_long']} short={report['n_short']} "
+            f"meets_150={bool(report['cagr'] >= 1.5 and report['min_equity_over_peak'] > 0.5)}"
         )
         return 0
     if found.command == "causal":
@@ -111,8 +116,48 @@ def main(argv: list[str] | None = None) -> int:
     return _forward(found)
 
 
+def _request_file(state: Path, name: str, command: str) -> None:
+    state.mkdir(parents=True, exist_ok=True)
+    (state / name).write_text(json.dumps({"command": command, "ts_ms": int(time.time() * 1000)}) + "\n")
+
+
+def _fetch_minutes(client: UsdMClient, cursor_ms: int, now_ms: int) -> list[object]:
+    """Completed and forming minutes from just after the stored cursor, in pages."""
+    if cursor_ms <= 0 or (now_ms - cursor_ms) // 60_000 + 3 <= 5:
+        return client.klines("1m", 5)
+    rows: list[object] = []
+    start = cursor_ms + 60_000
+    for _page in range(30):
+        page = client.klines("1m", 1000, start)
+        if not page:
+            break
+        rows.extend(page)
+        last = page[-1]
+        last_open = int(last[0]) if isinstance(last, list) else 0
+        if len(page) < 1000 or last_open + 60_000 >= now_ms:
+            break
+        start = last_open + 60_000
+    return rows
+
+
+class _Interrupted(Exception):
+    pass
+
+
+def _raise_interrupt(_signum: int, _frame: object) -> None:
+    raise _Interrupted
+
+
 def _forward(found: argparse.Namespace) -> int:
-    keys = _keys(str(found.environment))
+    environment = str(found.environment)
+    if found.command == "resume":
+        state = _state_dir(environment, str(found.state_dir))
+        removed = [name for name in ("stop.request", "flatten.request") if (state / name).exists()]
+        for name in removed:
+            (state / name).unlink()
+        print("已清除：" + ", ".join(removed) if removed else "没有需要清除的请求文件")
+        return 0
+    keys = _keys(environment)
     if keys is None:
         which = "STARQUANT_DEMO_API_KEY" if found.environment == DEMO else "STARQUANT_PROD_API_KEY"
         print(
@@ -123,100 +168,144 @@ def _forward(found: argparse.Namespace) -> int:
     if found.command == "run" and found.max_notional_usdt <= 0:
         print("增仓需要名义上限。\npython -m btc_perp run --environment demo --max-notional-usdt 200 --once")
         return 2
-    state = _state_dir(str(found.environment), str(found.state_dir))
-    if found.command == "stop":
-        state.mkdir(parents=True, exist_ok=True)
-        (state / "stop.request").write_text("stop\n")
-    if found.command == "flatten":
-        state.mkdir(parents=True, exist_ok=True)
-        (state / "flatten.request").write_text("flatten\n")
+    state = _state_dir(environment, str(found.state_dir))
+    if not found.dry_run:
+        if found.command == "stop":
+            _request_file(state, "stop.request", "stop")
+        if found.command == "flatten":
+            _request_file(state, "flatten.request", "flatten")
     try:
-        store = Store(state, str(found.environment))
+        store = Store(state, environment)
+        store.bind_credential(keys[0])
     except RuntimeError as exc:
         print(str(exc))
         return 2
-    client = UsdMClient(str(found.environment), keys[0], keys[1], UrllibTransport())
+    read_only = bool(found.dry_run or found.command in {"check", "takeover"})
+    client = UsdMClient(environment, keys[0], keys[1], UrllibTransport(), read_only=read_only)
     cfg = load_config()
     limits = load_limits()
-    mode = {"check": "check", "run": "run", "stop": "stop", "flatten": "flatten", "takeover": "takeover"}[
-        str(found.command)
-    ]
+    mode = str(found.command)
     once = bool(found.once or found.command != "run")
+    if found.command == "run":
+        for name in ("stop.request", "flatten.request"):
+            if (state / name).exists():
+                print(f"存在 {name}，这一轮会按停机处理；确认后用 resume 清除")
     if found.environment == PROD and found.command in {"run", "stop", "flatten"} and not found.dry_run:
-        blocked = prod_permission_block(str(found.environment), keys[0], keys[1], client.transport)
+        blocked = prod_permission_block(environment, keys[0], keys[1], client.transport)
         if blocked:
             print(blocked)
             store.close()
             return 2
     stream: UserStream | None = None
     if not found.dry_run and found.command in {"run", "stop", "flatten"}:
-        stream = UserStream(client, str(found.environment))
+        stream = UserStream(client, environment)
         stream.start()
+    previous_term = signal.signal(signal.SIGTERM, _raise_interrupt)
     report = None
+    interrupted = False
     try:
         while True:
             now_ms = int(time.time() * 1000)
-            stream_expired = False
-            if stream is not None:
-                stream.keepalive(now_ms)
-                stream.reconnect_if_due(now_ms)
-                hints, stream_expired = stream.poll()
-                for hint in hints:
-                    store.append_journal(
-                        {
-                            "ts_ms": now_ms,
-                            "kind": "stream",
-                            "event": hint.kind,
-                            "client_id": hint.client_id,
-                            "status": hint.status,
-                        }
-                    )
-            try:
-                minute = client.klines("1m", 5)
-                hourly = client.klines("1h", max(cfg.entry_hours + 2, 100))
-            except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
-                print(f"行情读取失败，本轮停止新增风险：{exc}"[:300])
-                return 2
-            channels = completed_hour_channels(hourly, now_ms, cfg.entry_hours, cfg.exit_hours)
-            hour_rows: list[tuple[int, float, float]] = []
-            if isinstance(hourly, list):
-                for row in hourly:
-                    if isinstance(row, list) and len(row) >= 7 and int(row[6]) <= now_ms:
-                        hour_rows.append((int(row[0]), float(row[2]), float(row[3])))
-            report = run_cycle(
-                store,
-                client,
-                environment=str(found.environment),
-                limits=limits,
-                max_notional=float(found.max_notional_usdt) if found.max_notional_usdt > 0 else None,
-                cfg=cfg,
-                now_ms=now_ms,
-                bars=bars_from_kline_rows(minute, now_ms),
-                channels=channels,
-                hour_rows=tuple(hour_rows),
-                fx=float(found.fx) if found.fx > 0 else None,
-                mode=mode,
-                prod_enabled=prod_orders_allowed(),
-                dry_run=bool(found.dry_run),
-                stream_expired=stream_expired,
-            )
+            report = _one_cycle(found, store, client, stream, cfg, limits, mode, now_ms)
             print(
                 f"mode={report.mode} frozen={str(report.frozen).lower()} reason={report.reason} "
                 f"position={report.position_qty} covered={str(report.covered).lower()} "
                 f"sent={','.join(report.sent) if report.sent else '-'} "
-                f"would={','.join(report.would_send) if report.would_send else '-'}"
+                f"would={','.join(report.would_send) if report.would_send else '-'} "
+                f"settled={str(report.settled).lower()}"
             )
             if once or (state / "stop.request").exists():
                 break
             mode = "run"
             time.sleep(max(float(found.poll_seconds), 1.0))
+    except (KeyboardInterrupt, _Interrupted):
+        interrupted = True
     finally:
+        signal.signal(signal.SIGTERM, previous_term)
+        if interrupted and found.command == "run" and not found.dry_run:
+            report = _wind_down(found, store, client, cfg, limits) or report
         if stream is not None:
             stream.stop()
         store.close()
     if report is None:
         return 2
+    if interrupted:
+        return 2
+    if found.command in {"stop", "flatten"}:
+        return 0 if report.settled else 2
     return 2 if report.frozen else 0
+
+
+def _one_cycle(
+    found: argparse.Namespace,
+    store: Store,
+    client: UsdMClient,
+    stream: UserStream | None,
+    cfg: AccountConfig,
+    limits: Limits,
+    mode: str,
+    now_ms: int,
+) -> CycleReport:
+    stream_expired = False
+    if stream is not None:
+        stream.keepalive(now_ms)
+        stream.reconnect_if_due(now_ms)
+        hints, stream_expired = stream.poll()
+        for hint in hints:
+            store.append_journal(
+                {
+                    "ts_ms": now_ms,
+                    "kind": "stream",
+                    "event": hint.kind,
+                    "client_id": hint.client_id,
+                    "status": hint.status,
+                }
+            )
+    minute: list[object] = []
+    hourly: list[object] = []
+    try:
+        minute = _fetch_minutes(client, store.load_book().cursor_ms, now_ms)
+        hourly = client.klines("1h", max(cfg.entry_hours + 2, 100))
+    except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
+        # Market data is only needed for new risk. Protection and exits do not wait for it.
+        print(f"行情读取失败，本轮停止新增风险：{exc}"[:300])
+    channels = completed_hour_channels(hourly, now_ms, cfg.entry_hours, cfg.exit_hours)
+    hour_rows: list[tuple[int, float, float]] = []
+    for row in hourly:
+        if isinstance(row, list) and len(row) >= 7 and int(row[6]) <= now_ms:
+            hour_rows.append((int(row[0]), float(row[2]), float(row[3])))
+    return run_cycle(
+        store,
+        client,
+        environment=str(found.environment),
+        limits=limits,
+        max_notional=float(found.max_notional_usdt) if found.max_notional_usdt > 0 else None,
+        cfg=cfg,
+        now_ms=now_ms,
+        bars=bars_from_kline_rows(minute, now_ms),
+        channels=channels,
+        hour_rows=tuple(hour_rows),
+        fx=float(found.fx) if found.fx > 0 else None,
+        mode=mode,
+        prod_enabled=prod_orders_allowed(),
+        dry_run=bool(found.dry_run),
+        stream_expired=stream_expired,
+    )
+
+
+def _wind_down(
+    found: argparse.Namespace, store: Store, client: UsdMClient, cfg: AccountConfig, limits: Limits
+) -> CycleReport | None:
+    """Ctrl-C or SIGTERM: cancel our unfilled entries, keep or restore protection, say what is left."""
+    try:
+        report = _one_cycle(found, store, client, None, cfg, limits, "stop", int(time.time() * 1000))
+    except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
+        print(f"收尾失败，交易所上只剩最后确认的保护单：{exc}"[:300])
+        return None
+    print(
+        f"收尾：settled={str(report.settled).lower()} covered={str(report.covered).lower()} position={report.position_qty}"
+    )
+    return report
 
 
 def _keys(environment: str) -> tuple[str, str] | None:

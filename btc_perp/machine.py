@@ -81,6 +81,12 @@ def protections_cover(snapshot: Snapshot) -> tuple[bool, str]:
         return False, "多仓止损不在现价下方"
     if snapshot.position_qty < 0 and snapshot.last_price > 0 and stop_px <= snapshot.last_price:
         return False, "空仓止损不在现价上方"
+    liquidation = snapshot.liquidation_price
+    if liquidation > 0:
+        if snapshot.position_qty > 0 and stop_px <= liquidation:
+            return False, "多仓止损不在强平价上方，可能先被强平"
+        if snapshot.position_qty < 0 and stop_px >= liquidation:
+            return False, "空仓止损不在强平价下方，可能先被强平"
     return True, ""
 
 
@@ -95,59 +101,44 @@ def foreign_ids(snapshot: Snapshot, known: set[str]) -> list[str]:
     return found
 
 
-def adopt_snapshot(intents: list[Intent], snapshot: Snapshot) -> list[tuple[str, str]]:
-    """Map stored ids onto the snapshot. Missing ids stay unknown; none are replaced."""
-    orders = {order.client_id: order.status for order in snapshot.orders}
-    algos = {algo.client_algo_id: algo.status for algo in snapshot.algos}
-    updates: list[tuple[str, str]] = []
-    for intent in intents:
-        if intent.phase in _TERMINAL:
-            continue
-        if intent.phase not in {"planned", "sent", "unknown", "acked", "partial"}:
-            continue
-        status = orders.get(intent.client_id, algos.get(intent.client_id))
-        if status is None:
-            if intent.phase in {"sent", "unknown", "acked", "partial"}:
-                updates.append((intent.client_id, "unknown"))
-            continue
-        mapped = {
-            "NEW": "acked",
-            "PARTIALLY_FILLED": "partial",
-            "FILLED": "filled",
-            "CANCELED": "canceled",
-            "CANCELLED": "canceled",
-            "REJECTED": "rejected",
-            "EXPIRED": "expired",
-            "TRIGGERED": "acked",
-            "FINISHED": "filled",
-        }.get(status, "unknown")
-        updates.append((intent.client_id, mapped))
-    return updates
+POSITION_ACTIONS = frozenset({"enter", "add", "reverse", "reduce", "flatten"})
+OPEN_PHASES = frozenset({"planned", "sent", "unknown", "acked", "partial"})
 
 
-def has_inflight(intents: list[Intent]) -> bool:
-    return any(item.phase in {"planned", "sent", "unknown", "partial"} for item in intents)
+def sibling_cancels(snapshot: Snapshot, known: set[str]) -> list[Command]:
+    """Cancel our own leftover protection once the position is gone.
+
+    A finished protection while a position remains is not proof that the
+    position is closed: the remainder keeps the other protection. Ids that
+    this program did not create are never cancelled here.
+    """
+    if not snapshot.known or abs(snapshot.position_qty) >= 1e-8:
+        return []
+    return [
+        Command("cancel_algo", algo.client_algo_id)
+        for algo in snapshot.algos
+        if algo.status in _ALGO_LIVE and algo.client_algo_id in known
+    ]
 
 
-def sibling_cancels(snapshot: Snapshot) -> list[Command]:
-    """After one protection finishes, cancel the other live one. Flat cancels both."""
-    finished = [algo for algo in snapshot.algos if algo.status == "FINISHED"]
-    live = [algo for algo in snapshot.algos if algo.status in _ALGO_LIVE]
-    commands: list[Command] = []
-    if abs(snapshot.position_qty) < 1e-8:
-        for algo in live:
-            commands.append(Command("cancel_algo", algo.client_algo_id))
-        return commands
-    if finished:
-        for algo in live:
-            commands.append(Command("cancel_algo", algo.client_algo_id))
-    return commands
+def triggered_with_position(snapshot: Snapshot) -> bool:
+    """A protection has fired but the account still holds a position."""
+    return abs(snapshot.position_qty) >= 1e-8 and any(
+        algo.status in {"FINISHED", "TRIGGERED"} for algo in snapshot.algos
+    )
 
 
 def freeze_for_manual(book: Book, snapshot: Snapshot, intents: list[Intent]) -> str:
+    """Only our own position-changing orders can explain a position change.
+
+    An acknowledged stop or take says nothing about how the position moved,
+    so it does not suppress the manual-change check.
+    """
     if not snapshot.known:
         return "账户快照未知"
-    inflight = [item for item in intents if item.phase in {"planned", "sent", "unknown", "acked", "partial"}]
+    inflight = [
+        item for item in intents if item.action in POSITION_ACTIONS and (item.phase in OPEN_PHASES or not item.absorbed)
+    ]
     if inflight:
         return ""
     snap_side = snapshot.position_side
@@ -164,6 +155,14 @@ def _price_matches(live: float, wanted: float) -> bool:
     return abs(live - wanted) / wanted <= 1e-6
 
 
+def shape_ok(algo: AlgoOrder, closing: str, position_qty: float) -> bool:
+    if algo.side != closing or algo.working_type != "CONTRACT_PRICE" or algo.status not in _ALGO_LIVE:
+        return False
+    if algo.close_position:
+        return not algo.reduce_only and algo.qty == 0.0
+    return algo.reduce_only and algo.qty + 1e-12 >= abs(position_qty)
+
+
 def plan_protection(
     snapshot: Snapshot,
     swaps: dict[str, str],
@@ -171,10 +170,10 @@ def plan_protection(
     stop_price: float,
     take_price: float,
 ) -> tuple[list[Command], dict[str, str]]:
-    """Place a new stop id when the live trigger no longer matches.
+    """Place a new id when no live protection of the right shape sits at the wanted trigger.
 
-    The returned swaps remember ``stop_next`` / ``take_next``. The old id stays
-    in ``stop_id`` / ``take_id`` until ``promote_protection`` sees the new one live.
+    ``stop_next`` / ``take_next`` remember the replacement. ``promote_protection``
+    cancels every older live protection of ours only after the replacement is live.
     """
     updates = dict(swaps)
     if abs(snapshot.position_qty) < 1e-8 or stop_price <= 0 or take_price <= 0:
@@ -185,7 +184,11 @@ def plan_protection(
         ("stop", "STOP_MARKET", stop_price),
         ("take", "TAKE_PROFIT_MARKET", take_price),
     ):
-        live = [algo for algo in _live_algos(snapshot, order_type) if _price_matches(algo.trigger_price, price)]
+        live = [
+            algo
+            for algo in _live_algos(snapshot, order_type)
+            if _price_matches(algo.trigger_price, price) and shape_ok(algo, closing, snapshot.position_qty)
+        ]
         if live:
             updates[f"{kind}_id"] = live[0].client_algo_id
             updates.pop(f"{kind}_next", None)
@@ -207,19 +210,29 @@ def plan_protection(
     return commands, updates
 
 
-def promote_protection(snapshot: Snapshot, swaps: dict[str, str]) -> tuple[list[Command], dict[str, str]]:
-    """Cancel the old id only after the replacement is live, then drop the old id."""
+def promote_protection(
+    snapshot: Snapshot, swaps: dict[str, str], known: set[str]
+) -> tuple[list[Command], dict[str, str]]:
+    """Cancel our older live protection of the same type once the kept one is live.
+
+    The kept id is recomputed from the snapshot every cycle, so a cancel that
+    timed out is simply issued again, also after a restart.
+    """
     updates = dict(swaps)
     commands: list[Command] = []
-    live = {algo.client_algo_id for algo in snapshot.algos if algo.status in _ALGO_LIVE}
-    for kind in ("stop", "take"):
+    for kind, order_type in (("stop", "STOP_MARKET"), ("take", "TAKE_PROFIT_MARKET")):
+        live = _live_algos(snapshot, order_type)
+        live_ids = {algo.client_algo_id for algo in live}
         new_id = updates.get(f"{kind}_next", "")
-        old_id = updates.get(f"{kind}_id", "")
-        if new_id and new_id in live and old_id and old_id in live and new_id != old_id:
-            commands.append(Command("cancel_algo", old_id))
-        if new_id and new_id in live and old_id not in live:
+        if new_id and new_id in live_ids:
             updates[f"{kind}_id"] = new_id
             updates.pop(f"{kind}_next", None)
+        keep = updates.get(f"{kind}_id", "")
+        if not keep or keep not in live_ids:
+            continue
+        for algo in live:
+            if algo.client_algo_id != keep and algo.client_algo_id in known:
+                commands.append(Command("cancel_algo", algo.client_algo_id))
     return commands, updates
 
 
@@ -231,6 +244,9 @@ def apply_takeover(book: Book, snapshot: Snapshot) -> Book:
     book.units = 1 if book.qty else 0
     book.extreme = snapshot.entry_price
     book.last_add = snapshot.entry_price
+    book.stop = 0.0
+    for key in ("unit_from", "unit_counted", "pre_qty", "pre_entry"):
+        book.swaps.pop(key, None)
     book.entries_frozen = True
     book.freeze_reason = "已接管实仓，仍不自动加仓"
     book.alerts.append("takeover")

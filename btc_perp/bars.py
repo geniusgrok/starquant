@@ -91,7 +91,8 @@ def completed_hour_channels(
     """Entry and exit levels from completed hourly klines only.
 
     The returned hour open is the last completed hour. Levels include that
-    hour, which is what the next minute is allowed to see.
+    hour. A minute may use them only when its own hour begins after that hour
+    ends (the runner checks this); a minute inside hour H never sees hour H.
     """
     from scripts.frontier import rolling_max, rolling_min
 

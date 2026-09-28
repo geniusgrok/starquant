@@ -15,7 +15,7 @@
 | | Demo | 生产 |
 | --- | --- | --- |
 | REST | `https://demo-fapi.binance.com` | `https://fapi.binance.com` |
-| 用户流 | `wss://demo-fstream.binance.com/ws` | `wss://fstream.binance.com/ws` |
+| 用户流 | `wss://demo-fstream.binance.com/private/ws` | `wss://fstream.binance.com/private/ws` |
 | 密钥 | `STARQUANT_DEMO_API_KEY` / `STARQUANT_DEMO_API_SECRET` | `STARQUANT_PROD_API_KEY` / `STARQUANT_PROD_API_SECRET` |
 | 状态 | `state/demo/` | `state/prod/` |
 
@@ -67,11 +67,13 @@ python -m btc_perp flatten --environment demo --once
 python -m btc_perp takeover --environment demo --once
 ```
 
+`stop` 或 `flatten` 之后会留下请求文件，`run` 看到它就按停机处理；`python -m btc_perp resume --environment demo` 清除它。`check`、`takeover` 和 `--dry-run` 使用只读客户端，任何写请求都会被拒绝。状态目录绑定第一次使用的密钥指纹（只存哈希），换一组密钥要换目录。同一账户还有一把账户级文件锁（`STARQUANT_LOCK_DIR`，默认系统临时目录），所以两个状态目录不能同时驱动同一账户；锁依赖 `fcntl`，只支持 Linux/macOS 单机。
+
 状态目录可以用 `--state-dir`，或环境变量 `STARQUANT_STATE_DIR`。默认是仓库下的 `state/<环境>/`，这个目录不进版本库。
 
 ## 订单和保护
 
-决策可以给出目标数量。实际仓位、均价和下一笔风险预算以交易所确认的成交和账户快照为准。下单前先把唯一的 `clientOrderId` 或 `clientAlgoId` 写入 SQLite，再发送。超时、断网或执行结果未知时，用原来的身份查询，不换一个新身份重发。
+决策可以给出目标数量。实际仓位、均价和下一笔风险预算以交易所确认的成交和账户快照为准。下单前先把唯一的 `clientOrderId` 或 `clientAlgoId` 写入 SQLite，再发送。超时、断网或执行结果未知时，用原来的身份查询，不换一个新身份重发。入场单和加仓单永远不重发，未回应就一直查；超过 600 秒仍查不到、仓位也没变，才标记为过期并解除阻塞。减仓、平仓和保护单最多用同一身份重发一次。自家成交用 `absorbed` 标记是否已计入账本，账本只在与账户对上之后才标记；保护单不算仓位变化的解释。
 
 普通市价单走 `/fapi/v1/order`。`STOP_MARKET` 和 `TAKE_PROFIT_MARKET` 走 `/fapi/v1/algoOrder`。保护单使用 `closePosition=true`，不再同时带数量和 `reduceOnly`。触发价源是 `CONTRACT_PRICE`。一张保护成交之后，核验并撤销另一张。平仓使用交易所的只减仓语义。反手要先确认旧仓归零、旧订单清掉，再开新方向。
 
@@ -81,7 +83,7 @@ python -m btc_perp takeover --environment demo --once
 
 ## 限额
 
-`config/limits.yaml` 里的 `capital_usdt`、`max_notional_usdt`、`max_daily_loss_usdt`、`max_unprotected_seconds` 现在都是空的。空着时，生产入口拒绝增仓。研究里的 4.8% 单位风险、最多三档、约 3.75 倍名义，以及强平前 0.1% 的止损间距，不是生产安全保证。
+`config/limits.yaml` 里的 `capital_usdt`、`max_notional_usdt`、`max_daily_loss_usdt`、`max_unprotected_seconds` 现在都是空的。空着时，生产入口拒绝增仓。填了 `capital_usdt` 之后，仓位权益取 `min(账户权益, capital_usdt)`，名义上限取命令行和文件的较小值。`max_daily_loss_usdt` 只冻结新增风险，不会自动平仓。收到 418/429 后进入冷却，只有减仓和保护写请求可以越过。研究里的 4.8% 单位风险、最多三档、约 3.75 倍名义，以及强平前 0.1% 的止损间距，不是生产安全保证。
 
 生产下单还要环境变量 `STARQUANT_ALLOW_PROD_ORDERS=yes`，并且命令行 `--max-notional-usdt` 为正、且不超过文件里的名义上限。生产在发单前还会读 `https://api.binance.com/sapi/v1/account/apiRestrictions`。密钥开通了提币、内部划转或万向划转，或者这次读取失败，就拒绝下单。Demo 密钥不拿去打这个现货接口。本轮实施和验证不发送真实资金订单。
 

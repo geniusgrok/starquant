@@ -13,6 +13,7 @@ class Filters:
     min_notional: float
     min_price: float
     max_price: float
+    max_qty: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,10 @@ class Snapshot:
     brackets_ok: bool = False
     recent_trades_ok: bool = False
     funding_ok: bool = False
+    clock_offset_ms: int | None = None
+    clock_rtt_ms: int | None = None
+    other_exposure: str = ""
+    multi_assets: bool = False
 
     @property
     def position_side(self) -> int:
@@ -89,6 +94,8 @@ class Intent:
     environment: str
     created_ms: int
     note: str = ""
+    attempts: int = 1
+    absorbed: bool = True
 
 
 @dataclass
@@ -116,8 +123,8 @@ class Book:
     last_add: float = 0.0
     stop: float = 0.0
     cooldown_until_ms: int = 0
-    peak_equity_cny: float = 10_000.0
-    close_peak_cny: float = 10_000.0
+    peak_equity_cny: float = 0.0
+    close_peak_cny: float = 0.0
     cursor_ms: int = 0
     entries_frozen: bool = False
     freeze_reason: str = ""
