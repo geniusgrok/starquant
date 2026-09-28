@@ -1,0 +1,88 @@
+{
+  "measured_on": "2026-09-28",
+  "parent": "6f3f6fd",
+  "note": "同一条行情上的一次性回放。正式结果仍是 reports/btc_account_measure.json。这些行不是通过线。",
+  "baseline_matches_official": true,
+  "scenarios": [
+    {
+      "id": "baseline",
+      "end_cny": 2029866.429605,
+      "cagr": 1.205161,
+      "min_equity_over_peak": 0.525843,
+      "n_long": 57,
+      "n_short": 35,
+      "n_stop": 80
+    },
+    {
+      "id": "taker_1_5x",
+      "change": "taker 0.0004 replaced with 0.0006 inside the replay loop",
+      "end_cny": 1911281.346760,
+      "cagr": 1.185492,
+      "min_equity_over_peak": 0.522675,
+      "n_long": 57,
+      "n_short": 35,
+      "n_stop": 80
+    },
+    {
+      "id": "slip_2x",
+      "change": "slip base 0.0002 and impact 1.0 inside the slippage function",
+      "end_cny": 1945643.222043,
+      "cagr": 1.191296,
+      "min_equity_over_peak": 0.524025,
+      "n_long": 57,
+      "n_short": 35,
+      "n_stop": 80
+    },
+    {
+      "id": "entry_depth_10pct",
+      "change": "new entries and adds capped at 10% of that minute quote volume; exits still close the full quantity",
+      "end_cny": 2025398.614885,
+      "cagr": 1.204438,
+      "min_equity_over_peak": 0.525843,
+      "n_long": 57,
+      "n_short": 35,
+      "n_stop": 80
+    },
+    {
+      "id": "path_order_flipped",
+      "change": "bullish and bearish minute path order swapped",
+      "end_cny": 1745596.597137,
+      "cagr": 1.156194,
+      "min_equity_over_peak": 0.525951,
+      "n_long": 57,
+      "n_short": 35,
+      "n_stop": 80
+    },
+    {
+      "id": "skip_20pct_sessions",
+      "change": "seed 20260928, each 5-minute session dropped with probability 0.20, dropped minutes are not stepped",
+      "kept_sessions": 565984,
+      "dropped_sessions": 140768,
+      "last_bar_stepped": true,
+      "end_cny": 24291.499438,
+      "cagr": 0.141223,
+      "min_equity_over_peak": 0.466518,
+      "n_long": 5,
+      "n_short": 2,
+      "n_stop": 7
+    },
+    {
+      "id": "entry_scale_off",
+      "change": "entry_scale_below 0 and entry_scale 1",
+      "end_cny": 146483.182817,
+      "cagr": 0.491126,
+      "min_equity_over_peak": 0.475888,
+      "n_long": 16,
+      "n_short": 5,
+      "n_stop": 20,
+      "min_day": 20260919
+    },
+    {
+      "id": "september_2026_funding_off",
+      "change": "funding zeroed on 2026-09-01 through 2026-09-19",
+      "end_cny": 2028229.470806,
+      "cagr_delta_cny": -1636.958799,
+      "min_equity_over_peak": 0.525843
+    }
+  ]
+}
