@@ -324,7 +324,9 @@ def _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail):
 # 18 pending side, 19 pending entry scale. Used when defer=1: the signal is
 # known at the close and the fill waits for the next bar's open.
 # 20 traded BTC and 21 traded USDT, every simulated fill, including intrabar round trips.
-STATE_N = 22
+# 22 extra adverse fraction on a stop fill and 23 taker fee override (0 keeps the
+# default). Both are stress inputs that the loop reads and never writes.
+STATE_N = 24
 
 
 @njit(cache=True)
@@ -395,7 +397,8 @@ def _loop(
     """
     n = len(C)
     # Fee inputs come from btc_perp.costs. The YAML copy is checked by a test.
-    taker = TAKER
+    taker = state[23] if state[23] > 0.0 else TAKER
+    stop_extra = state[22]
     slip_b = SLIP_BASE
     fx_fee = FX_FEE
     lev = LEVERAGE
@@ -589,11 +592,11 @@ def _loop(
                 stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, px)
                 if side > 0 and px <= stop_px:
                     hit = True
-                    fill = (px if k == 0 else stop_px) * (1.0 - slip_b)
+                    fill = (px if k == 0 else stop_px) * (1.0 - slip_b - (0.0 if k == 0 else stop_extra))
                     break
                 if side < 0 and px >= stop_px:
                     hit = True
-                    fill = (px if k == 0 else stop_px) * (1.0 + slip_b)
+                    fill = (px if k == 0 else stop_px) * (1.0 + slip_b + (0.0 if k == 0 else stop_extra))
                     break
                 # Account giveback, not the price stop. Fill at the price where
                 # equity/peak equals flatten_ratio, or at this print if the bar gapped through it.
@@ -860,7 +863,7 @@ def run(
 ):
     """Replay the whole tape from a flat book."""
     n = len(C)
-    state = np.empty(STATE_N, dtype=np.float64)
+    state = np.zeros(STATE_N, dtype=np.float64)
     _reset(state, fx[0])
     end = _loop(
         state,
@@ -901,7 +904,7 @@ def run(
 
 def initial_state(fx0: float) -> np.ndarray:
     """Flat book, before any minute has been replayed."""
-    state = np.empty(STATE_N, dtype=np.float64)
+    state = np.zeros(STATE_N, dtype=np.float64)
     _reset(state, fx0)
     return state
 

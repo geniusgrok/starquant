@@ -81,6 +81,18 @@ python -m btc_perp takeover --environment demo --once
 
 `run`、`stop` 和 `flatten` 会申请 listenKey，并连接 `wss://<官方主机>/private/ws?listenKey=...&events=...`。这是 2026-04-23 之后的私有用户流路径，不再使用已经撤掉的 `/ws/<listenKey>`。Demo 主机是 `demo-fstream.binance.com`，不会改去 `fstream.binancefuture.com`。`ALGO_UPDATE` 读 `o.caid` 和状态 `X`，同时接受 `ao` 与 `ALGO_ORDER_UPDATE`。这些事件只写入流水并触发下一轮 REST 对账，不直接改仓位。断线、过期或握手失败时，本轮只信 REST 快照，并在 30 秒后再尝试连接。listenKey 不进日志。
 
+## 回撤锁和重置
+
+收盘权益/峰值降到 `1 - dd_flat`（0.53）或更低时，`run` 不再开新仓、不再加仓，仍按规则离场。空仓时它不会自己解除，因为空仓的权益不会回升。这时每轮都会在提示里说明，流水里有 `dd_locked`。
+
+要继续交易，先确认愿意把此前的亏损当作新起点，再在空仓、没有未完成订单时运行：
+
+```bash
+python -m btc_perp rearm --environment demo --yes
+```
+
+它只把峰值换成当前权益，并写一条 `rearm` 事件。它不发任何订单，不改止损、保护和 `limits.yaml` 的限额。有持仓或有未完成订单时拒绝；不带 `--yes` 只打印说明。
+
 ## 限额
 
 `config/limits.yaml` 里的 `capital_usdt`、`max_notional_usdt`、`max_daily_loss_usdt`、`max_unprotected_seconds` 现在都是空的。空着时，生产入口拒绝增仓。填了 `capital_usdt` 之后，仓位权益取 `min(账户权益, capital_usdt)`，名义上限取命令行和文件的较小值。`max_daily_loss_usdt` 只冻结新增风险，不会自动平仓。收到 418/429 后进入冷却，只有减仓和保护写请求可以越过。研究里的 4.8% 单位风险、最多三档、约 3.75 倍名义，以及强平前 0.1% 的止损间距，不是生产安全保证。

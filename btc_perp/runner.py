@@ -92,6 +92,7 @@ class CycleReport:
     dry_run: bool = False
     would_send: tuple[str, ...] = ()
     settled: bool = False
+    locked: bool = False
 
 
 def readiness(snapshot: Snapshot) -> str:
@@ -262,6 +263,13 @@ def run_cycle(
         if book.freeze_reason:
             alerts.append(book.freeze_reason)
     _track_naked(book, snap, now_ms)
+    _update_lock(book, snap, cfg, fx_used, alerts)
+
+    if mode == "rearm":
+        done = _rearm(store, book, snap, fx_used, alerts, dry_run)
+        _save(store, book, dry_run)
+        covered, _why = protections_cover(snap)
+        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered, done)
 
     if mode in {"check", "takeover"}:
         covered, why = protections_cover(snap)
@@ -420,6 +428,7 @@ def _finish(
             "covered": report.covered,
             "cursor_ms": book.cursor_ms,
             "settled": settled,
+            "dd_locked": book.dd_locked,
             "server_time_ms": snap.server_time_ms,
             "sent": list(sent),
             "would": list(would),
@@ -467,7 +476,45 @@ def _report(
         dry_run=dry_run,
         would_send=tuple(would),
         settled=settled,
+        locked=book.dd_locked,
     )
+
+
+def _update_lock(book: Book, snap: Snapshot, cfg: AccountConfig, fx_used: float, alerts: list[str]) -> None:
+    """Say out loud when the drawdown lock is on. It blocks new entries and adds."""
+    equity = _equity_now(snap) * fx_used
+    peak = book.close_peak_cny
+    book.dd_locked = peak > 0 and equity / peak <= 1.0 - cfg.dd_flat
+    if not book.dd_locked:
+        return
+    if abs(snap.position_qty) < 1e-8:
+        alerts.append("回撤锁已触发：空仓不会自行回到线上，不会再开新仓；接受新的回撤基准后用 rearm 重置")
+    else:
+        alerts.append("回撤锁已触发：不开新仓、不加仓，仍按规则离场")
+
+
+def _rearm(store: Store, book: Book, snap: Snapshot, fx_used: float, alerts: list[str], dry_run: bool) -> bool:
+    """Move the drawdown baseline to today's equity. Only a flat, quiet account may do it."""
+    if abs(snap.position_qty) >= 1e-8 or book.side != 0:
+        alerts.append("有持仓，不重置回撤基准")
+        return False
+    if store.open_intents():
+        alerts.append("还有未完成订单，不重置回撤基准")
+        return False
+    equity = _equity_now(snap) * fx_used
+    if equity <= 0:
+        alerts.append("账户权益不是正数，不重置回撤基准")
+        return False
+    old = (book.peak_equity_cny, book.close_peak_cny)
+    if dry_run:
+        alerts.append(f"会把峰值从 {old[1]:.2f} 重置为 {equity:.2f}（dry-run，没有写入）")
+        return False
+    book.peak_equity_cny = equity
+    book.close_peak_cny = equity
+    book.dd_locked = False
+    store.append_event("rearm", f"peak {old[0]:.2f}/{old[1]:.2f} -> {equity:.2f}")
+    alerts.append(f"回撤基准已重置为 {equity:.2f}；这不改变止损、保护和其他限额")
+    return True
 
 
 def _swap_ids(book: Book) -> set[str]:

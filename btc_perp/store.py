@@ -165,6 +165,7 @@ class Store:
                 "day_key": book.day_key,
                 "day_realized_usdt": book.day_realized_usdt,
                 "manual": book.manual,
+                "dd_locked": book.dd_locked,
                 "swaps": book.swaps,
                 "alerts": book.alerts[-50:],
             },
@@ -195,6 +196,7 @@ class Store:
         book.day_key = str(raw.get("day_key", ""))
         book.day_realized_usdt = float(raw.get("day_realized_usdt", 0.0))
         book.manual = bool(raw.get("manual", False))
+        book.dd_locked = bool(raw.get("dd_locked", False))
         swaps = raw.get("swaps", {})
         book.swaps = {str(k): str(v) for k, v in swaps.items()} if isinstance(swaps, dict) else {}
         alerts = raw.get("alerts", [])

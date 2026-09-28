@@ -31,6 +31,7 @@
 - 真实 Demo 的开仓、保护触发、故障演练和连续 30 个自然日还没有做。本环境访问 `demo-fapi.binance.com` 和 `fapi.binance.com` 返回地区限制，也没有密钥。用户流客户端和密钥权限检查已经在本地套接字上验证，没有远端回读。流水格式在 `state/<环境>/journal.jsonl`，文件不入库。结论是 DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO，见 `docs/forward_audit.md`。
 - 2026-09-29 第二轮审查（SQ-01 至 SQ-34）：30 项修复、1 项部分修复（SQ-27）、3 项是研究或目标边界，见 `docs/forward_audit.md` 文末。经济数字不变，DEMO_GO 与 SMALL_LIVE_GO 仍是 NO_GO。
 - 没有 5 秒成交。分钟内部用四段开高低收。前向进程停着的时候，通道和一半峰值平仓不会运行，只留下交易所上的止损和灾备止盈。
+- 稳健性（`reports/btc_account_robustness.json`）很弱：止损成交多 0.1% 不利滑点就会被回撤锁永久停机；54 个参数邻居里 13 个同样如此；去掉 2020 年后年化约 54%。回撤锁是吸收线，空仓账户不会自己回到线上，实盘要用 `rearm`（见 `docs/forward.md`）。120% 是一条路径，不是稳健估计。
 - 150% 年化没有达到。因果对照没有用来改参数或改统计口径。
 - 小资金实盘门槛没有成立。`config/limits.yaml` 仍是空的。
 

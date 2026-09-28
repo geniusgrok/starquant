@@ -132,6 +132,7 @@ class Book:
     day_key: str = ""
     day_realized_usdt: float = 0.0
     manual: bool = False
+    dd_locked: bool = False
     swaps: dict[str, str] = field(default_factory=dict)
     alerts: list[str] = field(default_factory=list)
 

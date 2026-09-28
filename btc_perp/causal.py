@@ -60,6 +60,30 @@ def validate_minutes(
     return problems
 
 
+def lockout(equity: np.ndarray, side: np.ndarray, days: np.ndarray, dd_flat: float, start: float) -> dict[str, Any]:
+    """Whether the close-equity drawdown lock ended the run.
+
+    New entries and adds stop at ``equity / close_peak <= 1 - dd_flat``. A flat
+    account cannot earn its way back over that line, so a run that ends flat
+    below it never trades again. The curve is the stored close equity, so the
+    ratio is close to, not identical with, the loop's own bookkeeping.
+    """
+    peak = np.maximum.accumulate(np.maximum(equity, start))
+    ratio = equity / peak
+    blocked = ratio <= 1.0 - dd_flat
+    held = np.flatnonzero(side != 0)
+    last = int(held[-1]) if len(held) else -1
+    return {
+        "locked_at_end": bool(side[-1] == 0 and blocked[-1]),
+        "close_ratio_at_end": float(ratio[-1]),
+        "lock_threshold": 1.0 - dd_flat,
+        "flat_days_at_end": float((len(equity) - 1 - last) / 1440.0),
+        "last_position_day": int(days[last]) if last >= 0 else None,
+        "flat_minutes_below_lock": int(np.sum(blocked & (side == 0))),
+        "note": "flat below the lock line means no new entry for the rest of the run",
+    }
+
+
 def _provenance() -> dict[str, Any]:
     """Which source and configuration produced a report."""
 
@@ -211,6 +235,7 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
             "usdcny_frankfurter.json": _sha256(fx_path),
         },
         "funding_gap": gap,
+        "lockout": lockout(equity, trace[:, 0], days, cfg.dd_flat, cfg.start_cny),
         "provenance": _provenance(),
         "previous_same_bar": None
         if previous is None

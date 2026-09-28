@@ -29,12 +29,14 @@ _EXAMPLES = """
 examples:
   python -m btc_perp measure
   python -m btc_perp causal
+  python -m btc_perp robustness
   python -m btc_perp check --environment demo
   python -m btc_perp run --environment demo --max-notional-usdt 200 --once
   python -m btc_perp run --environment demo --max-notional-usdt 200 --dry-run --once
   python -m btc_perp stop --environment demo
   python -m btc_perp flatten --environment demo --once
   python -m btc_perp takeover --environment demo --once
+  python -m btc_perp rearm --environment demo --yes
 """
 
 
@@ -72,12 +74,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     causal.add_argument("--no-write", action="store_true")
 
+    robust = sub.add_parser(
+        "robustness",
+        help="止损更差成交、手续费和参数邻域下的稳健性",
+        epilog="python -m btc_perp robustness",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    robust.add_argument("--no-write", action="store_true")
+
     for name, help_text, example in (
         ("check", "只读核对账户、过滤器和保护", "python -m btc_perp check --environment demo"),
         ("run", "真实时钟前向循环", "python -m btc_perp run --environment demo --max-notional-usdt 200 --once"),
         ("stop", "撤销会加仓的挂单，保留实仓保护", "python -m btc_perp stop --environment demo"),
         ("flatten", "只减仓平掉实仓", "python -m btc_perp flatten --environment demo --once"),
         ("takeover", "按实仓接管并继续冻结加仓", "python -m btc_perp takeover --environment demo --once"),
+        ("rearm", "空仓时把回撤基准重置为当前权益（需要 --yes）", "python -m btc_perp rearm --environment demo --yes"),
         ("resume", "清除 stop/flatten 请求文件，让 run 恢复正常", "python -m btc_perp resume --environment demo"),
     ):
         cmd = sub.add_parser(name, help=help_text, epilog=example, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -88,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--once", action="store_true")
         cmd.add_argument("--dry-run", action="store_true")
         cmd.add_argument("--poll-seconds", type=float, default=5.0)
+        cmd.add_argument("--yes", action="store_true", help="只有 rearm 使用：确认接受新的回撤基准")
 
     found = parser.parse_args(args)
     if found.command == "measure":
@@ -110,6 +122,20 @@ def main(argv: list[str] | None = None) -> int:
             f"meets_100={report.get('meets_100')} end={report.get('end_cny')} cagr={report.get('cagr')}"
         )
         return 0 if report.get("verified") else 2
+    if found.command == "robustness":
+        from btc_perp.robustness import run_robustness
+
+        result = run_robustness(write_report=not found.no_write)
+        if not result.get("verified"):
+            print(f"verified=False reason={result.get('reason')}")
+            return 2
+        summary = result["summary"]
+        print(
+            f"neighbour_runs={summary['neighbour_runs']} "
+            f"failing={summary['neighbours_breaching_half_peak_or_locked']} "
+            f"smallest_stop_extra_that_breaches={summary['smallest_stop_extra_that_breaches']}"
+        )
+        return 0
     if found.command is None:
         parser.print_help()
         return 2
@@ -150,6 +176,12 @@ def _raise_interrupt(_signum: int, _frame: object) -> None:
 
 def _forward(found: argparse.Namespace) -> int:
     environment = str(found.environment)
+    if found.command == "rearm" and not found.yes:
+        print(
+            "rearm 会把回撤基准换成当前权益，等于接受此前的亏损作为新起点。\n"
+            "只在空仓、并且你确认要继续交易时使用：python -m btc_perp rearm --environment demo --yes"
+        )
+        return 2
     if found.command == "resume":
         state = _state_dir(environment, str(found.state_dir))
         removed = [name for name in ("stop.request", "flatten.request") if (state / name).exists()]
@@ -180,7 +212,7 @@ def _forward(found: argparse.Namespace) -> int:
     except RuntimeError as exc:
         print(str(exc))
         return 2
-    read_only = bool(found.dry_run or found.command in {"check", "takeover"})
+    read_only = bool(found.dry_run or found.command in {"check", "takeover", "rearm"})
     client = UsdMClient(environment, keys[0], keys[1], UrllibTransport(), read_only=read_only)
     cfg = load_config()
     limits = load_limits()
@@ -231,7 +263,7 @@ def _forward(found: argparse.Namespace) -> int:
         return 2
     if interrupted:
         return 2
-    if found.command in {"stop", "flatten"}:
+    if found.command in {"stop", "flatten", "rearm"}:
         return 0 if report.settled else 2
     return 2 if report.frozen else 0
 
