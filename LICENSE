@@ -4,28 +4,36 @@ Copyright © 2026 geniusgrok. All rights reserved.
 
 中文摘要（便于阅读。与英文正文冲突时，以英文正文为准。）
 
-本仓库（含源代码、文档、配置、研究报告与数据产物，下称“本软件”）是专有软件，不是开源软件。版权人是 geniusgrok。本软件是一份 BTCUSDT 账户的私人研究。
+本仓库（含源代码、文档、配置、研究报告与数据产物，下称“本软件”）是专有软件，不是开源软件。版权人是 geniusgrok。
 
-1. 只有版权人本人可以把本软件用于其私人研究。
-2. 禁止实盘。不得把本软件用于真实账户下单、管理他人资金、投资顾问，或任何面向他人的服务。
-3. 未经版权人事先书面许可，任何人不得复制、下载后留存、修改、二次创作、合并、分发、再许可、出售、出租、公开传播本软件的全部或一部分，也不得用它训练模型或制作数据集。
-4. 能在网页上读到本仓库，不构成任何使用许可。
-5. 本软件按“原样”提供，不提供任何担保。仓库里的回测和笔记不是投资建议。第三方 Python 依赖以它们自己的许可证为准。
+1. 只有版权人本人可以使用本软件。
+2. 版权人可以先把自己的币安 USDⓈ-M Demo 账户接到本软件，在真实时间里前向运行。只有 Demo 记录、故障演练和本人写明的资金与名义上限都已经成立，版权人才可以在该上限内用本人小资金账户做验证。生产增仓默认关闭。本许可不表示经济目标已经达到，也不表示可以自动加大投入。
+3. 除上一款写明的版权人本人范围外，禁止把本软件用于他人的真实账户、管理他人资金、投资顾问，或任何面向他人的服务。
+4. 未经版权人事先书面许可，任何人不得复制、下载后留存、修改、二次创作、合并、分发、再许可、出售、出租、公开传播本软件的全部或一部分，也不得用它训练模型或制作数据集。第三方不因本款对版权人的允许而获得复制、修改、二次创作或交易的权利。
+5. 能在网页上读到本仓库，不构成任何使用许可。
+6. 本软件按“原样”提供，不提供任何担保。仓库里的回测、Demo 记录和笔记不是投资建议。第三方 Python 依赖以它们自己的许可证为准。
 
 ---
 
 This repository (including all source code, documentation, configuration,
 research reports, and data artifacts, collectively the "Software") is proprietary
-software. It is not open source. The Software is private research on one
-BTCUSDT account.
+software. It is not open source.
 
-The copyright holder is geniusgrok. The copyright holder may use the Software
-only for that person's own private research.
+The copyright holder is geniusgrok. Only the copyright holder may use the
+Software.
 
-**No live trading.** The Software must not be used to send orders to a live
-account, to manage money for any other person, to give investment advice, or to
-provide any service to any other person. This prohibition binds every person,
-including the copyright holder.
+The copyright holder may connect the Software to that person's own Binance
+USDⓈ-M Demo account and run it forward in real time. Only after a Demo record,
+the fault drills, and capital and notional caps written by the copyright holder
+all exist, the copyright holder may verify the Software on that person's own
+small account inside those caps. The production entry gate stays closed unless
+those caps and the explicit environment switch are both present. Nothing in
+this license is a statement that an economic target has been met, and nothing
+in it raises those caps automatically.
+
+Except for that personal scope, the Software must not be used on any other
+person's live account, to manage money for any other person, to give investment
+advice, or to provide any service to any other person.
 
 **Public visibility does not grant a license.** No one acquires any right to
 use the Software merely by being able to read it.
@@ -38,10 +46,12 @@ Without the prior written permission of the copyright holder, no person may:
    Software available to any other person;
 4. use the Software to train a machine-learning model or to build a dataset.
 
-If this repository is public, the GitHub Terms of Service may still allow
-viewing and the platform's own fork control. That platform mechanic is not a
-license from the copyright holder to use, modify, trade with, or redistribute
-the Software. Keeping the repository private is what turns the fork control off.
+The personal Demo and small-account permission above does not give any third
+party a right to copy, modify, create derivative works, or trade. If this
+repository is public, the GitHub Terms of Service may still allow viewing and
+the platform's own fork control. That platform mechanic is not a license from
+the copyright holder to use, modify, trade with, or redistribute the Software.
+Keeping the repository private is what turns the fork control off.
 
 ### Third-party components (not covered by this notice)
 
@@ -59,7 +69,8 @@ SOFTWARE.
 **Financial risk notice.** The research reports, backtest results, parameters,
 and notes in this repository are the copyright holder's private research. They
 do not constitute investment advice, financial advice, or an offer of any kind.
-Trading cryptocurrency derivatives can lose the entire principal.
+Trading cryptocurrency derivatives can lose the entire principal. A profitable
+Demo month would not establish a future return.
 
 Licensing enquiries: contact the copyright holder through this repository's
 private GitHub channels.

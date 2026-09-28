@@ -36,3 +36,8 @@ credentials.*
 
 *.log
 .DS_Store
+
+# forward runtime state
+state/
+*.sqlite
+*.sqlite-*

@@ -1,7 +1,8 @@
-"""Exchange surface for one one-way isolated BTCUSDT account.
+"""In-process venue used by the historical session mirror.
 
-The simulator is the stand-in used for fill, protection, disconnect, and late-fill
-checks. The Binance adapter never sends orders: live trading is prohibited.
+The forward Demo and production adapter is ``btc_perp.binance_client``. This
+simulator does not speak to Binance. ``BinanceExchange`` remains a closed stub
+so an old import cannot send an order.
 """
 
 from __future__ import annotations
@@ -25,6 +26,10 @@ class Protection:
     side: int
     qty: float
     price: float
+    active: bool = True
+    close_position: bool = True
+    reduce_only: bool = False
+    trigger_source: str = "contract"
 
 
 @dataclass
@@ -71,7 +76,20 @@ class SimExchange:
         takes = [p for p in self.protections if p.kind == "take_profit"]
         if len(stops) != 1 or len(takes) != 1:
             return False
-        return abs(stops[0].qty - net) < 1e-9 and abs(takes[0].qty - net) < 1e-9
+        pos_side = 1 if self.position_qty > 0 else -1
+        stop, take = stops[0], takes[0]
+        for order in (stop, take):
+            if order.side != pos_side or order.price <= 0.0 or not order.active:
+                return False
+            if not order.close_position and not order.reduce_only:
+                return False
+            if abs(order.qty - net) >= 1e-9:
+                return False
+            if order.trigger_source not in {"contract", "mark"}:
+                return False
+        if pos_side > 0:
+            return stop.price < take.price
+        return stop.price > take.price
 
     def submit_market(self, side: int, qty: float, stop: float, take_profit: float) -> float:
         if not self.connected:
@@ -139,4 +157,4 @@ class BinanceExchange:
         return False
 
     def submit_market(self, side: int, qty: float, stop: float, take_profit: float) -> float:
-        raise RuntimeError("禁止实盘：这是私人研究，不会发送订单")
+        raise RuntimeError("这个旧接口不会发送订单。前向订单走 btc_perp.binance_client，生产闸默认关闭")

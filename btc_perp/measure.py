@@ -1,5 +1,9 @@
 """Full-sample research measurement of the one account.
 
+This is the same-close historical mirror. It is not a real-time Demo month.
+The forward loop is ``python -m btc_perp run``. A next-open fill study is
+``python -m btc_perp causal``.
+
 The sample is walked by successive manual sessions. Each session lasts
 ``session_seconds``, polls every ``poll_seconds``, and returns. The next
 session is a new object on the same in-process venue, so a position and its

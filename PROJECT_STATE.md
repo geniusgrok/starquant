@@ -4,7 +4,7 @@
 
 一个 BTCUSDT U 本位永续研究账户。单向逐仓，引擎按 20 倍记保证金，多空都可以新开仓。手动启动一段有限会话（默认 300 秒、每 5 秒一轮），到点或中断后退出。没有后台进程。
 
-测量路径：`python -m btc_perp --measure` → 连续的 `Session.run` → `scripts.frontier` 按分钟续算。同一个进程里的 `SimExchange` 留着仓位和保护单。`BinanceExchange` 拒绝下单，配置里没有打开实盘的开关。
+历史测量：`python -m btc_perp measure` 仍是同根收盘、同一进程里的 `SimExchange`。那不是一个月真实时间 Demo。收盘后下一根开盘的对照是 `python -m btc_perp causal`。前向循环是 `python -m btc_perp run`。生产增仓默认关闭。`BinanceExchange` 仍不会发送订单。
 
 模型是 1008/192 小时唐奇安，最多 3 个单位。82% 以下新开仓缩半，路径权益落到峰值一半时平仓。细则在 `docs/btc_account.md`。
 
@@ -24,13 +24,14 @@
 
 正式测量：57 笔多头、35 笔空头、80 次止损，最低点在 2021-05-19。手续费、滑点、开仓深度和分钟顺序对调仍过代码里的 100% 线和 0.5 线，离 4,716,653 元都远。跳过会话和关掉缩量两行两条线都不过。做法和原始小数在 `docs/measure_protocol.md` 与 `reports/btc_account_stress.json`。
 
+因果对照（`reports/btc_account_causal.json`，信号在收盘后知道，开仓、加仓和通道出场在下一根开盘）：期末 2,039,229 元，年化 120.67%，最低权益/峰值 0.528（2021-05-19），57/35/80。100% 线过了，150% 线没有过。和同根收盘的 2,029,866 元相比，差额来自成交通道，不是改参数。2026-09-01 00:00 UTC 的资金费槽位仍是 0，这一档未验证。
+
 ## 未完成
 
-- 真实账户上的成交、保护替换、断线和迟到成交没有核对。适配器拒绝下单。
-- 没有 5 秒成交。分钟内部用四段开高低收，止损由内核在这条假设路径上成交，会话再发一张镜像市价单。模拟交易所自己不看价格。
-- 正式测量按全额成交。部分成交只在合成测试里出现。
-- 706,752 段会话在同一个进程里首尾相接。进程退出之后，没有另一个程序盯着价格去碰交易所上的保护单。
-- 150% 年化没有达到。压力没有用来改参数。
+- 真实 Demo 的开仓、保护触发、故障演练和连续 30 个自然日还没有做。本环境访问 `demo-fapi.binance.com` 和 `fapi.binance.com` 返回地区限制，也没有密钥。流水格式在 `state/<环境>/journal.jsonl`，文件不入库。结论是 DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO，见 `docs/forward_audit.md`。
+- 没有 5 秒成交。分钟内部用四段开高低收。前向进程停着的时候，通道和一半峰值平仓不会运行，只留下交易所上的止损和灾备止盈。
+- 150% 年化没有达到。因果对照没有用来改参数或改统计口径。
+- 小资金实盘门槛没有成立。`config/limits.yaml` 仍是空的。
 
 ## 数据
 
@@ -46,4 +47,4 @@
 
 ## 接着看
 
-`README.md`、`docs/btc_account.md`、`docs/measure_protocol.md`、`reports/btc_account_measure.json`。
+`README.md`、`docs/btc_account.md`、`docs/forward.md`、`docs/forward_audit.md`、`docs/measure_protocol.md`、`reports/btc_account_measure.json`。

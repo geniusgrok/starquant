@@ -1,8 +1,8 @@
 # BTCUSDT 账户
 
-私人研究。只有版权人本人可以使用，禁止实盘，禁止他人复制或二次创作。许可见 [LICENSE](LICENSE)。
+私人研究。只有版权人本人可以使用。版权人可以先跑自己的币安 USDⓈ-M Demo，再在本人写明的资金上限内做小资金验证。第三方没有复制、修改、二次创作或交易的权利。生产增仓默认关闭。许可见 [LICENSE](LICENSE)。
 
-一个币安 BTCUSDT U 本位永续账户：起始 10,000 元人民币，中间不加钱，单向逐仓，保证金按 20 倍计算，多空都可以新开仓。测量从 2020-01-01 00:00 UTC 到 2026-09-20 00:00 UTC，结束日不含。每次手动开一段有限会话，默认 300 秒、每 5 秒看一次，到点或中断就退出，没有后台进程。
+一个币安 BTCUSDT U 本位永续账户：起始 10,000 元人民币，中间不加钱，单向逐仓，保证金按 20 倍计算，多空都可以新开仓。历史测量从 2020-01-01 00:00 UTC 到 2026-09-20 00:00 UTC，结束日不含。`measure` 仍按每段 300 秒的研究会话回放，那不是一个月真实时间 Demo。真实时间前向运行见 [docs/forward.md](docs/forward.md)。
 
 ## 模型
 
@@ -15,6 +15,7 @@
 - 期末 2,029,866 元，年化 120.52%，最低权益/峰值 0.526（2021-05-19）
 - 57 笔多头，35 笔空头，80 次止损，92 次平仓
 - 代码里的通过线是年化 100% 且权益/峰值高于 0.5。按 150% 年化，同一起点大约是 4,716,653 元，这次没有到达
+- 这是同根收盘成交。收盘后下一根开盘的对照在 [reports/btc_account_causal.json](reports/btc_account_causal.json)：期末 2,039,229 元，年化 120.67%，最低比值 0.528，笔数仍是 57/35/80。150% 仍然没有到达。2026-09-01 00:00 UTC 的资金费槽位没有官方结算价
 
 同一条行情上的压力见 [docs/measure_protocol.md](docs/measure_protocol.md)。手续费 ×1.5、滑点 ×2、开仓深度 10% 和把分钟路径对调之后，年化仍在 115% 以上，最低比值仍高于 0.5。随机跳过 20% 的会话之后，期末 24,292 元，年化 14.12%，最低比值 0.467。关掉 82% 缩量之后，期末 146,483 元，年化 49.11%，最低比值 0.476。
 
@@ -32,16 +33,29 @@ pip install -e . --no-deps
 python -m btc_perp --measure
 ```
 
-`--measure` 把全样本拆成一段一段的手动会话：默认每段 300 秒、每 5 秒看一次，这一段返回之后才开始下一段。不带 `--measure` 只打印一句拒绝，然后退出。它不下单，也不启动会话。
+`python -m btc_perp measure` 把全样本拆成一段一段的手动会话。不带参数只打印入口说明，不会下单，也不会启动会话。
+
+```bash
+python -m btc_perp causal
+python -m btc_perp check --environment demo
+python -m btc_perp run --environment demo --max-notional-usdt 200 --once
+python -m btc_perp stop --environment demo
+```
+
+Demo 密钥用 `STARQUANT_DEMO_API_KEY` 和 `STARQUANT_DEMO_API_SECRET`。生产还要 `STARQUANT_ALLOW_PROD_ORDERS=yes` 和填好的 [config/limits.yaml](config/limits.yaml)。细则在 [docs/forward.md](docs/forward.md)，门槛结论在 [docs/forward_audit.md](docs/forward_audit.md)。
 
 ## 目录
 
 | 路径 | 内容 |
 | --- | --- |
-| `btc_perp/` | 配置、费率、手动会话、拒绝下单的接口、全样本入口 |
+| `btc_perp/` | 配置、历史测量、前向循环、Demo/生产客户端 |
 | `scripts/frontier.py` | 回放内核 |
 | `config/btc_account.yaml` | 这一份账户配置 |
-| `reports/btc_account_measure.json` | 正式全样本结果 |
+| `reports/btc_account_measure.json` | 同根收盘的正式全样本结果 |
+| `reports/btc_account_causal.json` | 收盘后下一根开盘的对照 |
+| `config/limits.yaml` | 生产资金上限，空着就拒绝增仓 |
+| `docs/forward.md` | Demo 前向怎么启动和停 |
+| `docs/forward_audit.md` | 前向门槛：DEMO_GO 与 SMALL_LIVE_GO |
 | `reports/btc_account_stress.json` | 2026-09-28 的压力数字 |
 | `docs/btc_account.md` | 模型、数据、账本和测量做不到的事 |
 | `docs/measure_protocol.md` | 测量轮次和压力怎么做的 |
@@ -57,4 +71,4 @@ ruff format --check . && ruff check . && mypy && pytest -m "not network"
 
 ## 许可
 
-专有软件，保留全部权利。版权人只能把它用于私人研究。禁止实盘。其他人不得复制、修改或二次创作。能在网页上读到本仓库，不构成使用许可。
+专有软件，保留全部权利。只有版权人本人可以使用：先 Demo，再在写明的上限内做本人小资金验证。其他人不得复制、修改、二次创作或交易。能在网页上读到本仓库，不构成使用许可。生产增仓默认关闭。

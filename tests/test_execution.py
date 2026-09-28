@@ -187,8 +187,8 @@ def test_the_default_entry_refuses_and_does_not_run_a_session(capsys):
     finally:
         sys.argv = argv
     out = capsys.readouterr().out
-    assert "禁止实盘" in out
     assert "不会下单" in out
+    assert "生产增仓默认关闭" in out
 
 
 def test_binance_adapter_refuses_orders():
@@ -197,6 +197,6 @@ def test_binance_adapter_refuses_orders():
     try:
         venue.submit_market(1, 0.01, 1.0, 2.0)
     except RuntimeError as exc:
-        assert "禁止实盘" in str(exc)
+        assert "不会发送订单" in str(exc)
     else:
         raise AssertionError("expected a refusal")

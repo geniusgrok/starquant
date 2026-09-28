@@ -1,8 +1,10 @@
 # 安全约定
 
-许可见仓库根目录的 [`LICENSE`](LICENSE)：仅版权人本人研究，禁止实盘，禁止他人复制或二次创作。公开可见不构成使用许可。
+许可见仓库根目录的 [`LICENSE`](LICENSE)：仅版权人本人可以使用。版权人可以先接自己的币安 USDⓈ-M Demo，再在本人写明的资金上限内做小资金验证。第三方没有复制、修改、二次创作或交易的权利。公开可见不构成使用许可。生产增仓默认关闭。
 
-**禁止实盘。** 不要把本仓库接到真实账户的下单接口。`btc_perp.exchange.BinanceExchange` 会拒绝下单。研究回放使用本地行情，不需要交易所密钥。
+**密钥。** Demo 用 `STARQUANT_DEMO_API_KEY` / `STARQUANT_DEMO_API_SECRET`。生产用 `STARQUANT_PROD_API_KEY` / `STARQUANT_PROD_API_SECRET`。只从环境变量读取。不要写进仓库、SQLite、日志或异常文本。密钥不得开通提币和划转。本仓库没有提币或划转调用。Demo 失败不会改去生产域名。生产下单还要 `STARQUANT_ALLOW_PROD_ORDERS=yes`，并且 `config/limits.yaml` 里的资金、名义、单日损失和裸露时间都是正数。
+
+研究回放不读密钥。旧的 `btc_perp.exchange.BinanceExchange` 不会发送订单。前向订单只走 `btc_perp.binance_client`。
 
 ## 不进仓库的东西
 

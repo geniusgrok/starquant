@@ -283,7 +283,10 @@ def _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail):
 # for this tape. 0 wallet, 1 side, 2 qty, 3 entry, 4 isolated, 5 stop, 6 extreme,
 # 7 units, 8 last_add, 9 cool, 10 peak, 11 peak_c, 12 min_ratio, 13 n_long,
 # 14 n_short, 15 n_stop, 16 min_i.
-STATE_N = 17
+# 17 pending signal (0 none, 1 entry, 2 add, 3 channel exit, 4 reverse),
+# 18 pending side, 19 pending entry scale. Used when defer=1: the signal is
+# known at the close and the fill waits for the next bar's open.
+STATE_N = 20
 
 
 @njit(cache=True)
@@ -305,6 +308,9 @@ def _reset(state, fx0):
     state[14] = 0.0
     state[15] = 0.0
     state[16] = 0.0
+    state[17] = 0.0
+    state[18] = 0.0
+    state[19] = 1.0
 
 
 @njit(cache=True)
@@ -340,8 +346,13 @@ def _loop(
     qv,
     eq_out,
     trace,
+    defer,
 ):
-    """Replay bars ``[i0, i1)`` and write the book back into ``state``."""
+    """Replay bars ``[i0, i1)`` and write the book back into ``state``.
+
+    ``defer`` 0 fills a close signal on that same close (the previous research
+    path). ``defer`` 1 stores the signal and fills it at the next bar's open.
+    """
     n = len(C)
     # Fee inputs come from btc_perp.costs. The YAML copy is checked by a test.
     taker = TAKER
@@ -365,6 +376,9 @@ def _loop(
     nS = int(state[14])
     nStop = int(state[15])
     min_i = int(state[16])
+    pending = state[17]
+    pending_side = state[18]
+    pending_scale = state[19]
     for i in range(i0, i1):
         # Stops can fill before this bar is finished, so impact uses the previous minute.
         if qv.shape[0] == n and qty > 0.0 and i > 0:
@@ -392,9 +406,120 @@ def _loop(
                 stop_px = 0.0
                 nStop += 1
                 cool = i + cool_h
+                pending = 0.0
             else:
                 wallet -= pay
                 isolated -= pay
+        # A signal stored on the previous close fills at this open, before the
+        # bar's high and low can move the trail. defer 0 never sets pending.
+        if defer > 0:
+            enter_now = 0.0
+            scale_now = pending_scale
+            if side != 0:
+                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, O[i])
+                through = (side > 0 and O[i] <= stop_px) or (side < 0 and O[i] >= stop_px)
+                if through or pending == 3.0 or pending == 4.0:
+                    fill = O[i] * (1.0 - slip_b) if side > 0 else O[i] * (1.0 + slip_b)
+                    fee = qty * fill * taker
+                    raw = (fill - entry) * qty * side - fee
+                    wallet, _delta = _realize(wallet, raw, 0.0, isolated)
+                    was_reverse = pending == 4.0 and not through
+                    isolated = 0.0
+                    qty = 0.0
+                    side = 0
+                    units = 0
+                    stop_px = 0.0
+                    if through:
+                        nStop += 1
+                        cool = i + cool_h
+                    elif was_reverse:
+                        enter_now = pending_side
+                    pending = 0.0
+                    peak, min_ratio, min_i = _mark(0.0, wallet, 0.0, 0.0, 0, fx[i], fx_fee, peak, min_ratio, min_i, i)
+            if pending == 1.0 and side == 0:
+                enter_now = pending_side
+                pending = 0.0
+            if enter_now != 0.0 and side == 0 and i >= cool:
+                want_e = int(enter_now)
+                px = O[i]
+                dist = px * stop
+                q = np.floor(wallet * risk * scale_now / dist * 1000.0) / 1000.0
+                capn = wallet * iso_frac * lev
+                if heat > 0.0:
+                    heat_n = wallet * heat / trail
+                    if heat_n < capn:
+                        capn = heat_n
+                if capn > MAX_NOTIONAL_20X:
+                    capn = MAX_NOTIONAL_20X
+                if q * px > capn:
+                    q = np.floor(capn / px * 1000.0) / 1000.0
+                if q >= 0.001 and q * px >= MIN_NOTIONAL:
+                    es = slip_b
+                    if i > 0 and qv.shape[0] == n:
+                        es = _slip_amt(px, q, H[i - 1], L[i - 1], qv[i - 1])
+                    fill = px * (1.0 + es) if want_e > 0 else px * (1.0 - es)
+                    fee = q * fill * taker
+                    iso = q * fill / lev
+                    if iso + fee < wallet * (1.0 - CASH_BUFFER):
+                        wallet -= fee
+                        side = want_e
+                        qty = q
+                        entry = fill
+                        isolated = iso
+                        units = 1
+                        extreme = fill
+                        last_add = fill
+                        stop_px = fill * (1.0 - stop) if want_e > 0 else fill * (1.0 + stop)
+                        stop_px = _clamp_stop(want_e, stop_px, fill, q, iso, px)
+                        if want_e > 0:
+                            nL += 1
+                        else:
+                            nS += 1
+            elif pending == 2.0 and side != 0 and int(pending_side) == side and units < max_units:
+                px = O[i]
+                dist = max(px * stop, px * 0.005)
+                eq_now = wallet + (px - entry) * qty * side
+                qadd = np.floor(eq_now * risk / dist * 1000.0) / 1000.0
+                capn = eq_now * iso_frac * lev
+                if heat > 0.0:
+                    heat_n = eq_now * heat / trail
+                    if heat_n < capn:
+                        capn = heat_n
+                if capn > MAX_NOTIONAL_20X:
+                    capn = MAX_NOTIONAL_20X
+                room = capn / px - qty
+                if qadd > room:
+                    qadd = np.floor(max(room, 0.0) * 1000.0) / 1000.0
+                if qadd >= 0.001:
+                    es = slip_b
+                    if i > 0 and qv.shape[0] == n:
+                        es = _slip_amt(px, qadd, H[i - 1], L[i - 1], qv[i - 1])
+                    fill = px * (1.0 + es) if side > 0 else px * (1.0 - es)
+                    fee = qadd * fill * taker
+                    iso_add = qadd * fill / lev
+                    posted = isolated if isolated > 0.0 else 0.0
+                    if wallet - posted > iso_add + fee:
+                        wallet -= fee
+                        entry = (entry * qty + fill * qadd) / (qty + qadd)
+                        qty += qadd
+                        isolated += iso_add
+                        units += 1
+                        last_add = fill
+                        if side > 0:
+                            if fill > extreme:
+                                extreme = fill
+                            be = fill / (1.0 + add_step)
+                            if be > stop_px:
+                                stop_px = be
+                        else:
+                            if fill < extreme:
+                                extreme = fill
+                            be = fill / (1.0 - add_step)
+                            if be < stop_px:
+                                stop_px = be
+                        stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, px)
+            pending = 0.0
+            pending_side = 0.0
         if side != 0:
             # No 5-second tape exists. A bullish bar is ordered open, low, high,
             # close, so the low is tested before a new high tightens the stop.
@@ -459,27 +584,34 @@ def _loop(
                 cool = i + cool_h
                 peak, min_ratio, min_i = _mark(0.0, wallet, 0.0, 0.0, 0, fx[i], fx_fee, peak, min_ratio, min_i, i)
         # Channel exits are not limited to minute 59. Entries and adds are.
-        # The close is known, so this fill can use the completed minute.
-        if side > 0 and C[i] < xl[i]:
-            slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
-            fill = C[i] * (1.0 - slip_x)
-            fee = qty * fill * taker
-            raw = (fill - entry) * qty * side - fee
-            wallet, _delta = _realize(wallet, raw, 0.0, isolated)
-            isolated = 0.0
-            qty = 0.0
-            side = 0
-            units = 0
-        elif side < 0 and C[i] > xh[i]:
-            slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
-            fill = C[i] * (1.0 + slip_x)
-            fee = qty * fill * taker
-            raw = (fill - entry) * qty * side - fee
-            wallet, _delta = _realize(wallet, raw, 0.0, isolated)
-            isolated = 0.0
-            qty = 0.0
-            side = 0
-            units = 0
+        # defer 0 fills this close. defer 1 waits for the next open.
+        ch_long = side > 0 and C[i] < xl[i]
+        ch_short = side < 0 and C[i] > xh[i]
+        if ch_long or ch_short:
+            if defer > 0:
+                pending = 3.0
+                pending_side = float(-side)
+                pending_scale = 1.0
+            elif ch_long:
+                slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
+                fill = C[i] * (1.0 - slip_x)
+                fee = qty * fill * taker
+                raw = (fill - entry) * qty * side - fee
+                wallet, _delta = _realize(wallet, raw, 0.0, isolated)
+                isolated = 0.0
+                qty = 0.0
+                side = 0
+                units = 0
+            else:
+                slip_x = _slip_amt(C[i], qty, H[i], L[i], qv[i]) if qv.shape[0] == n else slip_b
+                fill = C[i] * (1.0 + slip_x)
+                fee = qty * fill * taker
+                raw = (fill - entry) * qty * side - fee
+                wallet, _delta = _realize(wallet, raw, 0.0, isolated)
+                isolated = 0.0
+                qty = 0.0
+                side = 0
+                units = 0
         eq = wallet + ((C[i] - entry) * qty * side if side != 0 else 0.0)
         cny = eq * fx[i] * (1.0 - fx_fee)
         if cny > peak:
@@ -508,7 +640,15 @@ def _loop(
             want = 1
         elif C[i] < ll[i]:
             want = -1
-        if side == 0 and want != 0:
+        if defer > 0 and pending == 3.0 and side != 0 and want != 0 and want == -side:
+            pending = 4.0
+            pending_side = float(want)
+            pending_scale = entry_scale if ratio_c < entry_scale_below else 1.0
+        elif side == 0 and want != 0 and defer > 0:
+            pending = 1.0
+            pending_side = float(want)
+            pending_scale = entry_scale if ratio_c < entry_scale_below else 1.0
+        elif side == 0 and want != 0:
             px = C[i]
             dist = px * stop
             # Same numbers as btc_perp.costs.new_entry_scale. Adds below do not apply it.
@@ -543,10 +683,14 @@ def _loop(
                         nL += 1
                     else:
                         nS += 1
-        elif side != 0 and units < max_units:
+        elif side != 0 and units < max_units and not (defer > 0 and pending >= 3.0):
             px = C[i]
             trig = (side > 0 and px >= last_add * (1.0 + add_step)) or (side < 0 and px <= last_add * (1.0 - add_step))
-            if trig:
+            if trig and defer > 0:
+                pending = 2.0
+                pending_side = float(side)
+                pending_scale = 1.0
+            elif trig:
                 dist = max(px * stop, px * 0.005)
                 eq_now = wallet + (px - entry) * qty * side
                 qadd = np.floor(eq_now * risk / dist * 1000.0) / 1000.0
@@ -612,6 +756,9 @@ def _loop(
     state[14] = nS
     state[15] = nStop
     state[16] = min_i
+    state[17] = pending
+    state[18] = pending_side
+    state[19] = pending_scale
     last = i1 - 1
     eq = wallet + ((C[last] - entry) * qty * side if side != 0 else 0.0)
     end = eq * fx[last] * (1.0 - fx_fee)
@@ -685,6 +832,7 @@ def run(
         qv,
         eq_out,
         trace,
+        0,
     )
     return end, state[12], int(state[13]), int(state[14]), int(state[15]), int(state[16])
 
@@ -728,10 +876,13 @@ def resume(
     qv: np.ndarray,
     eq_out: np.ndarray,
     trace: np.ndarray,
+    defer: int = 0,
 ) -> tuple[float, float, int, int, int, int]:
     """Replay ``[i0, i1)`` on an existing book.
 
     Index 0 rebuilds the starting wallet. A later slice keeps ``state``.
+    ``defer`` 0 fills a close signal on that close. ``defer`` 1 fills it at
+    the next open. The published research file uses 0.
     """
     if i0 == 0:
         _reset(state, float(fx[0]))
@@ -767,5 +918,6 @@ def resume(
         qv,
         eq_out,
         trace,
+        defer,
     )
     return float(end), float(state[12]), int(state[13]), int(state[14]), int(state[15]), int(state[16])

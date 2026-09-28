@@ -1,0 +1,7 @@
+# 版权人自己的资金限额。空着的时候，生产入口拒绝增仓。
+# 研究里的 4.8% 单位风险、三档和约 3.75 倍名义不是这里的安全保证。
+# 填正数之后，命令行的 --max-notional-usdt 还不能高于 max_notional_usdt。
+capital_usdt: null
+max_notional_usdt: null
+max_daily_loss_usdt: null
+max_unprotected_seconds: null
