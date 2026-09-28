@@ -22,7 +22,6 @@ def test_full_period_clears_100pct_cagr_and_half_drawdown():
     assert report["cagr"] >= 1.0
     assert report["min_equity_over_peak"] > 0.5
     assert report["passed"] is True
-    assert report["live_orders"] is False
     sessions = report["sessions"]
     assert sessions["seconds"] == 300
     assert sessions["poll_seconds"] == 5

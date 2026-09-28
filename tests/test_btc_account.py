@@ -39,7 +39,6 @@ def test_yaml_fees_match_the_replay_constants() -> None:
     assert cfg.fx_fee == FX_FEE
     assert cfg.leverage == LEVERAGE
     assert cfg.start_cny == START_CNY
-    assert cfg.live_orders is False
 
 
 def test_maintenance_brackets_match_the_published_table() -> None:
@@ -170,8 +169,8 @@ def test_new_entry_is_halved_only_below_the_close_peak_line() -> None:
     assert new_entry_scale(1.0) == 1.0
 
 
-def test_live_flag_cannot_open_the_adapter() -> None:
-    venue = BinanceExchange(True, True, True, "k")
+def test_the_adapter_refuses_orders() -> None:
+    venue = BinanceExchange()
     assert venue.allowed() is False
 
 
@@ -353,20 +352,11 @@ def _replay(
         dd_flat,
         iso_frac,
         0,
-        0,
-        0.0,
         0.35,
         0.07,
-        1,
-        0,
-        0.0,
-        1,
-        1.0,
         heat,
-        0.0,
         np.ones(n, np.int8),
         qv,
         np.empty(1),
         trace,
-        np.empty(1),
     )

@@ -25,7 +25,7 @@ def main() -> None:
             f"long={report['n_long']} short={report['n_short']}"
         )
         return
-    venue = BinanceExchange(cfg.live_orders, measurement_passed=False, checks_passed=False, api_key=None)
+    venue = BinanceExchange()
     if venue.allowed():
         raise RuntimeError("live path is not wired; the gate should be closed")
     print(

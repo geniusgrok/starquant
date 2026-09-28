@@ -133,18 +133,7 @@ class SimExchange:
 
 
 class BinanceExchange:
-    """Research adapter. It never sends an order.
-
-    The constructor still accepts the old gate flags so existing call sites keep
-    working. ``allowed`` does not consult them: live trading is prohibited by
-    LICENSE, not deferred until a later check.
-    """
-
-    def __init__(self, live_orders: bool, measurement_passed: bool, checks_passed: bool, api_key: str | None):
-        self.live_orders = live_orders
-        self.measurement_passed = measurement_passed
-        self.checks_passed = checks_passed
-        self.api_key = api_key
+    """Research adapter. It never sends an order."""
 
     def allowed(self) -> bool:
         return False

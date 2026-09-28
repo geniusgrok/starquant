@@ -128,7 +128,6 @@ class _Held:
     exchange: SimExchange
     equity: np.ndarray
     trace: np.ndarray
-    peak: np.ndarray
     o: np.ndarray
     h: np.ndarray
     low: np.ndarray
@@ -185,23 +184,14 @@ class _Held:
                 self.cfg.risk,
                 self.cfg.dd_flat,
                 self.cfg.iso_frac,
-                0 if self.cfg.long_and_short else 1,
                 self.cfg.cooldown_hours * 60,
-                0.0,
                 self.cfg.ratchet_gain,
                 self.cfg.ratchet_trail,
-                1,
-                0,
-                0.0,
-                1,
-                1.0,
                 self.cfg.heat,
-                0.0,
                 self.gate,
                 self.qv,
                 self.equity,
                 self.trace,
-                self.peak,
             )
             self.end = float(raw[0])
             after_side, after_qty, after_entry, after_stop = _book(self.state)
@@ -267,7 +257,6 @@ def walk_tape(
     state = initial_state(float(fx[0]))
     equity = np.empty(n, dtype=np.float64)
     trace = np.empty((1, 4), dtype=np.float64)
-    peak = np.empty(1, dtype=np.float64)
     exchange = SimExchange()
     cursor = 0
     closes = 0
@@ -282,7 +271,6 @@ def walk_tape(
         exchange=exchange,
         equity=equity,
         trace=trace,
-        peak=peak,
         o=o,
         h=h,
         low=low,
@@ -414,7 +402,6 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
             "polls": walked.polls,
             "closes": walked.closes,
         },
-        "live_orders": False,
     }
     if write_report:
         path = ROOT / "reports" / "btc_account_measure.json"
