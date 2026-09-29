@@ -21,6 +21,8 @@
 
 这些压力没有动到止损成交和参数本身。`python -m btc_perp robustness`（[reports/btc_account_robustness.json](reports/btc_account_robustness.json)）补上了这两项，结论要保守：止损成交只多 0.1% 的不利滑点，账户就会跌破 0.5 线并被回撤锁永久停机，期末约 11 万元；54 个把参数移动 5% 到 10% 的邻居里有 13 个（24%）同样如此；去掉 2020 年，之后的年化约 54%。所以 120% 是这条行情上的一条路径，不是稳健估计，也不能用来推算小资金实盘的收益。
 
+`python -m btc_perp generalization`（[reports/btc_account_generalization.json](reports/btc_account_generalization.json)）把同一套规则放到没调过的数据上：ETHUSDT、SOLUSDT 永续和 2017–2019 的 BTC 现货。基准原样运行，三条都以回撤锁结束，年化 +1.7%、−2.6%、−1.6%，只有 11 到 16 笔交易。也就是说 BTC 2020–2026 的 120% 没有跨资产、跨时期成立。研究用的候选模型（4 个通道长度的集成、波动率目标仓位、ATR 止损、平滑回撤缩仓、交易所杠杆 5 倍）在四条行情上年化都是正的，但很低：预先定好的一组参数在 BTC 2020–2026 是 +4.1%，最低比值 0.413；36 个网格点的中位数在 BTC/ETH/SOL/2017 分别是 +6.5%、+8.6%、+4.6%、+37.5%。候选模型只在研究里，没有接入前向循环，也没有换掉基准。BTC 2020–2026 已经用来选过基准，这段数据上没有干净的样本外。
+
 当前状态和没做完的事见 [PROJECT_STATE.md](PROJECT_STATE.md)。
 
 ## 复现
@@ -52,6 +54,10 @@ Demo 密钥用 `STARQUANT_DEMO_API_KEY` 和 `STARQUANT_DEMO_API_SECRET`。生产
 | --- | --- |
 | `btc_perp/` | 配置、历史测量、前向循环、Demo/生产客户端 |
 | `scripts/frontier.py` | 回放内核 |
+| `scripts/assets.py` | 下载并合成 ETH、SOL 和 2017–2019 BTC 现货分钟行情（`data/assets/`，不入库） |
+| `btc_perp/candidate.py` | 研究用候选模型，未接入前向循环 |
+| `config/candidate.yaml` | 候选模型预先定好的设置 |
+| `reports/btc_account_generalization.json` | 跨资产、前进验证、自助法和压力结果 |
 | `config/btc_account.yaml` | 这一份账户配置 |
 | `reports/btc_account_measure.json` | 同根收盘的正式全样本结果 |
 | `reports/btc_account_causal.json` | 收盘后下一根开盘的对照 |
