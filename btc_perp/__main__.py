@@ -30,6 +30,7 @@ examples:
   python -m btc_perp measure
   python -m btc_perp causal
   python -m btc_perp robustness
+  python -m btc_perp generalization
   python -m btc_perp check --environment demo
   python -m btc_perp run --environment demo --max-notional-usdt 200 --once
   python -m btc_perp run --environment demo --max-notional-usdt 200 --dry-run --once
@@ -81,6 +82,14 @@ def main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     robust.add_argument("--no-write", action="store_true")
+
+    general = sub.add_parser(
+        "generalization",
+        help="其他币种、早期 BTC、前进验证和自助法下的泛化检查（研究用，不改任何设置）",
+        epilog="python -m btc_perp generalization",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    general.add_argument("--no-write", action="store_true")
 
     for name, help_text, example in (
         ("check", "只读核对账户、过滤器和保护", "python -m btc_perp check --environment demo"),
@@ -134,6 +143,19 @@ def main(argv: list[str] | None = None) -> int:
             f"neighbour_runs={summary['neighbour_runs']} "
             f"failing={summary['neighbours_breaching_half_peak_or_locked']} "
             f"smallest_stop_extra_that_breaches={summary['smallest_stop_extra_that_breaches']}"
+        )
+        return 0
+    if found.command == "generalization":
+        from btc_perp.generalization import run_generalization
+
+        outcome = run_generalization(write_report=not found.no_write)
+        if not outcome.get("verified"):
+            print(f"verified=False reason={outcome.get('reason')}")
+            return 2
+        info = outcome["summary"]
+        print(
+            f"baseline_positive_tapes={info['tapes_with_positive_cagr_baseline_zero_tune']}/{info['tapes']} "
+            f"candidate_positive_tapes={info['tapes_with_positive_cagr_candidate']}/{info['tapes']}"
         )
         return 0
     if found.command is None:

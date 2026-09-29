@@ -1,0 +1,19 @@
+# Candidate model for out-of-sample comparison. These values were fixed before the
+# candidate was ever run on the tape. They are conventional choices, not fitted.
+# The baseline stays config/btc_account.yaml.
+lookback_days: [20, 40, 60, 90]
+exit_fraction: 0.25
+target_vol: 0.5
+atr_mult: 3.0
+max_leverage: 3.0
+# Exchange leverage. 20 leaves a 3-ATR stop beyond liquidation, so this model
+# needs a lower isolated leverage than the baseline's 20.
+leverage: 5
+vol_days: 30
+atr_days: 14
+dd_window_days: 180
+dd_soft: 0.85
+dd_floor: 0.55
+band: 0.2
+cooldown_hours: 24
+flatten_ratio: 0.5
