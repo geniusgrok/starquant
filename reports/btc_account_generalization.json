@@ -42,9 +42,9 @@
   "side_by_side": {
     "btc": {
       "baseline_zero_tune": {
-        "end_cny": 2039228.742932259,
-        "cagr": 1.206671820181076,
-        "min_equity_over_peak": 0.5280011467046337,
+        "end_cny": 1839663.4505553266,
+        "cagr": 1.173104242333221,
+        "min_equity_over_peak": 0.5281120676707606,
         "trades": 92,
         "n_stop": 80,
         "locked_at_end": false,
@@ -2704,8 +2704,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 6.792336704486798,
-        "train_calmar_published": 6.251136285487199,
+        "train_calmar_chosen": 6.339472688240843,
+        "train_calmar_published": 5.831294202175363,
         "return_published": 1.9449802857131404,
         "return_selected": 1.929894155425175,
         "return_median_of_family": 1.9449802857131404,
@@ -2720,8 +2720,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 7.972413429829755,
-        "train_calmar_published": 7.4992284993756995,
+        "train_calmar_chosen": 7.560141805997816,
+        "train_calmar_published": 7.109998504065577,
         "return_published": -0.23824891663028658,
         "return_selected": -0.23824891663028658,
         "return_median_of_family": -0.23824891663028658,
@@ -2736,8 +2736,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 4.9875702926938486,
-        "train_calmar_published": 4.709277247983534,
+        "train_calmar_chosen": 4.745196388728818,
+        "train_calmar_published": 4.478685053314337,
         "return_published": 0.25784811376909933,
         "return_selected": 0.25784811376909933,
         "return_median_of_family": 0.25784811376909933,
@@ -2752,8 +2752,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 4.09519756905911,
-        "train_calmar_published": 3.885848011355938,
+        "train_calmar_chosen": 3.91299872658767,
+        "train_calmar_published": 3.7117830106130083,
         "return_published": 0.8811998026581331,
         "return_selected": 0.8616806375774893,
         "return_median_of_family": 0.8811998026581331,
@@ -2768,8 +2768,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 4.028418763142074,
-        "train_calmar_published": 3.8471365817378906,
+        "train_calmar_chosen": 3.8706687631642964,
+        "train_calmar_published": 3.6959549029945937,
         "return_published": 0.46010837858408604,
         "return_selected": 0.4431308831699239,
         "return_median_of_family": 0.46010837858408604,
@@ -2784,8 +2784,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 3.9629095153790086,
-        "train_calmar_published": 3.8177300133391796,
+        "train_calmar_chosen": 3.823855231124442,
+        "train_calmar_published": 3.6838336130119433,
         "return_published": 0.09760692049166053,
         "return_selected": 0.09760692049166053,
         "return_median_of_family": 0.09760692049166053,
@@ -2800,8 +2800,8 @@
           "field": "ratchet_trail",
           "value": 0.0735
         },
-        "train_calmar_chosen": 3.539799968571366,
-        "train_calmar_published": 3.4183030526258475,
+        "train_calmar_chosen": 3.423501286949108,
+        "train_calmar_published": 3.306088390702083,
         "return_published": 0.2582807406302581,
         "return_selected": 0.2582807406302581,
         "return_median_of_family": 0.2582807406302581,
@@ -2813,15 +2813,15 @@
         "test_start_index": 2891520,
         "test_days": 184,
         "chosen": {
-          "field": "entry_scale_below",
-          "value": 0.902
+          "field": "ratchet_trail",
+          "value": 0.0735
         },
-        "train_calmar_chosen": 3.2789080688673704,
-        "train_calmar_published": 3.1516113582990286,
+        "train_calmar_chosen": 3.1561007341462632,
+        "train_calmar_published": 3.054389594518387,
         "return_published": -0.21976776895058037,
-        "return_selected": -0.19700164648568952,
+        "return_selected": -0.21976776895058037,
         "return_median_of_family": -0.21976776895058037,
-        "min_ratio_selected": 0.644218971074321,
+        "min_ratio_selected": 0.6422272611451619,
         "min_ratio_published": 0.6422272611451619,
         "share_of_family_positive": 0.0
       },
@@ -2829,11 +2829,11 @@
         "test_start_index": 3156480,
         "test_days": 181,
         "chosen": {
-          "field": "entry_scale_below",
-          "value": 0.902
+          "field": "ratchet_trail",
+          "value": 0.0735
         },
-        "train_calmar_chosen": 2.672399934205486,
-        "train_calmar_published": 2.568832021426835,
+        "train_calmar_chosen": 2.572492182391245,
+        "train_calmar_published": 2.4895650804731746,
         "return_published": 0.6212316306537997,
         "return_selected": 0.6212316306537997,
         "return_median_of_family": 0.6212316306537997,
@@ -2845,27 +2845,27 @@
         "test_start_index": 3417120,
         "test_days": 81,
         "chosen": {
-          "field": "entry_scale_below",
-          "value": 0.902
+          "field": "ratchet_trail",
+          "value": 0.0735
         },
-        "train_calmar_chosen": 2.691661681317628,
-        "train_calmar_published": 2.595590944289494,
+        "train_calmar_chosen": 2.59898808231461,
+        "train_calmar_published": 2.5220216979539387,
         "return_published": 0.20117584359541096,
-        "return_selected": 0.23181927397667845,
+        "return_selected": 0.20117584359541096,
         "return_median_of_family": 0.20117584359541096,
-        "min_ratio_selected": 0.7932423109487047,
+        "min_ratio_selected": 0.7735091682348714,
         "min_ratio_published": 0.7735091682348714,
         "share_of_family_positive": 1.0
       }
     ],
     "compounded_growth": {
       "fixed": 16.264608864165037,
-      "selected": 16.704566957454034,
+      "selected": 15.827198467038526,
       "median_of_family": 16.264608864165037
     },
     "cagr": {
       "fixed": 0.8061980563986619,
-      "selected": 0.816446514182257,
+      "selected": 0.7957900432109948,
       "median_of_family": 0.8061980563986619
     },
     "note": "Each test window starts flat with 10,000 CNY. The family is the published settings and their neighbours, so it already sits around a point tuned on this same tape: this is optimistic, not a clean out-of-sample."
@@ -2874,9 +2874,9 @@
     "btc": {
       "baseline": {
         "row": {
-          "end_cny": 2039228.742932259,
-          "cagr": 1.206671820181076,
-          "min_equity_over_peak": 0.5280011467046337,
+          "end_cny": 1839663.4505553266,
+          "cagr": 1.173104242333221,
+          "min_equity_over_peak": 0.5281120676707606,
           "trades": 92,
           "n_stop": 80
         },
@@ -2884,28 +2884,28 @@
           "draws": 1000,
           "block_days": 20,
           "cagr_percentiles": {
-            "5": 0.3539569220401919,
-            "25": 0.7859572249242195,
-            "50": 1.21333264517115,
-            "75": 1.697848823161428,
-            "95": 2.710263706366888
+            "5": 0.3432812321821001,
+            "25": 0.7686092138554399,
+            "50": 1.1820749447539776,
+            "75": 1.6571131321004016,
+            "95": 2.615903479832868
           },
           "min_equity_over_peak_percentiles": {
-            "5": 0.26221404435001694,
-            "25": 0.3750678784916461,
-            "50": 0.456181759704426,
-            "75": 0.5184892078978778,
-            "95": 0.5998256964933778
+            "5": 0.2623079643611662,
+            "25": 0.3747308298416976,
+            "50": 0.456316625870425,
+            "75": 0.5185811525700575,
+            "95": 0.5998939362808794
           },
           "share_min_ratio_above_half": 0.321,
           "share_positive_cagr": 0.998
         },
         "half_year_windows": {
           "windows": 13,
-          "median": 0.2279354968166607,
+          "median": 0.22794327724889163,
           "share_positive": 0.7692307692307693,
-          "worst": -0.22723281787776184,
-          "best": 4.922372296164121
+          "worst": -0.22720634400576922,
+          "best": 4.92199724491834
         }
       },
       "candidate": {
@@ -3184,36 +3184,36 @@
     "btc": {
       "baseline": [
         {
-          "end_cny": 2039228.742932259,
-          "cagr": 1.206671820181076,
-          "min_equity_over_peak": 0.5280011467046337,
+          "end_cny": 1839663.4505553266,
+          "cagr": 1.173104242333221,
+          "min_equity_over_peak": 0.5281120676707606,
           "trades": 92,
           "n_stop": 80,
           "stop_extra": 0.0,
           "taker": null
         },
         {
-          "end_cny": 114693.67452605577,
-          "cagr": 0.4378063705293038,
-          "min_equity_over_peak": 0.47537240517173124,
+          "end_cny": 103275.18641863197,
+          "cagr": 0.41553878870298244,
+          "min_equity_over_peak": 0.4754846340142418,
           "trades": 23,
           "n_stop": 22,
           "stop_extra": 0.001,
           "taker": null
         },
         {
-          "end_cny": 105431.7137355868,
-          "cagr": 0.419899618680031,
-          "min_equity_over_peak": 0.4686836172378479,
+          "end_cny": 94907.2381171627,
+          "cagr": 0.3978478246826931,
+          "min_equity_over_peak": 0.468725833146689,
           "trades": 23,
           "n_stop": 22,
           "stop_extra": 0.005,
           "taker": null
         },
         {
-          "end_cny": 1980648.3760564933,
-          "cagr": 1.19711943634482,
-          "min_equity_over_peak": 0.5264263353770611,
+          "end_cny": 1785685.3651474775,
+          "cagr": 1.1634933469101156,
+          "min_equity_over_peak": 0.5264966462356192,
           "trades": 92,
           "n_stop": 80,
           "stop_extra": 0.0,
@@ -3761,17 +3761,35 @@
     "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5",
     "eth_1m.npz": "236738cdb408b13c4f013d179bf370199ddf5b3bf901b7a29547694eff08900e",
     "sol_1m.npz": "ec95318b486edd1f2e09f296453fe5bc2db5b6640d263758b97ec1a6fbbeb6b5",
-    "btc_spot_2017_1m.npz": "429239fba94821018eeb7086fe0779b953678c8ed68061b8cc8bbd5bb93a9ec3"
+    "btc_spot_2017_1m.npz": "429239fba94821018eeb7086fe0779b953678c8ed68061b8cc8bbd5bb93a9ec3",
+    "eth_funding.npz": "b5b1bb5aa048a39bc343e25297458a58833c44867611134d9c2b3590b3353483",
+    "sol_funding.npz": "26ce7761075e99abd2a9eff6925c44b739ece384249b71913251a1e5915cca64"
   },
   "provenance": {
-    "git_head": "bd911bf09baf01b07ff702efee2b55bc988760b5",
+    "git_head": "bc9df47c2b92ffd4b569775787f22b8896d0c31a",
     "git_dirty": false,
     "files_sha256": {
-      "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
+      "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
-      "scripts/frontier.py": "58a4f2abfa4bb566d52dab14f4fc5e52cfed9fca1b3e81e62512fc98aa77a281",
-      "btc_perp/causal.py": "487c7c058b671a4f9b5b93c041768d1a59e8a85a95f89f3ccedb84508300f0cd"
+      "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+      "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
+      "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+      "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
+      "btc_perp/robustness.py": "7544d712159d97b92cff9e9ac4b0dc508346bb84d4cf53790437de7250cca195",
+      "btc_perp/generalization.py": "e22a366ca69a0e7352289314b886bee6c345de1536b35a596a81b214acc22724",
+      "btc_perp/candidate.py": "1f0f74fe29152c5f63ef51ce2f0fe7eca8254234562425d6387a226fd26c22a6",
+      "btc_perp/tapes.py": "f7ad5d0ad10e07cdea26f73611d707e630aced6b4dfae02bf242fb20c65c8cf9",
+      "config/candidate.yaml": "864e0f8a97db979a8a206bf00f73c1e4438c1b9364f773455b758b3f9dd4bd8a",
+      "scripts/assets.py": "0aba1a4c72852ccfd2a1a5e89db8ae7b78c1fc9d8f10646ae828e22f174c5e5c"
     },
     "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
-  }
+  },
+  "completion": {
+    "data_validated": true,
+    "path_complete": true,
+    "execution_closed": false,
+    "economic_pass": false,
+    "note": "path_complete 只表示数组回放至末端；data_validated 只表示输入结构已校验，代理/缺失资金费另列；回放成交是模型假设，没有真实执行，execution_closed 恒为 false。"
+  },
+  "run_id": "20260929T120630Z-cc415406"
 }

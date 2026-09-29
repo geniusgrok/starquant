@@ -1,10 +1,10 @@
 {
   "verified": true,
-  "fills": "next open after the close is known (defer=1); stops use the intrabar path",
+  "fills": "next open after close (defer=1); resting stops use intrabar path, new trail starts next minute",
   "base": {
-    "end_cny": 2039228.742932259,
-    "cagr": 1.206671820181076,
-    "min_equity_over_peak": 0.5280011467046337,
+    "end_cny": 1839663.4505553266,
+    "cagr": 1.173104242333221,
+    "min_equity_over_peak": 0.5281120676707606,
     "trades": 92,
     "n_stop": 80,
     "breaches_half_peak_line": false,
@@ -14,43 +14,43 @@
   "concentration": {
     "yearly": {
       "2020": {
-        "equity_cny": 171716.09959067157,
-        "return": 16.17160995906716
+        "equity_cny": 154747.97194135052,
+        "return": 14.474797194135052
       },
       "2021": {
-        "equity_cny": 156360.5969587534,
-        "return": -0.0894237795321573
+        "equity_cny": 141008.82859914185,
+        "return": -0.08878399613156673
       },
       "2022": {
-        "equity_cny": 334994.1324090087,
-        "return": 1.1424459801555842
+        "equity_cny": 302035.5276676349,
+        "return": 1.1419618237256457
       },
       "2023": {
-        "equity_cny": 628686.8803893096,
-        "return": 0.8767101258410068
+        "equity_cny": 567002.3633798676,
+        "return": 0.8772704249673795
       },
       "2024": {
-        "equity_cny": 1221561.4344161374,
-        "return": 0.9430363071354291
+        "equity_cny": 1101858.1437679452,
+        "return": 0.9433043227542013
       },
       "2025": {
-        "equity_cny": 1174235.0257321568,
-        "return": -0.03874255305595897
+        "equity_cny": 1059187.1820050136,
+        "return": -0.038726366006619384
       },
       "2026": {
-        "equity_cny": 2039228.742932259,
-        "return": 0.7366444521281104
+        "equity_cny": 1839663.4505553266,
+        "return": 0.7368634003603518
       }
     },
     "first_year": "2020",
-    "cagr_after_first_year": 0.5414161691089951,
+    "cagr_after_first_year": 0.5417007494882842,
     "note": "the first year is one path from the same tape; the rest CAGR starts from its ending equity"
   },
   "stop_extra_adverse": [
     {
-      "end_cny": 114693.67452605577,
-      "cagr": 0.4378063705293038,
-      "min_equity_over_peak": 0.47537240517173124,
+      "end_cny": 103275.18641863197,
+      "cagr": 0.41553878870298244,
+      "min_equity_over_peak": 0.4754846340142418,
       "trades": 23,
       "n_stop": 22,
       "breaches_half_peak_line": true,
@@ -59,9 +59,9 @@
       "stop_extra": 0.001
     },
     {
-      "end_cny": 111530.93020827111,
-      "cagr": 0.43183470928164414,
-      "min_equity_over_peak": 0.4705808841543376,
+      "end_cny": 100418.69215117929,
+      "cagr": 0.4096415994027438,
+      "min_equity_over_peak": 0.4705415764954017,
       "trades": 25,
       "n_stop": 24,
       "breaches_half_peak_line": true,
@@ -70,9 +70,9 @@
       "stop_extra": 0.002
     },
     {
-      "end_cny": 105431.7137355868,
-      "cagr": 0.419899618680031,
-      "min_equity_over_peak": 0.4686836172378479,
+      "end_cny": 94907.2381171627,
+      "cagr": 0.3978478246826931,
+      "min_equity_over_peak": 0.468725833146689,
       "trades": 23,
       "n_stop": 22,
       "breaches_half_peak_line": true,
@@ -81,9 +81,9 @@
       "stop_extra": 0.005
     },
     {
-      "end_cny": 98253.79232503458,
-      "cagr": 0.40507631922078335,
-      "min_equity_over_peak": 0.47680767487375475,
+      "end_cny": 88311.98308717109,
+      "cagr": 0.3829429589535853,
+      "min_equity_over_peak": 0.4768846318471817,
       "trades": 22,
       "n_stop": 21,
       "breaches_half_peak_line": true,
@@ -93,9 +93,9 @@
     }
   ],
   "taker_stress": {
-    "end_cny": 1980648.3760564933,
-    "cagr": 1.19711943634482,
-    "min_equity_over_peak": 0.5264263353770611,
+    "end_cny": 1785685.3651474775,
+    "cagr": 1.1634933469101156,
+    "min_equity_over_peak": 0.5264966462356192,
     "trades": 92,
     "n_stop": 80,
     "breaches_half_peak_line": false,
@@ -103,11 +103,38 @@
     "flat_days_at_end": 15.434027777777779,
     "taker": 0.0005
   },
+  "funding_uncertainty": {
+    "scenarios": [
+      {
+        "end_cny": 1915642.6212752005,
+        "cagr": 1.186233596400879,
+        "min_equity_over_peak": 0.5281120676707606,
+        "trades": 92,
+        "n_stop": 80,
+        "breaches_half_peak_line": false,
+        "locked_at_end": false,
+        "flat_days_at_end": 15.434027777777779,
+        "rate_per_unofficial_slot": -0.003
+      },
+      {
+        "end_cny": 1816516.6315080302,
+        "cagr": 1.1690127042841345,
+        "min_equity_over_peak": 0.5281120676707606,
+        "trades": 92,
+        "n_stop": 80,
+        "breaches_half_peak_line": false,
+        "locked_at_end": false,
+        "flat_days_at_end": 15.434027777777779,
+        "rate_per_unofficial_slot": 0.003
+      }
+    ],
+    "note": "57 个未获官方结算确认的 2026-09 槽位统一设为 ±0.3% 的情景；仅是固定情景，不是官方费率的数学上下界。"
+  },
   "neighbours": [
     {
-      "end_cny": 437823.34090609517,
-      "cagr": 0.755046722284447,
-      "min_equity_over_peak": 0.47219698182443276,
+      "end_cny": 397607.6886646208,
+      "cagr": 0.7300579822230568,
+      "min_equity_over_peak": 0.4721683853056537,
       "trades": 76,
       "n_stop": 70,
       "breaches_half_peak_line": true,
@@ -118,9 +145,9 @@
       "value": 907
     },
     {
-      "end_cny": 1717881.497383715,
-      "cagr": 1.1510639803967173,
-      "min_equity_over_peak": 0.5281803145718786,
+      "end_cny": 1548678.321422609,
+      "cagr": 1.1181213089074276,
+      "min_equity_over_peak": 0.5282336846624334,
       "trades": 98,
       "n_stop": 86,
       "breaches_half_peak_line": false,
@@ -131,9 +158,9 @@
       "value": 958
     },
     {
-      "end_cny": 1096486.1502928464,
-      "cagr": 1.0120152854063336,
-      "min_equity_over_peak": 0.5283492000083748,
+      "end_cny": 1011839.8487691339,
+      "cagr": 0.9880993888273952,
+      "min_equity_over_peak": 0.5283335852756826,
       "trades": 95,
       "n_stop": 84,
       "breaches_half_peak_line": false,
@@ -144,9 +171,9 @@
       "value": 1058
     },
     {
-      "end_cny": 13974.663049300276,
-      "cagr": 0.051071854663752525,
-      "min_equity_over_peak": 0.476685069632646,
+      "end_cny": 12870.750044895696,
+      "cagr": 0.03827712981243647,
+      "min_equity_over_peak": 0.4766672293617421,
       "trades": 9,
       "n_stop": 9,
       "breaches_half_peak_line": true,
@@ -157,9 +184,9 @@
       "value": 1109
     },
     {
-      "end_cny": 1913025.6478339015,
-      "cagr": 1.1857888118564999,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1725780.6369996616,
+      "cagr": 1.1525332695993238,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 94,
       "n_stop": 81,
       "breaches_half_peak_line": false,
@@ -170,9 +197,9 @@
       "value": 173
     },
     {
-      "end_cny": 1890452.4015685786,
-      "cagr": 1.1819305785430947,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1705584.9753556272,
+      "cagr": 1.1487652665335042,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 94,
       "n_stop": 82,
       "breaches_half_peak_line": false,
@@ -183,9 +210,9 @@
       "value": 182
     },
     {
-      "end_cny": 1978242.1749631034,
-      "cagr": 1.1967219533817617,
-      "min_equity_over_peak": 0.527996105126969,
+      "end_cny": 1783508.2336235098,
+      "cagr": 1.1631005424482561,
+      "min_equity_over_peak": 0.5282334437974235,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -196,9 +223,9 @@
       "value": 202
     },
     {
-      "end_cny": 2112096.0524010924,
-      "cagr": 1.2182331890736111,
-      "min_equity_over_peak": 0.5281218992435674,
+      "end_cny": 1906348.6584279947,
+      "cagr": 1.1846516303976666,
+      "min_equity_over_peak": 0.5282335293833663,
       "trades": 91,
       "n_stop": 79,
       "breaches_half_peak_line": false,
@@ -209,9 +236,9 @@
       "value": 211
     },
     {
-      "end_cny": 137750.17704498288,
-      "cagr": 0.47754568625770344,
-      "min_equity_over_peak": 0.4763511419085419,
+      "end_cny": 124149.76563801893,
+      "cagr": 0.454860693472926,
+      "min_equity_over_peak": 0.4764464262156577,
       "trades": 25,
       "n_stop": 24,
       "breaches_half_peak_line": true,
@@ -222,9 +249,9 @@
       "value": 0.0288
     },
     {
-      "end_cny": 130460.45623327917,
-      "cagr": 0.4656367667964194,
-      "min_equity_over_peak": 0.48042032629113046,
+      "end_cny": 117600.43069875294,
+      "cagr": 0.44317234122385485,
+      "min_equity_over_peak": 0.48055002622158627,
       "trades": 23,
       "n_stop": 22,
       "breaches_half_peak_line": true,
@@ -235,9 +262,9 @@
       "value": 0.0304
     },
     {
-      "end_cny": 1689292.785224585,
-      "cagr": 1.145697776752539,
-      "min_equity_over_peak": 0.530966582187156,
+      "end_cny": 1527334.7555087868,
+      "cagr": 1.113750781816905,
+      "min_equity_over_peak": 0.530959460784141,
       "trades": 91,
       "n_stop": 79,
       "breaches_half_peak_line": false,
@@ -248,9 +275,9 @@
       "value": 0.0336
     },
     {
-      "end_cny": 1346001.6943402328,
-      "cagr": 1.074360495268167,
-      "min_equity_over_peak": 0.5323950621546799,
+      "end_cny": 1219173.5701458014,
+      "cagr": 1.0440294024253696,
+      "min_equity_over_peak": 0.5323566402553298,
       "trades": 90,
       "n_stop": 77,
       "breaches_half_peak_line": false,
@@ -261,9 +288,9 @@
       "value": 0.0352
     },
     {
-      "end_cny": 219301.66812498405,
-      "cagr": 0.5834299145659865,
-      "min_equity_over_peak": 0.4759657008303198,
+      "end_cny": 197819.20776342365,
+      "cagr": 0.5593184677738339,
+      "min_equity_over_peak": 0.47598916520355156,
       "trades": 42,
       "n_stop": 41,
       "breaches_half_peak_line": true,
@@ -274,9 +301,9 @@
       "value": 0.144
     },
     {
-      "end_cny": 2240232.3886037352,
-      "cagr": 1.237764618038312,
-      "min_equity_over_peak": 0.5279494671709715,
+      "end_cny": 2021537.0160492714,
+      "cagr": 1.2038118147617065,
+      "min_equity_over_peak": 0.528016114095069,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -287,9 +314,9 @@
       "value": 0.152
     },
     {
-      "end_cny": 1754939.6293994032,
-      "cagr": 1.1579079261378178,
-      "min_equity_over_peak": 0.5236033217769042,
+      "end_cny": 1586919.958587929,
+      "cagr": 1.1258254230103057,
+      "min_equity_over_peak": 0.5235919404521051,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -300,9 +327,9 @@
       "value": 0.168
     },
     {
-      "end_cny": 1419813.068042359,
-      "cagr": 1.0909090405181958,
-      "min_equity_over_peak": 0.5213193388560787,
+      "end_cny": 1287069.1343929556,
+      "cagr": 1.0605836744986634,
+      "min_equity_over_peak": 0.5213921563650122,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -313,9 +340,9 @@
       "value": 0.176
     },
     {
-      "end_cny": 24208.41542993757,
-      "cagr": 0.14064113053596472,
-      "min_equity_over_peak": 0.4748756759383878,
+      "end_cny": 21888.286124963823,
+      "cagr": 0.12366447862099128,
+      "min_equity_over_peak": 0.47479560545427835,
       "trades": 17,
       "n_stop": 16,
       "breaches_half_peak_line": true,
@@ -326,9 +353,9 @@
       "value": 0.045
     },
     {
-      "end_cny": 1964822.247787268,
-      "cagr": 1.1944975234189128,
-      "min_equity_over_peak": 0.5331081835984468,
+      "end_cny": 1773014.922175202,
+      "cagr": 1.1612015648200549,
+      "min_equity_over_peak": 0.5332015043652761,
       "trades": 93,
       "n_stop": 81,
       "breaches_half_peak_line": false,
@@ -339,9 +366,9 @@
       "value": 0.0475
     },
     {
-      "end_cny": 24647.211220116504,
-      "cagr": 0.1436948907874389,
-      "min_equity_over_peak": 0.4503455836164609,
+      "end_cny": 22213.759696801815,
+      "cagr": 0.126135772144357,
+      "min_equity_over_peak": 0.4504314720626192,
       "trades": 5,
       "n_stop": 5,
       "breaches_half_peak_line": true,
@@ -352,9 +379,9 @@
       "value": 0.0525
     },
     {
-      "end_cny": 24288.768823033846,
-      "cagr": 0.14120384734400404,
-      "min_equity_over_peak": 0.44576135140010015,
+      "end_cny": 21887.200735101593,
+      "cagr": 0.12365618516609045,
+      "min_equity_over_peak": 0.44566210727024086,
       "trades": 5,
       "n_stop": 5,
       "breaches_half_peak_line": true,
@@ -365,9 +392,9 @@
       "value": 0.055
     },
     {
-      "end_cny": 1313589.6687946564,
-      "cagr": 1.0668485035707218,
-      "min_equity_over_peak": 0.5339660333474683,
+      "end_cny": 1190669.941641729,
+      "cagr": 1.0368448454831367,
+      "min_equity_over_peak": 0.5340331013599674,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -378,9 +405,9 @@
       "value": 0.0432
     },
     {
-      "end_cny": 1703112.554329666,
-      "cagr": 1.1483013692904205,
-      "min_equity_over_peak": 0.5316625657383651,
+      "end_cny": 1539463.08286629,
+      "cagr": 1.1162406314960696,
+      "min_equity_over_peak": 0.5317082542307207,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -391,9 +418,9 @@
       "value": 0.0456
     },
     {
-      "end_cny": 126402.59542675893,
-      "cagr": 0.458760023624746,
-      "min_equity_over_peak": 0.4728280133205534,
+      "end_cny": 113930.21081376002,
+      "cagr": 0.4363778100275708,
+      "min_equity_over_peak": 0.47287536267088853,
       "trades": 25,
       "n_stop": 24,
       "breaches_half_peak_line": true,
@@ -404,22 +431,22 @@
       "value": 0.0504
     },
     {
-      "end_cny": 2162786.060935276,
-      "cagr": 1.2260771997246511,
-      "min_equity_over_peak": 0.5042751213729987,
-      "trades": 80,
-      "n_stop": 68,
-      "breaches_half_peak_line": false,
-      "locked_at_end": false,
-      "flat_days_at_end": 15.434027777777779,
+      "end_cny": 118955.50060820978,
+      "cagr": 0.4456353547869816,
+      "min_equity_over_peak": 0.47538052253070523,
+      "trades": 22,
+      "n_stop": 21,
+      "breaches_half_peak_line": true,
+      "locked_at_end": true,
+      "flat_days_at_end": 1471.8326388888888,
       "field": "risk",
       "base": 0.048,
       "value": 0.0528
     },
     {
-      "end_cny": 26797.703667597983,
-      "cagr": 0.15802372665565634,
-      "min_equity_over_peak": 0.5023281994305537,
+      "end_cny": 24152.522258634173,
+      "cagr": 0.1402487709962914,
+      "min_equity_over_peak": 0.5024238810385537,
       "trades": 5,
       "n_stop": 5,
       "breaches_half_peak_line": false,
@@ -430,9 +457,9 @@
       "value": 0.423
     },
     {
-      "end_cny": 122728.65332914585,
-      "cagr": 0.4523698576429618,
-      "min_equity_over_peak": 0.5003908123246973,
+      "end_cny": 110635.71065555199,
+      "cagr": 0.43011825923885505,
+      "min_equity_over_peak": 0.5004835493972547,
       "trades": 22,
       "n_stop": 21,
       "breaches_half_peak_line": false,
@@ -443,9 +470,9 @@
       "value": 0.4465
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -456,9 +483,9 @@
       "value": 0.4935
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -469,9 +496,9 @@
       "value": 0.517
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -482,9 +509,9 @@
       "value": 0.45
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -495,9 +522,9 @@
       "value": 0.475
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -508,22 +535,22 @@
       "value": 0.525
     },
     {
-      "end_cny": 24919.97608170127,
-      "cagr": 0.14556992904884547,
-      "min_equity_over_peak": 0.47759440011965615,
-      "trades": 61,
-      "n_stop": 61,
+      "end_cny": 22463.974261293315,
+      "cagr": 0.1280147621465073,
+      "min_equity_over_peak": 0.4777225522648285,
+      "trades": 57,
+      "n_stop": 57,
       "breaches_half_peak_line": true,
       "locked_at_end": true,
-      "flat_days_at_end": 1415.3729166666667,
+      "flat_days_at_end": 1424.4847222222222,
       "field": "flatten_ratio",
       "base": 0.5,
       "value": 0.55
     },
     {
-      "end_cny": 117715.10260433925,
-      "cagr": 0.44338170513686714,
-      "min_equity_over_peak": 0.48040870436716016,
+      "end_cny": 106134.11816395054,
+      "cagr": 0.42130359969582654,
+      "min_equity_over_peak": 0.48049997272193157,
       "trades": 23,
       "n_stop": 22,
       "breaches_half_peak_line": true,
@@ -534,9 +561,9 @@
       "value": 0.738
     },
     {
-      "end_cny": 1640170.2556873988,
-      "cagr": 1.1362940750629313,
-      "min_equity_over_peak": 0.5280964817023964,
+      "end_cny": 1480033.9620077289,
+      "cagr": 1.103876610769234,
+      "min_equity_over_peak": 0.5281430878486515,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -547,9 +574,9 @@
       "value": 0.779
     },
     {
-      "end_cny": 2323494.195039568,
-      "cagr": 1.2499521126954822,
-      "min_equity_over_peak": 0.5279401167620323,
+      "end_cny": 2095511.7378703053,
+      "cagr": 1.2156320556451607,
+      "min_equity_over_peak": 0.5279575519794603,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -560,9 +587,9 @@
       "value": 0.861
     },
     {
-      "end_cny": 2386522.3803122933,
-      "cagr": 1.258933068529497,
-      "min_equity_over_peak": 0.527950401407672,
+      "end_cny": 2011458.6419371197,
+      "cagr": 1.2021730286676036,
+      "min_equity_over_peak": 0.5280983528566963,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -573,9 +600,9 @@
       "value": 0.902
     },
     {
-      "end_cny": 1695048.9618829296,
-      "cagr": 1.146784413732238,
-      "min_equity_over_peak": 0.5465934738387932,
+      "end_cny": 1537652.0191802606,
+      "cagr": 1.1158698972565162,
+      "min_equity_over_peak": 0.5464328836806328,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -586,9 +613,9 @@
       "value": 0.54
     },
     {
-      "end_cny": 1927186.3358262044,
-      "cagr": 1.188189431552277,
-      "min_equity_over_peak": 0.5315159731563197,
+      "end_cny": 1742544.6716781813,
+      "cagr": 1.155632615986927,
+      "min_equity_over_peak": 0.5315015848576521,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -599,9 +626,9 @@
       "value": 0.57
     },
     {
-      "end_cny": 2042485.4909820792,
-      "cagr": 1.2071959955930023,
-      "min_equity_over_peak": 0.5187030003930106,
+      "end_cny": 1842352.877768881,
+      "cagr": 1.1735767921497984,
+      "min_equity_over_peak": 0.5187484717292548,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -612,9 +639,9 @@
       "value": 0.63
     },
     {
-      "end_cny": 2044228.1606829718,
-      "cagr": 1.2074761871365607,
-      "min_equity_over_peak": 0.5085509222991716,
+      "end_cny": 1843467.7931294288,
+      "cagr": 1.1737725178763858,
+      "min_equity_over_peak": 0.5084341951431777,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -625,9 +652,9 @@
       "value": 0.66
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -638,9 +665,9 @@
       "value": 0.252
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -651,9 +678,9 @@
       "value": 0.266
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -664,9 +691,9 @@
       "value": 0.294
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -677,9 +704,9 @@
       "value": 0.308
     },
     {
-      "end_cny": 2056680.1465589905,
-      "cagr": 1.2094723587337683,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1855522.576903487,
+      "cagr": 1.1758823514179912,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 81,
       "breaches_half_peak_line": false,
@@ -690,9 +717,9 @@
       "value": 0.315
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -703,9 +730,9 @@
       "value": 0.3325
     },
     {
-      "end_cny": 1862246.8059577346,
-      "cagr": 1.1770541649664983,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1680011.3290867365,
+      "cagr": 1.1439389900890666,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 79,
       "breaches_half_peak_line": false,
@@ -716,9 +743,9 @@
       "value": 0.3675
     },
     {
-      "end_cny": 1862246.8059577346,
-      "cagr": 1.1770541649664983,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1680011.3290867365,
+      "cagr": 1.1439389900890666,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 79,
       "breaches_half_peak_line": false,
@@ -729,9 +756,9 @@
       "value": 0.385
     },
     {
-      "end_cny": 1946441.6261489452,
-      "cagr": 1.191429749880339,
-      "min_equity_over_peak": 0.5280215559802576,
+      "end_cny": 1759339.4200618211,
+      "cagr": 1.1587122954609819,
+      "min_equity_over_peak": 0.5281009978746659,
       "trades": 93,
       "n_stop": 81,
       "breaches_half_peak_line": false,
@@ -742,9 +769,9 @@
       "value": 0.063
     },
     {
-      "end_cny": 2116025.4618046246,
-      "cagr": 1.2188469410168388,
-      "min_equity_over_peak": 0.5280431492485099,
+      "end_cny": 1909206.087853978,
+      "cagr": 1.1851387035242782,
+      "min_equity_over_peak": 0.5280400980172617,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -755,9 +782,9 @@
       "value": 0.0665
     },
     {
-      "end_cny": 2273090.3216063846,
-      "cagr": 1.242619540235303,
-      "min_equity_over_peak": 0.5279689150456558,
+      "end_cny": 2049635.3612056337,
+      "cagr": 1.2083442805005316,
+      "min_equity_over_peak": 0.5279467001186297,
       "trades": 90,
       "n_stop": 78,
       "breaches_half_peak_line": false,
@@ -768,9 +795,9 @@
       "value": 0.0735
     },
     {
-      "end_cny": 2189997.046941468,
-      "cagr": 1.2302236164672053,
-      "min_equity_over_peak": 0.5278318886374883,
+      "end_cny": 1972823.698019625,
+      "cagr": 1.1958253603899154,
+      "min_equity_over_peak": 0.5280241448281758,
       "trades": 90,
       "n_stop": 78,
       "breaches_half_peak_line": false,
@@ -781,9 +808,9 @@
       "value": 0.077
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -794,9 +821,9 @@
       "value": 5
     },
     {
-      "end_cny": 2039228.742932259,
-      "cagr": 1.206671820181076,
-      "min_equity_over_peak": 0.5280011467046337,
+      "end_cny": 1839663.4505553266,
+      "cagr": 1.173104242333221,
+      "min_equity_over_peak": 0.5281120676707606,
       "trades": 92,
       "n_stop": 80,
       "breaches_half_peak_line": false,
@@ -809,13 +836,13 @@
   ],
   "summary": {
     "neighbour_runs": 54,
-    "neighbours_breaching_half_peak_or_locked": 13,
-    "neighbour_failure_share": 0.24074074074074073,
+    "neighbours_breaching_half_peak_or_locked": 14,
+    "neighbour_failure_share": 0.25925925925925924,
     "smallest_stop_extra_that_breaches": 0.001,
-    "base_min_equity_over_peak": 0.5280011467046337,
+    "base_min_equity_over_peak": 0.5281120676707606,
     "target_cny_100": 1053236.6589794934,
     "target_cny_150": 4716652.688753132,
-    "reading": "A stop that fills worse, or a setting moved by 5 to 10 percent, often ends in the drawdown lock. Read the published 120% as one path on one tape, not as a robust estimate."
+    "reading": "A stop that fills worse, or a setting moved by 5 to 10 percent, often ends in the drawdown lock. Read the baseline 117.3% as one path on one tape, not as a robust estimate."
   },
   "inputs": {
     "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
@@ -823,14 +850,30 @@
     "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
   },
   "provenance": {
-    "git_head": "79d18c418d9af59208bafd04ad9be5d9daddfa5a",
+    "git_head": "bc9df47c2b92ffd4b569775787f22b8896d0c31a",
     "git_dirty": false,
     "files_sha256": {
-      "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
+      "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
-      "scripts/frontier.py": "58a4f2abfa4bb566d52dab14f4fc5e52cfed9fca1b3e81e62512fc98aa77a281",
-      "btc_perp/causal.py": "487c7c058b671a4f9b5b93c041768d1a59e8a85a95f89f3ccedb84508300f0cd"
+      "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+      "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
+      "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+      "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
+      "btc_perp/robustness.py": "7544d712159d97b92cff9e9ac4b0dc508346bb84d4cf53790437de7250cca195",
+      "btc_perp/generalization.py": "e22a366ca69a0e7352289314b886bee6c345de1536b35a596a81b214acc22724",
+      "btc_perp/candidate.py": "1f0f74fe29152c5f63ef51ce2f0fe7eca8254234562425d6387a226fd26c22a6",
+      "btc_perp/tapes.py": "f7ad5d0ad10e07cdea26f73611d707e630aced6b4dfae02bf242fb20c65c8cf9",
+      "config/candidate.yaml": "864e0f8a97db979a8a206bf00f73c1e4438c1b9364f773455b758b3f9dd4bd8a",
+      "scripts/assets.py": "0aba1a4c72852ccfd2a1a5e89db8ae7b78c1fc9d8f10646ae828e22f174c5e5c"
     },
     "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
-  }
+  },
+  "completion": {
+    "data_validated": true,
+    "path_complete": true,
+    "execution_closed": false,
+    "economic_pass": false,
+    "note": "path_complete 只表示数组回放至末端；data_validated 只表示输入结构已校验，代理/缺失资金费另列；回放成交是模型假设，没有真实执行，execution_closed 恒为 false。"
+  },
+  "run_id": "20260929T120704Z-0579f752"
 }

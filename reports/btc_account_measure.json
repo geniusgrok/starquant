@@ -1,50 +1,94 @@
 {
   "verified": true,
   "passed": true,
+  "meets_150": false,
+  "funding_gap_unverified": true,
+  "funding_gap": {
+    "slots": 7362,
+    "official": 7305,
+    "proxy_from_premium": 56,
+    "missing_filled_with_zero": 1,
+    "missing_first": "2026-09-01T00:00:00Z",
+    "missing_last": "2026-09-01T00:00:00Z",
+    "missing_sample": [
+      "2026-09-01T00:00:00Z"
+    ],
+    "proxy_first": "2026-09-01T08:00:00Z",
+    "proxy_last": "2026-09-19T16:00:00Z",
+    "missing_slot": true,
+    "note": "缺失槽位在回放里按 0 计，没有官方结算价验证；proxy 槽位来自溢价指数估算，不是官方结算价。"
+  },
+  "inputs": {
+    "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
+    "funding.npz": "0682df98242a6fccfe86da66a1da871c2af1d0b955fac6d38734b0059b94cb7a",
+    "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
+  },
+  "provenance": {
+    "git_head": "bc9df47c2b92ffd4b569775787f22b8896d0c31a",
+    "git_dirty": false,
+    "files_sha256": {
+      "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83",
+      "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+      "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+      "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
+      "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+      "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
+      "btc_perp/robustness.py": "7544d712159d97b92cff9e9ac4b0dc508346bb84d4cf53790437de7250cca195",
+      "btc_perp/generalization.py": "e22a366ca69a0e7352289314b886bee6c345de1536b35a596a81b214acc22724",
+      "btc_perp/candidate.py": "1f0f74fe29152c5f63ef51ce2f0fe7eca8254234562425d6387a226fd26c22a6",
+      "btc_perp/tapes.py": "f7ad5d0ad10e07cdea26f73611d707e630aced6b4dfae02bf242fb20c65c8cf9",
+      "config/candidate.yaml": "864e0f8a97db979a8a206bf00f73c1e4438c1b9364f773455b758b3f9dd4bd8a",
+      "scripts/assets.py": "0aba1a4c72852ccfd2a1a5e89db8ae7b78c1fc9d8f10646ae828e22f174c5e5c"
+    },
+    "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
+  },
   "completion": {
     "data_validated": true,
     "path_complete": true,
     "execution_closed": false,
     "economic_pass": false,
-    "note": "回放里成交是模型假设，没有真实执行，所以 execution_closed 恒为 false"
+    "note": "path_complete 只表示数组回放至末端；data_validated 只表示输入结构已校验，代理/缺失资金费另列；回放成交是模型假设，没有真实执行，execution_closed 恒为 false。"
   },
   "start_cny": 10000.0,
-  "end_cny": 2029866.4296051874,
+  "end_cny": 1830997.655007944,
+  "end_usdt": 274341.35441075894,
+  "fx_end_usdcny": 6.6976,
+  "valuation_note": "USDT 按 USD 平价，以前一已公布 Frankfurter 美元兑人民币中间价估值，期末扣 0.35% 假设兑换费；非可交易报价。",
   "target_cny": 1053236.6589794934,
-  "cagr": 1.2051609721471608,
-  "min_equity_over_peak": 0.525842588784016,
+  "cagr": 1.1715775954968115,
+  "min_equity_over_peak": 0.5258968844946783,
   "min_day": 20210519,
   "n_long": 57,
   "n_short": 35,
   "n_stop": 80,
   "yearly": {
     "2020": {
-      "equity_cny": 171959.5980060438,
-      "return": 16.195959800604378
+      "equity_cny": 155057.23219642896,
+      "return": 14.505723219642896
     },
     "2021": {
-      "equity_cny": 155858.88783256506,
-      "return": -0.09363077350827975
+      "equity_cny": 140550.7933809136,
+      "return": -0.0935553834544034
     },
     "2022": {
-      "equity_cny": 333829.2476744486,
-      "return": 1.14186853452382
+      "equity_cny": 301052.3304120035,
+      "return": 1.1419468589985602
     },
     "2023": {
-      "equity_cny": 626670.9365474166,
-      "return": 0.877219988700775
+      "equity_cny": 565113.2661051207,
+      "return": 0.8771263631533361
     },
     "2024": {
-      "equity_cny": 1216022.1454918762,
-      "return": 0.9404476489550218
+      "equity_cny": 1096821.2855066154,
+      "return": 0.9408875198880715
     },
     "2025": {
-      "equity_cny": 1168912.6550328364,
-      "return": -0.03874065175020658
+      "equity_cny": 1054270.64585546,
+      "return": -0.03879450573527243
     },
     "2026": {
-      "equity_cny": 2029866.4296051874,
-      "return": 0.7365424361396495
+      "equity_cny": 1830997.655007944,
+      "return": 0.7367434654525824
     }
   },
   "costs": {
@@ -54,7 +98,7 @@
     "fx_fee": 0.0035,
     "funding": "binance vision through 2026-08-31, premium-index September 2026, 2026-09-01 00:00 missing"
   },
-  "path": "successive manual sessions, one minute stepped when the session clock completes that minute; 1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
+  "path": "successive manual sessions, one minute stepped when the session clock completes that minute; 1-minute OHLC path with prior resting stop; new trail from the next minute, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation",
   "sessions": {
     "seconds": 300,
     "poll_seconds": 5,
@@ -62,5 +106,5 @@
     "polls": 42405120,
     "closes": 92
   },
-  "run_id": "20260929T075810Z-1471ab53"
+  "run_id": "20260929T120626Z-27796ba1"
 }
