@@ -278,7 +278,8 @@ def run_cycle(
         book.alerts.append(book.freeze_reason)
         _save(store, book, dry_run)
         store.append_event("freeze", book.freeze_reason)
-        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would)
+        unread = ["账户快照未知：" + book.freeze_reason] if mode in {"stop", "flatten"} else None
+        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, remaining=unread)
 
     allow = "none"
     if writes:
@@ -291,7 +292,8 @@ def run_cycle(
             book.entries_frozen = True
             book.freeze_reason = snap.reason or "账户未知"
             _save(store, book, dry_run)
-            return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would)
+            unread = ["账户快照未知：" + book.freeze_reason] if mode in {"stop", "flatten"} else None
+            return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, remaining=unread)
 
     def resnap() -> Snapshot:
         nonlocal snap, marker
@@ -1128,14 +1130,14 @@ def _act(
             return blocked
         if _blocking_reduce(store):
             return "已有未完成订单，先等这张平仓单结束"
-        if action.kind == "reverse":
-            book.swaps["after_flat"] = "BUY" if action.side > 0 else "SELL"
-            book.swaps["after_flat_ms"] = str(bar_open_ms)
-            book.swaps["after_scale"] = str(action.scale)
         price = snap.mark_price or snap.last_price
         qty = _fit_qty(abs(snap.position_qty), snap, price, True, 0.0)
         if qty is None:
             return "实仓数量无法量化"
+        if action.kind == "reverse":
+            book.swaps["after_flat"] = "BUY" if action.side > 0 else "SELL"
+            book.swaps["after_flat_ms"] = str(bar_open_ms)
+            book.swaps["after_scale"] = str(action.scale)
         side = "SELL" if snap.position_qty > 0 else "BUY"
         _queue_market(store, venue, book, environment, "reduce", side, qty, True, sent, would, alerts, dry_run, now_ms)
         return action.reason
@@ -1691,6 +1693,13 @@ def _cancel(store: Store, venue: Venue, command: Command, sent: list[str], alert
         return
     except WriteRefused as exc:
         alerts.append(str(exc)[:160])
+        return
+    except RuntimeError as exc:
+        sent.append(command.client_id)
+        alerts.append("撤单出现无法归类的错误，结果按未知处理：" + str(exc)[:120])
+        store.append_event("cancel-unknown", command.client_id)
+        if known is not None:
+            store.mark_intent(command.client_id, "unknown", "cancel-error")
         return
     sent.append(command.client_id)
     echoed = str(body.get("clientOrderId") or body.get("origClientOrderId") or body.get("clientAlgoId") or "")

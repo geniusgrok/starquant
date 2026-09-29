@@ -98,6 +98,13 @@ class Store:
             if missing:
                 self._keep_pre_upgrade_copy()
         self._db.executescript(_SCHEMA)
+        known_phases = (*OPEN_PHASES, "filled", "rejected", "canceled", "expired")
+        odd = self._db.execute(
+            "select client_id, phase from intents where phase not in (" + ",".join("?" for _ in known_phases) + ")",
+            known_phases,
+        ).fetchone()
+        if odd is not None:
+            raise RuntimeError(f"意图 {odd[0]} 的阶段 {odd[1]!r} 无法识别，进入只读恢复，不会忽略它")
         columns = {str(row[1]) for row in self._db.execute("pragma table_info(intents)")}
         if "attempts" not in columns:
             self._db.execute("alter table intents add column attempts integer not null default 1")

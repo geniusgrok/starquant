@@ -201,6 +201,19 @@ def _request_file(state: Path, name: str, command: str, environment: str) -> Non
     (state / name).write_text(json.dumps(body) + "\n")
 
 
+def _request_pending(state: Path, name: str, environment: str) -> bool:
+    """Whether a control request for this environment is waiting. Another environment's file does not count."""
+    path = state / name
+    if not path.exists():
+        return False
+    try:
+        body = json.loads(path.read_text() or "{}")
+    except (OSError, ValueError):
+        return True
+    owner = body.get("environment") if isinstance(body, dict) else None
+    return owner in (None, environment)
+
+
 def _write_run_state(state: Path, **fields: object) -> None:
     """The last known lifecycle of this state directory, written atomically."""
     body = {"ts_ms": int(time.time() * 1000), "pid": os.getpid(), **fields}
@@ -351,7 +364,7 @@ def _forward(found: argparse.Namespace) -> int:
                 f"settled={str(report.settled).lower()} "
                 f"remaining={'|'.join(report.remaining) if report.remaining else '-'}"
             )
-            if once or (state / "stop.request").exists():
+            if once or _request_pending(state, "stop.request", environment):
                 break
             mode = "run"
             time.sleep(max(float(found.poll_seconds), 1.0))

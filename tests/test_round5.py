@@ -937,3 +937,91 @@ def test_a_failed_run_never_replaces_the_formal_report(tmp_path: Path) -> None:
     assert json.loads(pointer.read_text())["value"] == 1
     runs = list((tmp_path / "reports" / "runs").glob("r-*.json"))
     assert len(runs) == 3 and len({path.name for path in runs}) == 3
+
+
+# Review sweep ---------------------------------------------------------------------------
+
+
+def test_a_cancel_that_fails_in_an_unclassified_way_is_unknown_and_does_not_end_the_cycle(tmp_path: Path) -> None:
+    from btc_perp.binance_client import AlgoEndpointRequired
+    from btc_perp.model import Command
+
+    class Broken(FakeVenue):
+        def cancel_algo(self, client_id: str) -> dict[str, object]:
+            raise AlgoEndpointRequired("wrong endpoint")
+
+    store = _store(tmp_path)
+    try:
+        store.insert_intent(
+            Intent("st9", "stop", "acked", "SELL", "", True, True, "96.8", "demo", NOW - 5_000, "", 1, False)
+        )
+        alerts: list[str] = []
+        _cancel(store, Broken(_fresh()), Command("cancel_algo", "st9"), [], alerts)
+        assert store.intents()[0].phase == "unknown"
+        assert any("未知" in item for item in alerts)
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize("mode", ["stop", "flatten"])
+def test_an_unreadable_account_never_reports_a_clean_stop(tmp_path: Path, mode: str) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(dataclasses.replace(_fresh(), known=False, reason="读不到"))
+    store = _store(tmp_path)
+    try:
+        report = _run(store, venue, bar, now, mode=mode)
+        assert not report.settled
+        assert report.remaining and "账户快照未知" in report.remaining[0]
+    finally:
+        store.close()
+
+
+def test_a_reverse_plan_is_not_kept_when_the_exit_could_not_be_built(tmp_path: Path) -> None:
+    bar, _now = _bar(100.0)
+    huge_step = dataclasses.replace(_snap().filters, step_size=1_000.0, min_qty=1_000.0)
+    snap = _covered(2.0)
+    snap = dataclasses.replace(snap, filters=huge_step)
+    store = _store(tmp_path)
+    try:
+        book = _book(side=1, qty=2.0, entry=100.0, units=1, stop=96.8)
+        note = _act(
+            Action("reverse", -1, 1.0, 0.0, 0.0, "reverse"),
+            store,
+            FakeVenue(snap),
+            snap,
+            book,
+            load_config(),
+            _ctx(),
+            [],
+            [],
+            [],
+            False,
+            NOW,
+            bar.open_ms,
+        )
+        assert "无法量化" in note
+        assert "after_flat" not in book.swaps
+    finally:
+        store.close()
+
+
+def test_the_run_loop_stops_only_for_a_request_that_belongs_to_it(tmp_path: Path) -> None:
+    from btc_perp.__main__ import _request_pending
+
+    assert not _request_pending(tmp_path, "stop.request", "demo")
+    (tmp_path / "stop.request").write_text(json.dumps({"environment": "prod"}))
+    assert not _request_pending(tmp_path, "stop.request", "demo")
+    (tmp_path / "stop.request").write_text(json.dumps({"environment": "demo"}))
+    assert _request_pending(tmp_path, "stop.request", "demo")
+    (tmp_path / "stop.request").write_text("not json")
+    assert _request_pending(tmp_path, "stop.request", "demo")
+
+
+def test_an_intent_with_an_unrecognised_phase_is_not_silently_ignored(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    store.insert_intent(Intent("en8", "enter", "sent", "BUY", "1.0", False, False, "", "demo", NOW, "", 1, False))
+    store._db.execute("update intents set phase='pending?' where client_id='en8'")
+    store._db.commit()
+    store.close()
+    with pytest.raises(RuntimeError, match="无法识别"):
+        _store(tmp_path)

@@ -341,7 +341,7 @@ class UsdMClient:
     def _trades(self) -> tuple[Trade, ...] | None:
         """The newest own fills. ``None`` means unreadable, which is not the same as no fills."""
         try:
-            payload = self._read("/fapi/v1/userTrades", {"symbol": "BTCUSDT", "limit": "100"})
+            payload = self._read("/fapi/v1/userTrades", {"symbol": "BTCUSDT", "limit": "1000"})
             rows = _rows(payload)
             return tuple(
                 sorted(
@@ -363,7 +363,7 @@ class UsdMClient:
 
     def _income(self) -> tuple[tuple[Income, ...], bool]:
         def load() -> object:
-            payload = self._read("/fapi/v1/income", {"limit": "100"})
+            payload = self._read("/fapi/v1/income", {"limit": "1000"})
             return tuple(
                 Income(
                     kind=str(row.get("incomeType", "")), amount=_need(row.get("income")), time_ms=_int(row.get("time"))
