@@ -16,6 +16,7 @@ from test_forward import FakeVenue, _snap
 
 import btc_perp.__main__ as entry
 from btc_perp.model import Intent, Snapshot
+from btc_perp.runner import CycleReport
 
 
 class LiveFake(FakeVenue):
@@ -228,6 +229,67 @@ def test_flatten_of_a_quiet_account_exits_zero(
     assert "settled=true" in out
     body = _state(state)
     assert isinstance(body["wind_down"], dict) and body["wind_down"]["verified"] is True
+
+
+@pytest.mark.parametrize("also_stop", [False, True])
+def test_run_handles_flatten_request_before_stop_and_exits(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch, also_stop: bool
+) -> None:
+    _venue, state = wired
+    state.mkdir(parents=True)
+    (state / "flatten.request").write_text(json.dumps({"environment": "demo"}))
+    if also_stop:
+        (state / "stop.request").write_text(json.dumps({"environment": "demo"}))
+    monkeypatch.setattr(entry.time, "sleep", lambda _seconds: pytest.fail("清仓处理后不应再睡眠或重复执行"))
+
+    assert entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200"]) == 0
+    assert _state(state)["wind_down"]["verified"] is True
+    modes = [json.loads(line).get("mode") for line in (state / "journal.jsonl").read_text().splitlines()]
+    assert modes.count("flatten") == 1
+    assert "stop" not in modes
+
+
+@pytest.mark.parametrize("control", ["stop", "flatten"])
+def test_operator_request_skips_strategy_market_fetch(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch, control: str
+) -> None:
+    venue, state = wired
+    state.mkdir(parents=True)
+    (state / f"{control}.request").write_text(json.dumps({"environment": "demo"}))
+    monkeypatch.setattr(venue, "klines", lambda *_a, **_k: pytest.fail("控制请求不能排在行情分页后面"))
+
+    assert entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"]) == 0
+    modes = [json.loads(line).get("mode") for line in (state / "journal.jsonl").read_text().splitlines()]
+    assert control in modes and "run" not in modes
+
+
+def test_requested_flatten_cannot_succeed_only_because_subsequent_stop_settles(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _venue, state = wired
+    monkeypatch.setattr(
+        entry,
+        "_one_cycle",
+        lambda *_args: CycleReport(
+            "flatten", True, "未平仓", (), 1.0, False, (), settled=False, remaining=("仍有持仓",)
+        ),
+    )
+    monkeypatch.setattr(
+        entry,
+        "_wind_down",
+        lambda *_args: CycleReport("stop", True, "安全停机", (), 1.0, True, (), settled=True),
+    )
+    monkeypatch.setattr(entry.time, "sleep", lambda _seconds: pytest.fail("清仓未完成也应退出并报告"))
+
+    assert entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200"]) == 2
+    assert _state(state)["exit_code"] == 2
+
+
+@pytest.mark.parametrize("interval", ["0", "5.01", "3600"])
+def test_unresponsive_poll_interval_is_rejected(interval: str) -> None:
+    with pytest.raises(SystemExit) as exc:
+        entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--poll-seconds", interval])
+    assert exc.value.code == 2
 
 
 def test_interrupt_with_a_confirmed_stop_is_named_apart_from_an_unconfirmed_one() -> None:

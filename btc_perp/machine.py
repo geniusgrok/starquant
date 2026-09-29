@@ -310,9 +310,42 @@ def plan_protection(
     return commands, updates
 
 
+def _usable_protection(algo: AlgoOrder, snapshot: Snapshot, kind: str) -> bool:
+    if not snapshot.known or abs(snapshot.position_qty) < 1e-8 or snapshot.last_price <= 0:
+        return False
+    closing = "SELL" if snapshot.position_qty > 0 else "BUY"
+    if not shape_ok(algo, closing, snapshot.position_qty) or algo.trigger_price <= 0:
+        return False
+    filters = snapshot.filters
+    if filters is None or (filters.min_price > 0 and algo.trigger_price < filters.min_price):
+        return False
+    if filters.max_price > 0 and algo.trigger_price > filters.max_price:
+        return False
+    long = snapshot.position_qty > 0
+    if kind == "stop":
+        if (long and algo.trigger_price >= snapshot.last_price) or (
+            not long and algo.trigger_price <= snapshot.last_price
+        ):
+            return False
+        liq = snapshot.liquidation_price
+        if liq > 0 and ((long and algo.trigger_price <= liq) or (not long and algo.trigger_price >= liq)):
+            return False
+    elif (long and algo.trigger_price <= snapshot.last_price) or (
+        not long and algo.trigger_price >= snapshot.last_price
+    ):
+        return False
+    return True
+
+
 def promote_protection(
-    snapshot: Snapshot, swaps: dict[str, str], known: set[str]
-) -> tuple[list[Command], dict[str, str]]:
+    snapshot: Snapshot,
+    swaps: dict[str, str],
+    known: set[str],
+    intents: list[Intent],
+    *,
+    stop_price: float,
+    take_price: float,
+) -> tuple[list[Command], dict[str, str], list[str]]:
     """Cancel our older live protection of the same type once the kept one is live.
 
     The kept id is recomputed from the snapshot every cycle, so a cancel that
@@ -320,20 +353,49 @@ def promote_protection(
     """
     updates = dict(swaps)
     commands: list[Command] = []
+    warnings: list[str] = []
+    by_id = {item.client_id: item for item in intents}
     for kind, order_type in (("stop", "STOP_MARKET"), ("take", "TAKE_PROFIT_MARKET")):
         live = _live_algos(snapshot, order_type)
-        live_ids = {algo.client_algo_id for algo in live}
         new_id = updates.get(f"{kind}_next", "")
-        if new_id and new_id in live_ids:
+        if new_id:
+            replacement = next((algo for algo in live if algo.client_algo_id == new_id), None)
+            if replacement is None:
+                continue
+            intent = by_id.get(new_id)
+            wanted = stop_price if kind == "stop" else take_price
+            if (
+                intent is None
+                or intent.action != kind
+                or intent.side != replacement.side
+                or not intent.close_position
+                or intent.reduce_only
+                or intent.qty not in {"", "0"}
+                or not _price_matches(replacement.trigger_price, wanted)
+                or not _price_matches(replacement.trigger_price, _intent_trigger(intent))
+                or not _usable_protection(replacement, snapshot, kind)
+            ):
+                warnings.append(f"新{kind}保护 {new_id} 未核验形状、价格和仓位，保留旧保护")
+                if new_id in known:
+                    commands.append(Command("cancel_algo", new_id))
+                continue
             updates[f"{kind}_id"] = new_id
             updates.pop(f"{kind}_next", None)
         keep = updates.get(f"{kind}_id", "")
-        if not keep or keep not in live_ids:
+        kept = next((algo for algo in live if algo.client_algo_id == keep), None)
+        if kept is None or not _usable_protection(kept, snapshot, kind):
             continue
         for algo in live:
             if algo.client_algo_id != keep and algo.client_algo_id in known:
                 commands.append(Command("cancel_algo", algo.client_algo_id))
-    return commands, updates
+    return commands, updates, warnings
+
+
+def _intent_trigger(intent: Intent) -> float:
+    try:
+        return float(intent.trigger_price)
+    except ValueError:
+        return 0.0
 
 
 def apply_takeover(book: Book, snapshot: Snapshot, *, history_covered: bool = True) -> Book:

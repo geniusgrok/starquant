@@ -883,6 +883,8 @@ def test_backups_are_dated_and_kept_and_the_journal_keeps_several_files(tmp_path
 
     store = _store(tmp_path)
     try:
+        store.save_book(Book(peak_equity_cny=1234, close_peak_cny=1234))
+        store.archive_if_due()
         assert list((tmp_path / "backups").glob("account-*.sqlite"))
         assert store.restore_latest_backup() is not None
         old = store_module.JOURNAL_MAX_BYTES

@@ -18,6 +18,7 @@ from btc_perp.binance_client import (
     WriteRefused,
     _capped,
     _snapshot_from,
+    _state_key,
 )
 from btc_perp.gates import assert_host_matches, load_limits, notional_cap, risk_equity
 from btc_perp.model import AlgoOrder, Intent, Limits
@@ -100,6 +101,25 @@ def _client(routes: dict[str, object], **kwargs: object) -> tuple[UsdMClient, Ro
     return UsdMClient("demo", "key", "secret", transport, **kwargs), transport  # type: ignore[arg-type]
 
 
+def test_income_is_read_fresh_before_advancing_flow_cursor() -> None:
+    client, transport = _client(
+        _routes(
+            **{
+                "/fapi/v1/income": [
+                    (200, []),
+                    (200, [{"incomeType": "TRANSFER", "income": "10", "time": 1_700_000_001_000}]),
+                ]
+            }
+        )
+    )
+    first, first_ok = client._income()
+    second, second_ok = client._income()
+    assert first_ok and second_ok
+    assert first == ()
+    assert len(second) == 1 and second[0].kind == "TRANSFER"
+    assert [path for _, path in transport.calls] == ["/fapi/v1/income", "/fapi/v1/income"]
+
+
 def test_a_clean_account_reads_as_known() -> None:
     client, _t = _client(_routes())
     snap = client.snapshot()
@@ -117,6 +137,9 @@ def test_a_clean_account_reads_as_known() -> None:
         {"/fapi/v2/positionRisk": (200, POSITION + POSITION)},
         {"/fapi/v2/positionRisk": (200, [])},
         {"/fapi/v2/account": (200, {**ACCOUNT, "assets": []})},
+        {"/fapi/v2/account": (200, {key: value for key, value in ACCOUNT.items() if key != "positions"})},
+        {"/fapi/v2/account": (200, {**ACCOUNT, "positions": [None]})},
+        {"/fapi/v2/account": (200, {**ACCOUNT, "positions": [{"symbol": "ETHUSDT"}]})},
         {
             "/fapi/v2/account": (
                 200,
@@ -143,6 +166,14 @@ def test_a_position_on_another_contract_is_reported() -> None:
     dual = {"dualSidePosition": False}
     snap = _snapshot_from(1, INFO, account, dual, {"raw": []}, {"raw": []}, {"raw": POSITION})  # type: ignore[arg-type]
     assert snap.known and snap.other_exposure == "ETHUSDT"
+
+
+def test_snapshot_consistency_detects_another_contract_position_change() -> None:
+    flat = {**ACCOUNT, "positions": [{"symbol": "ETHUSDT", "positionAmt": "0"}]}
+    held = {**ACCOUNT, "positions": [{"symbol": "ETHUSDT", "positionAmt": "2"}]}
+    state = ({"raw": POSITION}, {"raw": []}, {"raw": []})
+    assert _state_key(*state, flat, ()) != _state_key(*state, held, ())
+    assert _state_key(*state, ACCOUNT, ()) != _state_key(*state, {**ACCOUNT, "positions": [None]}, ())
 
 
 def test_a_read_only_client_refuses_every_write() -> None:

@@ -27,6 +27,7 @@ class Tape:
     fx: np.ndarray
     days: np.ndarray
     note: str = ""
+    present: np.ndarray | None = None
 
     @property
     def hours(self) -> int:
@@ -65,6 +66,15 @@ def validate_tape(tape: Tape) -> list[str]:
         problems.append("资金费有非有限数字")
     if not np.all(np.isfinite(tape.fx)) or np.any(tape.fx <= 0):
         problems.append("汇率有非有限或非正数字")
+    if tape.name != "btc":
+        if tape.present is None or len(tape.present) != n or tape.present.dtype != np.dtype(bool):
+            problems.append("缺少真实分钟来源覆盖标记；重新构建行情")
+        else:
+            missing = np.flatnonzero(~tape.present)
+            for run in np.split(missing, np.flatnonzero(np.diff(missing) > 1) + 1):
+                if len(run) > 1440:
+                    first_gap = dt.datetime.fromtimestamp(int(tape.ts[run[0]]) / 1000, dt.UTC).isoformat()
+                    problems.append(f"源行情连续缺失超过 24 小时：{first_gap} 起，{len(run)} 分钟")
     return problems
 
 
@@ -88,7 +98,7 @@ def _days(ts_hours: np.ndarray) -> np.ndarray:
 
 
 def load_tape(name: str) -> Tape:
-    from scripts.frontier import _bucket8h, load_hourly
+    from scripts.frontier import load_hourly
 
     if name == "btc":
         raw = np.load(DATA / "btcusdt_1m.npz")
@@ -119,18 +129,40 @@ def load_tape(name: str) -> Tape:
     funding_path = DATA / "assets" / f"{name}_funding.npz"
     if name in {"eth", "sol"} and not funding_path.exists():
         raise ValueError(f"{funding_path.name} 缺失，不能按零费率替代永续合约资金费")
-    if funding_path.exists():
+    if "present" not in raw:
+        raise ValueError(f"{path.name} 缺少真实分钟覆盖标记；请重新运行 scripts/assets.py")
+    if name in {"eth", "sol"}:
         official = np.load(funding_path)
         stamps, rates = official["ts"], official["rate"]
-        if not np.all(np.isfinite(rates)) or len(np.unique(stamps)) != len(stamps):
-            raise ValueError(f"{funding_path.name} 资金费时间重复或费率非有限")
-        rate = {_bucket8h(int(t)): float(r) for t, r in zip(stamps, rates, strict=True)}
+        if (
+            stamps.ndim != 1
+            or rates.ndim != 1
+            or len(stamps) != len(rates)
+            or not np.issubdtype(stamps.dtype, np.integer)
+            or not np.all(np.isfinite(rates))
+        ):
+            raise ValueError(f"{funding_path.name} 资金费时间或费率无效")
+        hour_ms = 3_600_000
+        if np.any(stamps % hour_ms >= 60_000):
+            raise ValueError(f"{funding_path.name} 资金费结算时刻无法对齐 UTC 整小时")
+        hours = stamps // hour_ms * hour_ms
+        if len(np.unique(hours)) != len(hours):
+            raise ValueError(f"{funding_path.name} 资金费同一结算小时重复")
+        rate = {int(t): float(r) for t, r in zip(hours, rates, strict=True)}
         step = 8 * 3600 * 1000
         slots = [(i, int(t)) for i, t in enumerate(hour_ts) if int(t) % step == 0]
-        missing = sum(1 for _i, t in slots if t not in rate)
-        for i, t in slots:
-            fund[i * 60] = rate.get(t, 0.0)
-        note = f"official funding; {missing} of {len(slots)} slots missing and filled with zero"
+        official_end = int(dt.datetime(2026, 9, 1, tzinfo=dt.UTC).timestamp() * 1000)
+        missing_official = [t for _i, t in slots if t < official_end and t not in rate]
+        if missing_official:
+            first = dt.datetime.fromtimestamp(missing_official[0] / 1000, dt.UTC).isoformat()
+            raise ValueError(f"{funding_path.name} 官方 8 小时资金费缺失：{len(missing_official)} 槽，首个 {first}")
+        missing_tail = sum(1 for _i, t in slots if t >= official_end and t not in rate)
+        for i, t in enumerate(hour_ts):
+            fund[i * 60] = rate.get(int(t), 0.0)
+        note = (
+            f"official funding events (including non-8h settlements); "
+            f"{missing_tail} September 2026 slots lack official prints and use zero placeholders"
+        )
     real_fx = name != "btc_spot_2017"
     fx_h = _fx(hour_ts, real_fx)
     return Tape(
@@ -145,4 +177,5 @@ def load_tape(name: str) -> Tape:
         np.repeat(fx_h, 60),
         np.repeat(_days(hour_ts), 60),
         note if real_fx else note + "; USD units (fx = 1)",
+        raw["present"],
     )

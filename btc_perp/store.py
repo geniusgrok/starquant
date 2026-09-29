@@ -116,7 +116,9 @@ class Store:
             self._db.execute("alter table intents add column executed text not null default ''")
         self._db.commit()
         self.load_book()
-        self._archive()
+        # A new account has no useful state before the first cycle. The
+        # runner calls archive_if_due after its cycle has committed the book;
+        # archiving here would make the first day's only copy an empty DB.
 
     def _keep_pre_upgrade_copy(self) -> None:
         target = self.directory / "account.pre-upgrade.sqlite"

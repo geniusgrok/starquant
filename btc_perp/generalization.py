@@ -14,18 +14,19 @@ from btc_perp.costs import START_CNY
 from btc_perp.reportio import completion, publish
 from btc_perp.tapes import Tape
 
-_CHANNELS: dict[tuple[str, int, int], tuple[np.ndarray, ...]] = {}
-
 
 def _baseline_channels(tape: Tape, entry: int, exit_: int) -> tuple[np.ndarray, ...]:
     from scripts.frontier import _channels
 
-    key = (tape.name, entry, exit_)
-    if key not in _CHANNELS:
+    # Cache on the tape so two different inputs with the same display name
+    # cannot share channels. The arrays are released with their tape.
+    cache: dict[tuple[int, int], tuple[np.ndarray, ...]] = tape.__dict__.setdefault("_baseline_channels", {})
+    key = (entry, exit_)
+    if key not in cache:
         high, low, _close = tape.hourly()
         hh, ll, xh, xl = _channels(high, low, entry, exit_)
-        _CHANNELS[key] = tuple(np.repeat(a, 60) for a in (hh, ll, xh, xl))
-    return _CHANNELS[key]
+        cache[key] = tuple(np.repeat(a, 60) for a in (hh, ll, xh, xl))
+    return cache[key]
 
 
 def baseline_replay(
@@ -374,6 +375,8 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
             "verified": False,
             "reason": "行情文件不在 data/ 或 data/assets/，没有泛化结果；先运行 scripts/assets.py",
             "missing": missing,
+            "inputs": {p.name: _sha(p) for p in needed if p.exists()},
+            "provenance": _provenance(),
         }
         if write_report:
             _write(report)
@@ -381,7 +384,13 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
 
     core_problems = _tape_problems()
     if core_problems:
-        report = {"verified": False, "reason": "BTC 正式输入校验失败", "problems": core_problems}
+        report = {
+            "verified": False,
+            "reason": "BTC 正式输入校验失败",
+            "problems": core_problems,
+            "inputs": {p.name: _sha(p) for p in needed},
+            "provenance": _provenance(),
+        }
         if write_report:
             _write(report)
         return report
@@ -391,14 +400,25 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
     try:
         tapes = {name: load_tape(name) for name in TAPES}
     except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
-        report = {"verified": False, "reason": f"泛化行情读取失败：{exc}"}
+        report = {
+            "verified": False,
+            "reason": f"泛化行情读取失败：{exc}",
+            "inputs": {p.name: _sha(p) for p in needed},
+            "provenance": _provenance(),
+        }
         if write_report:
             _write(report)
         return report
     tape_problems = {name: validate_tape(tape) for name, tape in tapes.items()}
     tape_problems = {name: issues for name, issues in tape_problems.items() if issues}
     if tape_problems:
-        report = {"verified": False, "reason": "泛化行情校验失败", "problems": tape_problems}
+        report = {
+            "verified": False,
+            "reason": "泛化行情校验失败",
+            "problems": tape_problems,
+            "inputs": {p.name: _sha(p) for p in needed},
+            "provenance": _provenance(),
+        }
         if write_report:
             _write(report)
         return report
@@ -511,3 +531,7 @@ def _write(report: dict[str, Any]) -> None:
     verified = bool(report.get("verified"))
     report.setdefault("completion", completion(data_validated=verified, path_complete=verified, economic_pass=False))
     publish(REPORT, report)
+    # This four-tape conclusion is invalid if any required source fails. Do
+    # not leave an older verified pointer beside the latest failed audit.
+    stale = REPORT if not verified else REPORT.with_suffix(".unverified.json")
+    stale.unlink(missing_ok=True)

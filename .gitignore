@@ -45,3 +45,4 @@ state/
 # per-run research reports (the pointer files in reports/ are the ones tracked)
 reports/runs/
 reports/*.unverified.json
+!reports/btc_account_generalization.unverified.json

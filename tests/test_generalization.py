@@ -75,6 +75,48 @@ def test_candidate_does_not_look_ahead() -> None:
     assert np.allclose(full["_equity"], truncated["_equity"])
 
 
+def test_candidate_new_trail_only_starts_next_minute() -> None:
+    # Minute 59 signals a long. Minute 60 opens at 100 and moves through
+    # 100 -> 120 -> 105: the original stop near 95 does not fire. A new
+    # trailing stop near 115 must wait until minute 61.
+    n = 62
+    o = np.full(n, 100.0)
+    h = np.full(n, 100.0)
+    low = np.full(n, 100.0)
+    c = np.full(n, 100.0)
+    h[60] = 120.0
+    c[60] = 105.0
+    o[61] = 105.0
+    h[61] = 105.0
+    low[61] = 104.0
+    c[61] = 105.0
+    tape = Tape(
+        "synthetic",
+        np.arange(n, dtype=np.int64) * 60_000,
+        o,
+        h,
+        low,
+        c,
+        np.full(n, 1e9),
+        np.zeros(n),
+        np.ones(n),
+        np.full(n, 20200101, dtype=np.int32),
+    )
+    channels = (
+        np.array([[99.0, np.inf]]),
+        np.array([[0.0, -np.inf]]),
+        np.full((1, 2), np.inf),
+        np.zeros((1, 2)),
+        np.full(2, 5.0),
+        np.full(2, 0.5),
+    )
+    cfg = dataclasses.replace(load_candidate(), target_vol=0.5, atr_mult=1.0)
+    result = run_candidate(tape, cfg, arrays=channels)
+    assert result["_side"][60] == 1
+    assert result["_side"][61] == 0
+    assert result["n_stop"] == 1
+
+
 def test_a_worse_stop_fill_and_a_higher_fee_never_help() -> None:
     tape = _tape()
     cfg = _small(load_candidate())
@@ -92,6 +134,29 @@ def test_baseline_replay_runs_on_any_tape_and_is_causal() -> None:
     assert len(full["_equity"]) == cut
     later = gen.baseline_replay(tape, cfg, 30 * 1440, cut)
     assert later["end_cny"] > 0
+
+
+def test_baseline_channels_do_not_reuse_another_tape_with_the_same_name() -> None:
+    from scripts.frontier import _channels
+
+    first = _tape(days=8, seed=1)
+    second = _tape(days=8, seed=2)
+    a = gen._baseline_channels(first, 12, 6)
+    b = gen._baseline_channels(second, 12, 6)
+    high, low, _close = second.hourly()
+    expected = _channels(high, low, 12, 6)
+    assert b is gen._baseline_channels(second, 12, 6)
+    assert not np.array_equal(a[0], b[0])
+    assert np.array_equal(b[0], np.repeat(expected[0], 60))
+
+
+def test_failed_generalization_invalidates_older_verified_pointer(tmp_path, monkeypatch) -> None:
+    pointer = tmp_path / "generalization.json"
+    pointer.write_text('{"verified": true}\n')
+    monkeypatch.setattr(gen, "REPORT", pointer)
+    gen._write({"verified": False, "reason": "source gap"})
+    assert not pointer.exists()
+    assert (tmp_path / "generalization.unverified.json").exists()
 
 
 def test_choose_uses_the_median_over_the_named_tapes() -> None:

@@ -14,7 +14,7 @@ import pytest
 from btc_perp.binance_client import _state_key
 from btc_perp.causal import validate_minutes
 from btc_perp.config import load_config
-from btc_perp.machine import foreign_ids, freeze_for_manual
+from btc_perp.machine import foreign_ids, freeze_for_manual, promote_protection
 from btc_perp.model import AlgoOrder, Book, Filters, Intent, Limits, RestingOrder, Snapshot, Trade
 from btc_perp.runner import (
     EntryContext,
@@ -24,6 +24,7 @@ from btc_perp.runner import (
     _entry_gate,
     _own_remaining,
     _rearm,
+    _reconcile,
     _record_outcome,
     _sync_book,
 )
@@ -180,6 +181,218 @@ def test_foreign_position_does_not_advance_strategy_memory(tmp_path: Path, monke
         assert actual.cursor_ms == 0 and actual.extreme == 100 and actual.stop == 90
 
 
+@pytest.mark.parametrize("mode", ["run", "stop"])
+def test_foreign_fill_arriving_during_cycle_cannot_trigger_old_stop_exit(tmp_path: Path, mode: str) -> None:
+    from test_forward import FakeVenue, _bar, _run, _snap
+
+    bar, now = _bar(100.0)
+
+    class ChangingVenue(FakeVenue):
+        reads = 0
+
+        def snapshot(self) -> Snapshot:
+            self.reads += 1
+            if self.reads == 2:
+                self.snap = dataclasses.replace(
+                    self.snap,
+                    position_qty=2,
+                    trades=(Trade(1, "external", "BUY", 1, now),),
+                )
+            return super().snapshot()
+
+    venue = ChangingVenue(_snap(server_time_ms=now, position_qty=1, entry_price=100))
+    with Store(tmp_path, "demo") as store:
+        store.save_book(Book(side=1, qty=1, entry=100, stop=110, extreme=100, swaps={"trade_cursor": "0"}))
+        result = _run(store, venue, bar, now, mode=mode)
+        assert result.position_qty == 2
+        assert venue.market_ids == []
+        if mode == "run":
+            assert store.load_book().cursor_ms == 0
+
+
+def test_stop_does_not_call_foreign_position_settled_just_because_close_all_orders_cover_it(tmp_path: Path) -> None:
+    from test_forward import FakeVenue, _bar, _run, _snap
+
+    bar, now = _bar(100.0)
+    stops = (
+        AlgoOrder("st_own", "STOP_MARKET", "SELL", 90, True, False, 0, "NEW", "CONTRACT_PRICE"),
+        AlgoOrder("tp_own", "TAKE_PROFIT_MARKET", "SELL", 1000, True, False, 0, "NEW", "CONTRACT_PRICE"),
+    )
+    current = _snap(
+        server_time_ms=now,
+        position_qty=2,
+        entry_price=100,
+        trades=(Trade(1, "external", "BUY", 1, now),),
+        algos=stops,
+    )
+    venue = FakeVenue(current)
+    with Store(tmp_path, "demo") as store:
+        store.save_book(Book(side=1, qty=1, entry=100, swaps={"trade_cursor": "0"}))
+        for client_id, action, trigger in (("st_own", "stop", "90"), ("tp_own", "take", "1000")):
+            store.insert_intent(Intent(client_id, action, "acked", "SELL", "", False, True, trigger, "demo", now))
+        result = _run(store, venue, bar, now, mode="stop")
+        assert not result.settled
+        assert any("归属未确认" in item for item in result.remaining)
+        assert venue.market_ids == []
+
+
+def test_stop_does_not_confirm_held_position_when_trade_history_is_unreadable(tmp_path: Path) -> None:
+    from test_forward import FakeVenue, _bar, _run, _snap
+
+    bar, now = _bar(100.0)
+    current = _snap(
+        server_time_ms=now,
+        position_qty=1,
+        entry_price=100,
+        recent_trades_ok=False,
+        algos=(
+            AlgoOrder("st_own", "STOP_MARKET", "SELL", 90, True, False, 0, "NEW", "CONTRACT_PRICE"),
+            AlgoOrder("tp_own", "TAKE_PROFIT_MARKET", "SELL", 1000, True, False, 0, "NEW", "CONTRACT_PRICE"),
+        ),
+    )
+    with Store(tmp_path, "demo") as store:
+        store.save_book(Book(side=1, qty=1, entry=100))
+        for client_id, action, trigger in (("st_own", "stop", "90"), ("tp_own", "take", "1000")):
+            store.insert_intent(Intent(client_id, action, "acked", "SELL", "", False, True, trigger, "demo", now))
+        result = _run(store, FakeVenue(current), bar, now, mode="stop")
+        assert not result.settled
+        assert any("归属未确认" in item for item in result.remaining)
+
+
+def test_old_reduce_is_not_resent_before_foreign_fill_is_checked(tmp_path: Path) -> None:
+    class Venue:
+        def query_order(self, _client_id: str) -> dict[str, object]:
+            return {"code": -2013, "msg": "Order does not exist"}
+
+        def place_market(self, **_kwargs: object) -> dict[str, object]:
+            raise AssertionError("旧减仓单平掉了外来持仓")
+
+    with Store(tmp_path, "demo") as store:
+        store.insert_intent(Intent("rd_old", "reduce", "unknown", "SELL", "1", True, False, "", "demo", NOW))
+        book = Book(side=1, qty=1, entry=100, swaps={"trade_cursor": "0"})
+        current = snap(
+            position_qty=1,
+            entry_price=100,
+            trades=(Trade(1, "external", "BUY", 1, NOW - 1), Trade(2, "external", "SELL", 1, NOW)),
+        )
+        alerts: list[str] = []
+        _reconcile(store, Venue(), current, book, [], alerts, allow="all", now_ms=NOW, dry_run=False)  # type: ignore[arg-type]
+        assert store.intents()[0].attempts == 1
+        assert store.intents()[0].phase == "unknown"
+        assert any("外来" in item or "不是本程序" in item for item in alerts)
+
+
+def test_old_reduce_with_obsolete_qty_is_not_resent(tmp_path: Path) -> None:
+    class Venue:
+        def query_order(self, _client_id: str) -> dict[str, object]:
+            return {"code": -2013, "msg": "Order does not exist"}
+
+        def place_market(self, **_kwargs: object) -> dict[str, object]:
+            raise AssertionError("旧数量的减仓单被重放")
+
+    with Store(tmp_path, "demo") as store:
+        store.insert_intent(Intent("rd_old", "reduce", "unknown", "SELL", "2", True, False, "", "demo", NOW))
+        _reconcile(
+            store,
+            Venue(),
+            snap(position_qty=1, entry_price=100),
+            Book(side=1, qty=1, entry=100),
+            [],
+            [],
+            allow="all",
+            now_ms=NOW,
+            dry_run=False,
+        )  # type: ignore[arg-type]
+        assert store.intents()[0].phase == "unknown" and store.intents()[0].attempts == 1
+
+
+def test_old_protection_is_not_sent_to_flat_or_changed_position(tmp_path: Path) -> None:
+    class Venue:
+        def place_algo(self, **_kwargs: object) -> dict[str, object]:
+            raise AssertionError("旧 closePosition 条件单被重放")
+
+    with Store(tmp_path, "demo") as store:
+        store.insert_intent(Intent("st_old", "stop", "planned", "SELL", "", False, True, "90", "demo", NOW))
+        book = Book(side=1, qty=1, entry=100)
+        for current in (snap(), snap(position_qty=-1, entry_price=100)):
+            _reconcile(store, Venue(), current, book, [], [], allow="reduce", now_ms=NOW, dry_run=False)  # type: ignore[arg-type]
+        assert store.intents()[0].phase == "planned"
+
+
+def test_old_stop_with_crossed_trigger_is_not_replayed(tmp_path: Path) -> None:
+    class Venue:
+        def query_algo(self, _client_id: str) -> dict[str, object]:
+            return {"code": -2013, "msg": "Order does not exist"}
+
+        def place_algo(self, **_kwargs: object) -> dict[str, object]:
+            raise AssertionError("已越过触发价的旧止损被重放")
+
+    with Store(tmp_path, "demo") as store:
+        store.insert_intent(Intent("st_old", "stop", "unknown", "SELL", "", False, True, "90", "demo", NOW))
+        book = Book(side=1, qty=1, entry=100)
+        _reconcile(
+            store,
+            Venue(),
+            snap(position_qty=1, entry_price=100, last_price=80),
+            book,
+            [],
+            [],
+            allow="reduce",
+            now_ms=NOW,
+            dry_run=False,
+        )  # type: ignore[arg-type]
+        assert store.intents()[0].attempts == 1
+        assert store.intents()[0].phase == "unknown"
+
+
+@pytest.mark.parametrize(
+    "bad_leg",
+    (
+        {"side": "BUY"},
+        {"working_type": "MARK_PRICE"},
+        {"close_position": False},
+        {"trigger_price": 94.0},
+        {"qty": 0.5},
+    ),
+)
+def test_bad_new_stop_never_retires_healthy_old_stop(bad_leg: dict[str, object]) -> None:
+    old = AlgoOrder("st_old", "STOP_MARKET", "SELL", 90, True, False, 0, "NEW", "CONTRACT_PRICE")
+    new = dataclasses.replace(
+        AlgoOrder("st_new", "STOP_MARKET", "SELL", 95, True, False, 0, "NEW", "CONTRACT_PRICE"),
+        **bad_leg,
+    )
+    current = snap(position_qty=1, entry_price=100, algos=(old, new))
+    intents = [Intent("st_new", "stop", "acked", "SELL", "", False, True, "95", "demo", NOW)]
+    commands, swaps, warnings = promote_protection(
+        current,
+        {"stop_id": "st_old", "stop_next": "st_new"},
+        {"st_old", "st_new"},
+        intents,
+        stop_price=95,
+        take_price=1000,
+    )
+    assert [item.client_id for item in commands] == ["st_new"]
+    assert swaps["stop_id"] == "st_old" and swaps["stop_next"] == "st_new"
+    assert warnings
+
+
+def test_verified_new_stop_retires_old_stop() -> None:
+    old = AlgoOrder("st_old", "STOP_MARKET", "SELL", 90, True, False, 0, "NEW", "CONTRACT_PRICE")
+    new = AlgoOrder("st_new", "STOP_MARKET", "SELL", 95, True, False, 0, "NEW", "CONTRACT_PRICE")
+    current = snap(position_qty=1, entry_price=100, algos=(old, new))
+    intents = [Intent("st_new", "stop", "acked", "SELL", "", False, True, "95", "demo", NOW)]
+    commands, swaps, warnings = promote_protection(
+        current,
+        {"stop_id": "st_old", "stop_next": "st_new"},
+        {"st_old", "st_new"},
+        intents,
+        stop_price=95,
+        take_price=1000,
+    )
+    assert [item.client_id for item in commands] == ["st_old"]
+    assert swaps["stop_id"] == "st_new" and "stop_next" not in swaps and not warnings
+
+
 def test_takeover_tracks_real_position_and_releases_without_resetting_peak(tmp_path: Path) -> None:
     with Store(tmp_path, "demo") as store:
         book = Book(side=1, qty=2, entry=100, units=1, manual=True, peak_equity_cny=20_000, close_peak_cny=20_000)
@@ -304,8 +517,10 @@ def test_long_running_store_makes_a_consistent_backup_on_new_utc_day(
 
     monkeypatch.setattr(storage, "dt", SimpleNamespace(datetime=Clock, UTC=dt.UTC))
     with Store(tmp_path, "demo") as store:
+        assert not list((tmp_path / "backups").glob("account-*.sqlite"))
         store.save_book(Book(peak_equity_cny=1234, close_peak_cny=1234))
         store.insert_intent(Intent("backup-id", "stop", "unknown", "SELL", "", False, True, "90", "demo", NOW))
+        store.archive_if_due()
         day[0] = 30
         store.archive_if_due()
         store.archive_if_due()

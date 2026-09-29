@@ -284,10 +284,11 @@ def run_cycle(
     would: list[str] = []
     alerts: list[str] = []
     remaining: list[str] = []
-    if mode == "run" and _control_requested(store, "stop.request", environment, alerts):
-        mode = "stop"
-    if mode == "run" and _control_requested(store, "flatten.request", environment, alerts):
-        mode = "flatten"
+    if mode == "run":
+        if _control_requested(store, "flatten.request", environment, alerts):
+            mode = "flatten"
+        elif _control_requested(store, "stop.request", environment, alerts):
+            mode = "stop"
     if stream_expired:
         alerts.append("用户流过期或断开，本轮只采用 REST 快照")
         store.append_event("stream", "rest-snapshot")
@@ -320,9 +321,9 @@ def run_cycle(
             unread = ["账户快照未知：" + book.freeze_reason] if mode in {"stop", "flatten"} else None
             return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, remaining=unread)
 
-    def resnap() -> Snapshot:
+    def resnap(*, force: bool = False) -> Snapshot:
         nonlocal snap, marker
-        if not dry_run and len(sent) != marker:
+        if not dry_run and (force or len(sent) != marker):
             snap = venue.snapshot()
             marker = len(sent)
         return snap
@@ -390,16 +391,14 @@ def run_cycle(
         _save(store, book, dry_run)
         return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered)
 
-    owned = not mismatch or book.manual
-
     if mode == "stop":
         settled = False
         if dry_run:
             _safe_stop(store, venue, snap, book, sent, would, alerts, dry_run)
         else:
-            _stop_until_safe(store, venue, book, cfg, environment, prod_enabled, owned, sent, alerts, now_ms)
+            _stop_until_safe(store, venue, book, cfg, environment, prod_enabled, sent, alerts, now_ms)
             snap = venue.snapshot()
-            remaining = _remaining_now(store, snap, entries_only=True)
+            remaining = _stop_remaining(store, book, snap, alerts)
             settled = snap.known and not remaining
         _save(store, book, dry_run)
         covered, _why = protections_cover(snap)
@@ -432,11 +431,28 @@ def run_cycle(
         book.freeze_reason = "强平距离过近"
         alerts.append(book.freeze_reason)
 
-    if writes and owned:
+    if writes and _owned_now(store, book, snap, alerts):
         if _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms):
-            _flatten(store, venue, resnap(), book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
-            book.cooldown_until_ms = now_ms + cfg.cooldown_hours * 3_600_000
+            latest = resnap(force=True)
+            if _owned_now(store, book, latest, alerts, for_exit=True):
+                _flatten(store, venue, latest, book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
+                book.cooldown_until_ms = now_ms + cfg.cooldown_hours * 3_600_000
         resnap()
+
+    if not snap.known:
+        book.entries_frozen = True
+        book.freeze_reason = snap.reason or "账户未知"
+        _save(store, book, dry_run)
+        return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would)
+    if not book.manual:
+        latest_mismatch = freeze_for_manual(
+            book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap)
+        )
+        if latest_mismatch:
+            mismatch = latest_mismatch
+            book.entries_frozen = True
+            book.freeze_reason = latest_mismatch
+            alerts.append(latest_mismatch)
 
     status = inspect_bars(bars, now_ms, book.cursor_ms)
     action_note = ""
@@ -491,11 +507,13 @@ def run_cycle(
         if snap.known:
             _sync_book(store, book, snap, cfg, now_ms)
             _track_naked(book, snap, now_ms)
-            if owned:
+            if _owned_now(store, book, snap, alerts):
                 if _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms):
-                    _flatten(
-                        store, venue, resnap(), book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms
-                    )
+                    latest = resnap(force=True)
+                    if _owned_now(store, book, latest, alerts, for_exit=True):
+                        _flatten(
+                            store, venue, latest, book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms
+                        )
                 snap = resnap()
                 _naked(store, venue, snap, book, limits, environment, prod_enabled, now_ms, sent, alerts)
                 snap = resnap()
@@ -716,7 +734,7 @@ def _flow_problem(book: Book, snap: Snapshot) -> str:
     return ""
 
 
-def _coverage_problem(book: Book, snap: Snapshot) -> str:
+def _coverage_problem(book: Book, snap: Snapshot, *, trades_only: bool = False) -> str:
     """Default REST history covers at most seven days/1000 rows. Never
     advance a cursor across a period whose fills or flows we did not see.
     """
@@ -724,6 +742,8 @@ def _coverage_problem(book: Book, snap: Snapshot) -> str:
         ("trade_seen_ms", snap.trades, snap.recent_trades_ok, "成交"),
         ("income_cursor_ms", snap.income, snap.funding_ok, "资金流水"),
     ):
+        if trades_only and key != "trade_seen_ms":
+            continue
         raw = book.swaps.get(key)
         if raw is None or not readable:
             continue
@@ -1022,7 +1042,6 @@ def _reconcile(
     entry that may have been handed over is only queried: not found and
     unanswered both stay unknown until an operator resolves them.
     """
-    _ = book
     if dry_run:
         return
     live_algos = {algo.client_algo_id for algo in snap.algos if algo.status == "NEW"}
@@ -1038,6 +1057,10 @@ def _reconcile(
                 if allow != "none":
                     store.mark_intent(intent.client_id, "canceled", "not-sent-in-this-mode")
                     store.mark_absorbed(intent.client_id)
+                continue
+            blocked = _old_reduce_block(store, book, snap, intent)
+            if blocked:
+                alerts.append(f"旧订单 {intent.client_id} 未发送：{blocked}")
                 continue
             _transmit(store, venue, intent, sent, alerts)
             continue
@@ -1068,6 +1091,11 @@ def _reconcile(
             )
             continue
         if intent.attempts < 2 and _may_send(intent.action, allow):
+            blocked = _old_reduce_block(store, book, snap, intent)
+            if blocked:
+                store.mark_intent(intent.client_id, "unknown", "retry-blocked")
+                alerts.append(f"旧订单 {intent.client_id} 不重发：{blocked}")
+                continue
             store.mark_intent(intent.client_id, "sent", "resend-same-id", attempts=intent.attempts + 1)
             refreshed = _reload(store, intent.client_id)
             if refreshed is not None:
@@ -1075,6 +1103,42 @@ def _reconcile(
             continue
         store.mark_intent(intent.client_id, "unknown", "still-missing")
         alerts.append("原订单仍查不到，不会换一个新身份重发")
+
+
+def _old_reduce_block(store: Store, book: Book, snap: Snapshot, intent: Intent) -> str:
+    """A persisted reducing plan must still belong to this position before transmission."""
+    if intent.action not in _RISK_DOWN_ACTIONS:
+        return ""
+    if book.manual:
+        return "实仓已人工接管，旧退出意图不能代表新仓位"
+    if not snap.recent_trades_ok:
+        return "成交历史读不到，不能确认旧意图的仓位归属"
+    coverage = _coverage_problem(book, snap, trades_only=True)
+    if coverage:
+        return coverage
+    if book.side == 0 or book.qty < 1e-8 or snap.position_side != book.side:
+        return "原方向持仓已不存在"
+    if abs(snap.position_qty - book.side * book.qty) > 1e-6:
+        return "仓位数量尚未重新归因，旧退出意图不能代表当前仓位"
+    closing = "SELL" if snap.position_qty > 0 else "BUY"
+    if intent.side != closing:
+        return "原订单方向与当前持仓不匹配"
+    mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap))
+    if mismatch:
+        return mismatch
+    if intent.action in {"reduce", "flatten"}:
+        qty = _float(intent.qty)
+        if qty <= 0 or abs(qty - abs(snap.position_qty)) > 1e-6:
+            return "旧减仓数量与当前实仓不一致"
+    if _is_algo(intent):
+        trigger = _float(intent.trigger_price)
+        kind = "stop" if intent.action == "stop" else "take"
+        if not _trigger_ok(book.side, kind, trigger, snap.last_price):
+            return "旧保护触发价不在现价的有效一侧"
+        filters = snap.filters
+        if filters is None or not _in_band(filters.min_price, filters.max_price, trigger):
+            return "旧保护触发价不在价格带内"
+    return ""
 
 
 def _walk_bars(
@@ -1405,6 +1469,27 @@ def _drop_reverse_plan(book: Book) -> None:
         book.swaps.pop(key, None)
 
 
+def _owned_now(store: Store, book: Book, snap: Snapshot, alerts: list[str], *, for_exit: bool = False) -> bool:
+    """Recheck ownership after each network read, before an automatic account write."""
+    if not snap.known:
+        return False
+    if book.manual:
+        return True
+    coverage = _coverage_problem(book, snap, trades_only=True)
+    if coverage:
+        alerts.append("归属未确认：" + coverage)
+        return False
+    delta = snap.position_qty - book.side * book.qty
+    if not snap.recent_trades_ok and (for_exit or abs(delta) > 1e-6):
+        alerts.append("成交历史读不到，当前仓位归属未确认")
+        return False
+    mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap))
+    if mismatch:
+        alerts.append("归属未确认：" + mismatch)
+        return False
+    return True
+
+
 def _keep_protected(
     store: Store,
     venue: Venue,
@@ -1464,8 +1549,19 @@ def _keep_protected(
             break
     if commands:
         snap = venue.snapshot()
-    cancels, swaps = promote_protection(snap, book.swaps, store.all_client_ids())
+        if not _owned_now(store, book, snap, alerts):
+            alerts.append("保护发送后实仓归属发生变化，不撤旧保护")
+            return False
+    cancels, swaps, warnings = promote_protection(
+        snap,
+        book.swaps,
+        store.all_client_ids(),
+        store.intents(),
+        stop_price=stop_px,
+        take_price=take_px,
+    )
     book.swaps = swaps
+    alerts.extend(warnings)
     for command in cancels:
         _cancel(store, venue, command, sent, alerts)
     return False
@@ -1499,10 +1595,13 @@ def _naked(
     cap = limits.max_unprotected_seconds or NAKED_DEFAULT_SECONDS
     if now_ms - book.unprotected_since_ms < cap * 1000:
         return
+    current = venue.snapshot()
+    if not _owned_now(store, book, current, alerts, for_exit=True):
+        return
     alerts.append("保护覆盖超时，改为只减仓")
     book.entries_frozen = True
     book.freeze_reason = "保护覆盖超时"
-    _flatten(store, venue, snap, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
+    _flatten(store, venue, current, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
 
 
 def _clear_own_orders(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
@@ -1557,6 +1656,13 @@ def _remaining_now(store: Store, snap: Snapshot, entries_only: bool = False) -> 
     if not snap.known:
         return ["账户快照未知：" + (snap.reason or "读不到")]
     return _own_remaining(store, snap, entries_only)
+
+
+def _stop_remaining(store: Store, book: Book, snap: Snapshot, alerts: list[str]) -> list[str]:
+    remaining = _remaining_now(store, snap, entries_only=True)
+    if not _owned_now(store, book, snap, alerts, for_exit=abs(snap.position_qty) >= 1e-8):
+        remaining.append("当前仓位归属未确认")
+    return remaining
 
 
 def _own_remaining(store: Store, snap: Snapshot, entries_only: bool = False) -> list[str]:
@@ -1620,8 +1726,8 @@ def _unresolved_protections(store: Store, snap: Snapshot) -> list[str]:
     ]
 
 
-def _stop_settled(store: Store, snap: Snapshot) -> bool:
-    return not _own_remaining(store, snap, entries_only=True)
+def _stop_settled(store: Store, book: Book, snap: Snapshot, alerts: list[str]) -> bool:
+    return not _stop_remaining(store, book, snap, alerts)
 
 
 def _stop_until_safe(
@@ -1631,7 +1737,6 @@ def _stop_until_safe(
     cfg: AccountConfig,
     environment: str,
     prod_enabled: bool,
-    owned: bool,
     sent: list[str],
     alerts: list[str],
     now_ms: int,
@@ -1650,13 +1755,13 @@ def _stop_until_safe(
             return False
         _safe_stop(store, venue, snap, book, sent, [], alerts, False)
         snap = venue.snapshot()
-        if snap.known and owned and abs(snap.position_qty) >= 1e-8:
+        if snap.known and abs(snap.position_qty) >= 1e-8 and _owned_now(store, book, snap, alerts):
             if _keep_protected(store, venue, snap, book, cfg, sent, alerts, now_ms):
-                _flatten(
-                    store, venue, venue.snapshot(), book, environment, prod_enabled, sent, [], alerts, False, now_ms
-                )
+                latest = venue.snapshot()
+                if _owned_now(store, book, latest, alerts, for_exit=True):
+                    _flatten(store, venue, latest, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
             snap = venue.snapshot()
-        if _stop_settled(store, snap):
+        if _stop_settled(store, book, snap, alerts):
             return True
     return False
 

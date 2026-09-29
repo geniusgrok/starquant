@@ -123,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--fx", type=_finite, default=0.0)
         cmd.add_argument("--once", action="store_true")
         cmd.add_argument("--dry-run", action="store_true")
-        cmd.add_argument("--poll-seconds", type=_finite, default=5.0)
+        cmd.add_argument("--poll-seconds", type=_poll_seconds, default=5.0)
         cmd.add_argument("--client-id", default="", help="只有 resolve 使用")
         cmd.add_argument("--yes", action="store_true", help="rearm 和 resolve 使用：确认这次操作")
 
@@ -191,6 +191,13 @@ def _finite(text: str) -> float:
         raise argparse.ArgumentTypeError(f"{text!r} 不是数字") from exc
     if not math.isfinite(value) or value < 0:
         raise argparse.ArgumentTypeError(f"{text!r} 必须是有限的非负数")
+    return value
+
+
+def _poll_seconds(text: str) -> float:
+    value = _finite(text)
+    if not 1.0 <= value <= 5.0:
+        raise argparse.ArgumentTypeError("轮询间隔必须在 1 到 5 秒之间，停机/清仓请求不能无限期等待")
     return value
 
 
@@ -379,7 +386,14 @@ def _forward(found: argparse.Namespace) -> int:
                 f"remaining={'|'.join(report.remaining) if report.remaining else '-'} "
                 f"alerts={report.alerts[-1] if report.alerts else '-'}"
             )
-            if once or _request_pending(state, "stop.request", environment):
+            if (
+                once
+                or report.mode in {"stop", "flatten"}
+                or (
+                    _request_pending(state, "stop.request", environment)
+                    and not _request_pending(state, "flatten.request", environment)
+                )
+            ):
                 break
             mode = "run"
             time.sleep(max(float(found.poll_seconds), 1.0))
@@ -439,6 +453,8 @@ def _exit_status(
         return 2
     if command == "run" and not dry_run:
         if wind is None or not wind.settled:
+            return 2
+        if report.mode == "flatten" and not report.settled:
             return 2
         return 2 if report.mode == "run" and report.frozen else 0
     if command in {"stop", "flatten", "rearm"}:
@@ -508,6 +524,13 @@ def _one_cycle(
     mode: str,
     now_ms: int,
 ) -> CycleReport:
+    if mode == "run":
+        # Handle operator risk controls before paging through strategy klines.
+        # run_cycle checks again after the read to catch a request made meanwhile.
+        if _request_pending(store.directory, "flatten.request", str(found.environment)):
+            mode = "flatten"
+        elif _request_pending(store.directory, "stop.request", str(found.environment)):
+            mode = "stop"
     stream_expired = False
     if stream is not None:
         stream.keepalive(now_ms)

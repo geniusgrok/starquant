@@ -368,20 +368,20 @@ class UsdMClient:
             return None
 
     def _income(self) -> tuple[tuple[Income, ...], bool]:
-        def load() -> object:
+        try:
+            # The runner advances its income cursor to the snapshot's server
+            # time. Reusing an older response would silently skip any transfer
+            # made while it was cached when the next fresh response arrives.
             payload = self._read("/fapi/v1/income", {"limit": "1000"})
-            return tuple(
+            found = tuple(
                 Income(
                     kind=str(row.get("incomeType", "")), amount=_need(row.get("income")), time_ms=_int(row.get("time"))
                 )
                 for row in _rows(payload)
             )
-
-        try:
-            found = self._cached("income", 20.0, load)
         except (UnknownExecution, WriteRefused, OSError, TimeoutError, RuntimeError, ValueError, KeyError):
             return (), False
-        return (tuple(found), True) if isinstance(found, tuple) else ((), False)
+        return found, True
 
     def _read_once(self) -> Snapshot | None:
         """One pass over the account endpoints. ``None`` means the account moved while reading."""
@@ -509,12 +509,22 @@ def _state_key(
         for r in _rows(algos)
     )
     wallet = ""
+    account_positions: tuple[tuple[str, str], ...] | None = None
     if isinstance(account, dict) and isinstance(account.get("assets"), list):
         for asset in account["assets"]:
             if isinstance(asset, dict) and asset.get("asset") == "USDT":
                 wallet = str(asset.get("walletBalance"))
+    if isinstance(account, dict) and isinstance(account.get("positions"), list):
+        account_positions = tuple(
+            sorted(
+                (str(item.get("symbol")), str(item.get("positionAmt")))
+                if isinstance(item, dict)
+                else ("<invalid>", str(index))
+                for index, item in enumerate(account["positions"])
+            )
+        )
     last_trade = None if trades is None else (max((t.trade_id for t in trades), default=0), len(trades))
-    return (pos, plain, conditional, wallet, last_trade)
+    return (pos, plain, conditional, wallet, account_positions, last_trade)
 
 
 def _flag(value: object) -> bool | None:
@@ -669,13 +679,16 @@ def _snapshot_from(
         return _unknown("USDT 余额不是有限数字")
     others: list[str] = []
     all_positions = account.get("positions")
-    if isinstance(all_positions, list):
-        for item in all_positions:
-            if not isinstance(item, dict) or item.get("symbol") == "BTCUSDT":
-                continue
-            amount = _num(item.get("positionAmt"))
-            if amount is None or amount != 0.0:
-                others.append(str(item.get("symbol", "?")))
+    if not isinstance(all_positions, list):
+        return _unknown("账户其他合约持仓列表缺失，不能确认没有额外风险")
+    for item in all_positions:
+        if not isinstance(item, dict) or not isinstance(item.get("symbol"), str):
+            return _unknown("账户其他合约持仓行无效")
+        amount = _num(item.get("positionAmt"))
+        if amount is None:
+            return _unknown("账户其他合约持仓数量无效")
+        if item["symbol"] != "BTCUSDT" and amount != 0.0:
+            others.append(item["symbol"])
     can_trade = _flag(account.get("canTrade"))
     multi = _flag(account.get("multiAssetsMargin"))
     if can_trade is None or multi is None:

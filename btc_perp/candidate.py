@@ -267,6 +267,9 @@ def _loop(  # type: ignore[no-untyped-def]
             hit = False
             fill = 0.0
             dist = atr_mult * atr_h[hk] if atr_h[hk] > 0.0 else 0.0
+            # The order resting through this minute was set before its path
+            # occurred. A new extreme can tighten it only after this close.
+            stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, C[i - 1] if i > i0 else OP[i])
             for k in range(4):
                 if k == 0:
                     px = OP[i]
@@ -276,7 +279,6 @@ def _loop(  # type: ignore[no-untyped-def]
                     px = H[i] if bull else L[i]
                 else:
                     px = C[i]
-                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, px)
                 if side > 0 and px <= stop_px:
                     hit = True
                     fill = (px if k == 0 else stop_px) * (1.0 - slip_b - (0.0 if k == 0 else stop_extra))
@@ -296,12 +298,14 @@ def _loop(  # type: ignore[no-untyped-def]
                     break
                 if (side > 0 and px > extreme) or (side < 0 and px < extreme):
                     extreme = px
+                peak, min_ratio, min_i = _mark(px, wallet, entry, qty, side, fx[i], FX_FEE, peak, min_ratio, min_i, i)
+            if not hit:
                 if dist > 0.0:
                     if side > 0 and extreme - dist > stop_px:
                         stop_px = extreme - dist
                     elif side < 0 and extreme + dist < stop_px:
                         stop_px = extreme + dist
-                peak, min_ratio, min_i = _mark(px, wallet, entry, qty, side, fx[i], FX_FEE, peak, min_ratio, min_i, i)
+                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, C[i])
             if hit:
                 fee = qty * fill * taker
                 turn_u += qty * fill
