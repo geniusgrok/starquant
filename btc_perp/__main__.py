@@ -8,20 +8,23 @@ order. Production entries stay closed unless the environment variable and
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import hashlib
 import json
+import math
 import os
 import signal
 import sys
 import time
 from pathlib import Path
 
-from btc_perp.bars import bars_from_kline_rows, completed_hour_channels
+from btc_perp.bars import bars_from_kline_rows, completed_hour_channels, hour_rows_from_klines
 from btc_perp.binance_client import UrllibTransport, UsdMClient
 from btc_perp.config import ROOT, AccountConfig, load_config
 from btc_perp.gates import DEMO, PROD, load_limits, prod_orders_allowed
 from btc_perp.model import Limits
-from btc_perp.permissions import prod_permission_block
-from btc_perp.runner import CycleReport, run_cycle
+from btc_perp.permissions import prod_permission_block, prod_uid_block
+from btc_perp.runner import CycleReport, resolve_intent, run_cycle
 from btc_perp.store import Store
 from btc_perp.user_stream import UserStream
 
@@ -38,7 +41,11 @@ examples:
   python -m btc_perp flatten --environment demo --once
   python -m btc_perp takeover --environment demo --once
   python -m btc_perp rearm --environment demo --yes
+  python -m btc_perp resolve --environment demo --client-id en0123456789abcdef0123 --yes
+  python -m btc_perp resume --environment demo
 """
+
+CONTROL_COMMANDS = ("run", "stop", "flatten")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -98,23 +105,36 @@ def main(argv: list[str] | None = None) -> int:
         ("flatten", "只减仓平掉实仓", "python -m btc_perp flatten --environment demo --once"),
         ("takeover", "按实仓接管并继续冻结加仓", "python -m btc_perp takeover --environment demo --once"),
         ("rearm", "空仓时把回撤基准重置为当前权益（需要 --yes）", "python -m btc_perp rearm --environment demo --yes"),
-        ("resume", "清除 stop/flatten 请求文件，让 run 恢复正常", "python -m btc_perp resume --environment demo"),
+        (
+            "resume",
+            "只清除 stop/flatten 请求文件；不解除任何账户或资金冻结",
+            "python -m btc_perp resume --environment demo",
+        ),
+        (
+            "resolve",
+            "确认交易所没有某张未决订单后放行它（需要 --client-id 和 --yes）",
+            "python -m btc_perp resolve --environment demo --client-id en0123456789abcdef0123 --yes",
+        ),
     ):
         cmd = sub.add_parser(name, help=help_text, epilog=example, formatter_class=argparse.RawDescriptionHelpFormatter)
         cmd.add_argument("--environment", required=True, choices=(DEMO, PROD))
         cmd.add_argument("--state-dir", default="")
-        cmd.add_argument("--max-notional-usdt", type=float, default=0.0)
-        cmd.add_argument("--fx", type=float, default=0.0)
+        cmd.add_argument("--max-notional-usdt", type=_finite, default=0.0)
+        cmd.add_argument("--fx", type=_finite, default=0.0)
         cmd.add_argument("--once", action="store_true")
         cmd.add_argument("--dry-run", action="store_true")
-        cmd.add_argument("--poll-seconds", type=float, default=5.0)
-        cmd.add_argument("--yes", action="store_true", help="只有 rearm 使用：确认接受新的回撤基准")
+        cmd.add_argument("--poll-seconds", type=_finite, default=5.0)
+        cmd.add_argument("--client-id", default="", help="只有 resolve 使用")
+        cmd.add_argument("--yes", action="store_true", help="rearm 和 resolve 使用：确认这次操作")
 
     found = parser.parse_args(args)
     if found.command == "measure":
         from btc_perp.measure import run_official
 
         report = run_official(write_report=not found.no_write)
+        if not report.get("verified"):
+            print(f"verified=False reason={report.get('reason')}")
+            return 2
         print(
             f"passed={report['passed']} cagr={report['cagr']:.3f} "
             f"end={report['end_cny']:,.0f} ratio={report['min_equity_over_peak']:.3f} "
@@ -164,9 +184,39 @@ def main(argv: list[str] | None = None) -> int:
     return _forward(found)
 
 
-def _request_file(state: Path, name: str, command: str) -> None:
+def _finite(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{text!r} 不是数字") from exc
+    if not math.isfinite(value) or value < 0:
+        raise argparse.ArgumentTypeError(f"{text!r} 必须是有限的非负数")
+    return value
+
+
+def _request_file(state: Path, name: str, command: str, environment: str) -> None:
+    """A control request belongs to one environment; another environment's runner ignores it."""
     state.mkdir(parents=True, exist_ok=True)
-    (state / name).write_text(json.dumps({"command": command, "ts_ms": int(time.time() * 1000)}) + "\n")
+    body = {"command": command, "environment": environment, "ts_ms": int(time.time() * 1000)}
+    (state / name).write_text(json.dumps(body) + "\n")
+
+
+def _write_run_state(state: Path, **fields: object) -> None:
+    """The last known lifecycle of this state directory, written atomically."""
+    body = {"ts_ms": int(time.time() * 1000), "pid": os.getpid(), **fields}
+    target = state / "run_state.json"
+    scratch = state / "run_state.json.tmp"
+    scratch.write_text(json.dumps(body, ensure_ascii=False) + "\n")
+    scratch.replace(target)
+
+
+def _config_digest(cfg: AccountConfig, limits: Limits, max_notional: float) -> str:
+    payload = json.dumps(
+        {"cfg": dataclasses.asdict(cfg), "limits": dataclasses.asdict(limits), "cap": max_notional},
+        sort_keys=True,
+        default=str,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
 def _fetch_minutes(client: UsdMClient, cursor_ms: int, now_ms: int) -> list[object]:
@@ -198,65 +248,97 @@ def _raise_interrupt(_signum: int, _frame: object) -> None:
 
 def _forward(found: argparse.Namespace) -> int:
     environment = str(found.environment)
-    if found.command == "rearm" and not found.yes:
+    command = str(found.command)
+    if command == "rearm" and not found.yes:
         print(
             "rearm 会把回撤基准换成当前权益，等于接受此前的亏损作为新起点。\n"
-            "只在空仓、并且你确认要继续交易时使用：python -m btc_perp rearm --environment demo --yes"
+            "只在空仓、没有活动订单、没有未决意图，并且你确认要继续交易时使用：\n"
+            "python -m btc_perp rearm --environment demo --yes"
         )
         return 2
-    if found.command == "resume":
-        state = _state_dir(environment, str(found.state_dir))
-        removed = [name for name in ("stop.request", "flatten.request") if (state / name).exists()]
-        for name in removed:
-            (state / name).unlink()
-        print("已清除：" + ", ".join(removed) if removed else "没有需要清除的请求文件")
-        return 0
+    if command == "resolve" and not (found.yes and found.client_id):
+        print(
+            "resolve 只在你已经核对账户、确认交易所没有这张订单之后使用：\n"
+            "python -m btc_perp resolve --environment demo --client-id <编号> --yes"
+        )
+        return 2
+    if command == "resume":
+        return _resume(_state_dir(environment, str(found.state_dir)), environment)
     keys = _keys(environment)
     if keys is None:
         which = "STARQUANT_DEMO_API_KEY" if found.environment == DEMO else "STARQUANT_PROD_API_KEY"
         print(
             f"缺少 {which} 和对应的 SECRET。密钥只从环境变量读取，不会写进仓库。\n"
-            f"python -m btc_perp {found.command} --environment {found.environment}"
+            f"python -m btc_perp {command} --environment {found.environment}"
         )
         return 2
-    if found.command == "run" and found.max_notional_usdt <= 0:
+    if command == "run" and found.max_notional_usdt <= 0:
         print("增仓需要名义上限。\npython -m btc_perp run --environment demo --max-notional-usdt 200 --once")
         return 2
     state = _state_dir(environment, str(found.state_dir))
-    if not found.dry_run:
-        if found.command == "stop":
-            _request_file(state, "stop.request", "stop")
-        if found.command == "flatten":
-            _request_file(state, "flatten.request", "flatten")
+    uid = os.environ.get("STARQUANT_ACCOUNT_UID", "").strip()
+    transport = UrllibTransport()
+    if environment == PROD:
+        blocked = prod_uid_block(keys[0], keys[1], transport, uid)
+        if blocked:
+            print(blocked)
+            return 2
+    writes = command in CONTROL_COMMANDS and not found.dry_run
+    if writes and command in {"stop", "flatten"}:
+        _request_file(state, f"{command}.request", command, environment)
     try:
         store = Store(state, environment)
-        store.bind_credential(keys[0])
     except RuntimeError as exc:
         print(str(exc))
+        if writes and command in {"stop", "flatten"}:
+            print("已写入请求文件；正在运行的进程会在下一轮按它处理。")
         return 2
-    read_only = bool(found.dry_run or found.command in {"check", "takeover", "rearm"})
-    client = UsdMClient(environment, keys[0], keys[1], UrllibTransport(), read_only=read_only)
+    try:
+        store.bind_credential(keys[0], uid)
+    except RuntimeError as exc:
+        print(str(exc))
+        store.close()
+        return 2
+    read_only = bool(found.dry_run or command in {"check", "takeover", "rearm", "resolve"})
+    client = UsdMClient(environment, keys[0], keys[1], transport, read_only=read_only)
     cfg = load_config()
     limits = load_limits()
-    mode = str(found.command)
-    once = bool(found.once or found.command != "run")
-    if found.command == "run":
-        for name in ("stop.request", "flatten.request"):
-            if (state / name).exists():
-                print(f"存在 {name}，这一轮会按停机处理；确认后用 resume 清除")
-    if found.environment == PROD and found.command in {"run", "stop", "flatten"} and not found.dry_run:
+    if command == "resolve":
+        return _resolve(store, client, str(found.client_id))
+    digest = _config_digest(cfg, limits, float(found.max_notional_usdt))
+    if command == "run" and not found.dry_run:
+        previous = store.get_json("config_digest")
+        if previous not in (None, digest) and store.open_intents():
+            reason = "配置或名义上限和未完成订单创建时不同，先处理未完成订单（stop 或 resolve）再改配置"
+            print(reason)
+            _write_run_state(state, phase="not_started", reason=reason, wind_down="not_applicable")
+            store.close()
+            return 2
+        store.put_json("config_digest", digest)
+    if environment == PROD and writes:
         blocked = prod_permission_block(environment, keys[0], keys[1], client.transport)
         if blocked:
             print(blocked)
+            _write_run_state(state, phase="not_started", reason=blocked, wind_down="unverified")
             store.close()
             return 2
+    mode = command
+    once = bool(found.once or command != "run")
+    if command == "run":
+        for name in ("stop.request", "flatten.request"):
+            if (state / name).exists():
+                print(f"存在 {name}，这一轮会按停机处理；确认后用 resume 清除")
     stream: UserStream | None = None
-    if not found.dry_run and found.command in {"run", "stop", "flatten"}:
+    if writes:
         stream = UserStream(client, environment)
         stream.start()
     previous_term = signal.signal(signal.SIGTERM, _raise_interrupt)
-    report = None
+    if writes:
+        _write_run_state(state, phase="running", command=command, wind_down="pending", config=digest)
+    report: CycleReport | None = None
+    wind: CycleReport | None = None
     interrupted = False
+    failure = ""
     try:
         while True:
             now_ms = int(time.time() * 1000)
@@ -266,7 +348,8 @@ def _forward(found: argparse.Namespace) -> int:
                 f"position={report.position_qty} covered={str(report.covered).lower()} "
                 f"sent={','.join(report.sent) if report.sent else '-'} "
                 f"would={','.join(report.would_send) if report.would_send else '-'} "
-                f"settled={str(report.settled).lower()}"
+                f"settled={str(report.settled).lower()} "
+                f"remaining={'|'.join(report.remaining) if report.remaining else '-'}"
             )
             if once or (state / "stop.request").exists():
                 break
@@ -274,20 +357,75 @@ def _forward(found: argparse.Namespace) -> int:
             time.sleep(max(float(found.poll_seconds), 1.0))
     except (KeyboardInterrupt, _Interrupted):
         interrupted = True
+    except BaseException as exc:
+        failure = f"{type(exc).__name__}: {exc}"[:300]
+        raise
     finally:
         signal.signal(signal.SIGTERM, previous_term)
-        if interrupted and found.command == "run" and not found.dry_run:
-            report = _wind_down(found, store, client, cfg, limits) or report
+        if command == "run" and not found.dry_run:
+            wind = _wind_down(found, store, client, cfg, limits, report)
+        if writes:
+            _write_run_state(
+                state,
+                phase="stopped",
+                command=command,
+                interrupted=interrupted,
+                failure=failure,
+                wind_down=_wind_state(wind, report),
+            )
         if stream is not None:
             stream.stop()
         store.close()
+    final = wind or report
+    if final is None or interrupted:
+        return 2
+    if command == "run" and wind is not None and not wind.settled:
+        return 2
+    if command in {"stop", "flatten", "rearm"}:
+        return 0 if final.settled else 2
+    return 2 if final.frozen else 0
+
+
+def _resume(state: Path, environment: str) -> int:
+    removed: list[str] = []
+    for name in ("stop.request", "flatten.request"):
+        path = state / name
+        if not path.exists():
+            continue
+        try:
+            body = json.loads(path.read_text() or "{}")
+        except (OSError, ValueError):
+            body = {}
+        owner = body.get("environment") if isinstance(body, dict) else None
+        if owner not in (None, environment):
+            print(f"{name} 属于 {owner}，不会在 {environment} 下清除")
+            continue
+        path.unlink()
+        removed.append(name)
+    print("已清除：" + ", ".join(removed) if removed else "没有需要清除的请求文件")
+    print("resume 不解除账户、资金或回撤冻结；这些看 run/check 的输出，回撤基准用 rearm")
+    return 0
+
+
+def _resolve(store: Store, client: UsdMClient, client_id: str) -> int:
+    try:
+        ok, message = resolve_intent(store, client, client_id)
+    finally:
+        store.close()
+    print(message)
+    return 0 if ok else 2
+
+
+def _wind_state(wind: CycleReport | None, last: CycleReport | None) -> dict[str, object] | str:
+    report = wind or last
     if report is None:
-        return 2
-    if interrupted:
-        return 2
-    if found.command in {"stop", "flatten", "rearm"}:
-        return 0 if report.settled else 2
-    return 2 if report.frozen else 0
+        return "unverified"
+    return {
+        "verified": bool(report.settled),
+        "remaining": list(report.remaining),
+        "covered": report.covered,
+        "position": report.position_qty,
+    }
 
 
 def _one_cycle(
@@ -317,17 +455,22 @@ def _one_cycle(
             )
     minute: list[object] = []
     hourly: list[object] = []
+    if mode == "run":
+        # Only new risk needs market series. Stop, flatten and the read-only modes never wait for them.
+        try:
+            minute = _fetch_minutes(client, store.load_book().cursor_ms, now_ms)
+            hourly = client.klines("1h", max(cfg.entry_hours + 2, 100))
+        except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
+            print(f"行情读取失败，本轮停止新增风险：{exc}"[:300])
+    rows = hour_rows_from_klines(hourly, now_ms) if hourly else None
+    if mode == "run" and hourly and rows is None:
+        print("小时行情有缺口、重复或格式错误，本轮不产生新信号")
+    channels = completed_hour_channels(hourly, now_ms, cfg.entry_hours, cfg.exit_hours) if rows is not None else None
     try:
-        minute = _fetch_minutes(client, store.load_book().cursor_ms, now_ms)
-        hourly = client.klines("1h", max(cfg.entry_hours + 2, 100))
-    except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
-        # Market data is only needed for new risk. Protection and exits do not wait for it.
-        print(f"行情读取失败，本轮停止新增风险：{exc}"[:300])
-    channels = completed_hour_channels(hourly, now_ms, cfg.entry_hours, cfg.exit_hours)
-    hour_rows: list[tuple[int, float, float]] = []
-    for row in hourly:
-        if isinstance(row, list) and len(row) >= 7 and int(row[6]) <= now_ms:
-            hour_rows.append((int(row[0]), float(row[2]), float(row[3])))
+        bars = bars_from_kline_rows(minute, now_ms)
+    except ValueError as exc:
+        print(f"分钟行情格式错误，本轮不产生新信号：{exc}"[:300])
+        bars = ()
     return run_cycle(
         store,
         client,
@@ -336,9 +479,9 @@ def _one_cycle(
         max_notional=float(found.max_notional_usdt) if found.max_notional_usdt > 0 else None,
         cfg=cfg,
         now_ms=now_ms,
-        bars=bars_from_kline_rows(minute, now_ms),
+        bars=bars,
         channels=channels,
-        hour_rows=tuple(hour_rows),
+        hour_rows=rows,
         fx=float(found.fx) if found.fx > 0 else None,
         mode=mode,
         prod_enabled=prod_orders_allowed(),
@@ -348,16 +491,25 @@ def _one_cycle(
 
 
 def _wind_down(
-    found: argparse.Namespace, store: Store, client: UsdMClient, cfg: AccountConfig, limits: Limits
+    found: argparse.Namespace,
+    store: Store,
+    client: UsdMClient,
+    cfg: AccountConfig,
+    limits: Limits,
+    last: CycleReport | None,
 ) -> CycleReport | None:
-    """Ctrl-C or SIGTERM: cancel our unfilled entries, keep or restore protection, say what is left."""
+    """Every way out of ``run``: cancel our unfilled entries, keep or restore protection, say what is left."""
+    if last is not None and last.mode in {"stop", "flatten"} and last.settled:
+        return last
     try:
         report = _one_cycle(found, store, client, None, cfg, limits, "stop", int(time.time() * 1000))
-    except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
-        print(f"收尾失败，交易所上只剩最后确认的保护单：{exc}"[:300])
+    except Exception as exc:
+        print(f"收尾没有完成，交易所上只剩最后确认的状态，收尾未验证：{exc}"[:300])
         return None
+    left = "|".join(report.remaining) if report.remaining else "-"
     print(
-        f"收尾：settled={str(report.settled).lower()} covered={str(report.covered).lower()} position={report.position_qty}"
+        f"收尾：settled={str(report.settled).lower()} covered={str(report.covered).lower()} "
+        f"position={report.position_qty} remaining={left}"
     )
     return report
 

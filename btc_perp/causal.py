@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -18,6 +17,7 @@ import numpy as np
 
 from btc_perp.config import ROOT
 from btc_perp.measure import TARGET_CNY, YEARS
+from btc_perp.reportio import completion, publish
 
 TARGET_150 = 10000.0 * (2.5**YEARS)
 
@@ -256,14 +256,10 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
 
 
 def _write(report: dict[str, Any]) -> None:
-    """Publish a verified report atomically. Anything else goes beside it and replaces nothing."""
-    directory = ROOT / "reports"
-    directory.mkdir(parents=True, exist_ok=True)
+    """Save this run under its own id. The pointer moves only for a verified, complete run."""
     verified = bool(report.get("verified"))
-    path = directory / ("btc_account_causal.json" if verified else "btc_account_causal.unverified.json")
-    temporary = path.with_suffix(f".tmp{os.getpid()}")
-    try:
-        temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    report.setdefault(
+        "completion",
+        completion(data_validated=verified, path_complete=verified, economic_pass=bool(report.get("meets_150"))),
+    )
+    publish(ROOT / "reports" / "btc_account_causal.json", report)

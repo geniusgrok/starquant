@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +11,7 @@ import numpy as np
 
 from btc_perp.config import ROOT, AccountConfig
 from btc_perp.costs import START_CNY
+from btc_perp.reportio import completion, publish
 from btc_perp.tapes import Tape
 
 _CHANNELS: dict[tuple[str, int, int], tuple[np.ndarray, ...]] = {}
@@ -487,11 +486,6 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
 
 
 def _write(report: dict[str, Any]) -> None:
-    REPORT.parent.mkdir(parents=True, exist_ok=True)
-    path = REPORT if report.get("verified") else REPORT.with_suffix(".unverified.json")
-    temporary = path.with_suffix(f".tmp{os.getpid()}")
-    try:
-        temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    verified = bool(report.get("verified"))
+    report.setdefault("completion", completion(data_validated=verified, path_complete=verified, economic_pass=False))
+    publish(REPORT, report)

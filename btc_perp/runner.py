@@ -35,7 +35,7 @@ from btc_perp.machine import (
     triggered_with_position,
 )
 from btc_perp.model import Action, Book, Command, Intent, Limits, Snapshot
-from btc_perp.policy import _qty, decide, disaster_take, initial_stop
+from btc_perp.policy import _qty, clamp_to_liquidation, decide, disaster_take, initial_stop
 from btc_perp.store import Store
 
 DRIFT_MS = 2_000
@@ -740,7 +740,8 @@ def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int, store: 
         return
     if book.qty > previous + 1e-6:
         marker = book.swaps.get("unit_from", "")
-        if marker and marker != book.swaps.get("unit_counted", ""):
+        new_unit = bool(marker) and marker != book.swaps.get("unit_counted", "")
+        if new_unit:
             book.units += 1
             book.swaps["unit_counted"] = marker
             book.swaps["pre_qty"] = repr(previous)
@@ -750,6 +751,19 @@ def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int, store: 
         added = book.qty - pre_qty
         if marker and marker == book.swaps.get("unit_counted", "") and added > 1e-9 and pre_qty > 0:
             book.last_add = (snap.entry_price * book.qty - pre_entry * pre_qty) / added
+        if new_unit and book.last_add > 0:
+            _breakeven_after_add(book, cfg)
+
+
+def _breakeven_after_add(book: Book, cfg: AccountConfig) -> None:
+    """The research kernel lifts the stop to the add fill divided by one add step, and counts the fill as an extreme."""
+    if book.side > 0:
+        book.extreme = max(book.extreme, book.last_add)
+        book.stop = max(book.stop, book.last_add / (1.0 + cfg.add_step))
+    elif book.side < 0:
+        book.extreme = book.last_add if book.extreme == 0.0 else min(book.extreme, book.last_add)
+        breakeven = book.last_add / (1.0 - cfg.add_step)
+        book.stop = breakeven if book.stop <= 0 else min(book.stop, breakeven)
 
 
 def _fill_time(store: Store, snap: Snapshot, now_ms: int) -> int:
@@ -773,6 +787,31 @@ def _may_send(action: str, allow: str) -> bool:
     if allow == "all":
         return True
     return allow == "reduce" and action in _RISK_DOWN_ACTIONS
+
+
+def resolve_intent(store: Store, venue: Venue, client_id: str) -> tuple[bool, str]:
+    """Let go of an unresolved order, but only when the exchange itself says it does not exist.
+
+    An operator asks for this after checking the account. A fresh answer that
+    the order exists is recorded as the fact it is, and nothing is released.
+    """
+    item = _reload(store, client_id)
+    if item is None:
+        return False, f"没有这个意图 {client_id}"
+    if item.phase not in {"planned", "sent", "unknown"}:
+        return False, f"意图 {client_id} 已经是 {item.phase}，不需要处理"
+    try:
+        body = venue.query_algo(client_id) if _is_algo(item) else venue.query_order(client_id)
+    except (UnknownExecution, WriteRefused, OSError, RuntimeError):
+        return False, "现在查询失败，不能放行；稍后再试"
+    outcome = classify(body)
+    if outcome.phase != "missing":
+        _record_outcome(store, item, outcome, "resolve-found")
+        return False, f"交易所查得到这张单（{outcome.phase}），已按事实更新，没有放行"
+    store.mark_intent(client_id, "canceled", "operator-resolved-not-sent")
+    store.mark_absorbed(client_id)
+    store.append_event("resolve", client_id)
+    return True, f"交易所确认没有 {client_id}，已按未发送处理；仓位是否一致由下一轮归因核对"
 
 
 def _record_outcome(store: Store, intent: Intent, outcome: Outcome, note: str = "") -> None:
@@ -1182,7 +1221,8 @@ def _keep_protected(
     side = snap.position_side
     entry = snap.entry_price
     if book.side == side and book.stop > 0:
-        stop_source = book.stop
+        stop_source = clamp_to_liquidation(side, book.stop, snap.liquidation_price)
+        book.stop = stop_source
     else:
         stop_source = initial_stop(side, entry, cfg.stop, snap.liquidation_price, snap.mark_price)
         if book.side == side:

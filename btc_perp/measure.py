@@ -16,7 +16,6 @@ at a time. The venue mirrors the size change, including a close.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,6 +23,7 @@ import numpy as np
 
 from btc_perp.config import ROOT, AccountConfig, load_config
 from btc_perp.exchange import SimExchange
+from btc_perp.reportio import completion, publish
 from btc_perp.session import Clock, Intent, ManualClock, Session
 
 YEARS = 2454 / 365.25
@@ -364,6 +364,18 @@ def _prepare(cfg: AccountConfig) -> tuple[Any, ...]:
 
 def run_official(write_report: bool = True) -> dict[str, Any]:
     cfg = load_config()
+    problems = _tape_problems()
+    if problems:
+        refused: dict[str, Any] = {
+            "verified": False,
+            "passed": False,
+            "reason": "行情校验没有通过，这次没有测量结果",
+            "problems": problems,
+            "completion": completion(data_validated=False, path_complete=False, economic_pass=False),
+        }
+        if write_report:
+            publish(ROOT / "reports" / "btc_account_measure.json", refused)
+        return refused
     o, h, low, c, qv, fund, fx, days, minute, hh, ll, xh, xl, gate = _prepare(cfg)
     walked = walk_tape(cfg, o, h, low, c, qv, fund, fx, hh, ll, xh, xl, gate)
     end = walked.end
@@ -379,8 +391,11 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
         yearly[str(year)] = {"equity_cny": equity, "return": equity / prev - 1.0}
         prev = equity
     passed = bool(cagr >= 1.0 and ratio > 0.5 and end >= TARGET_CNY and walked.n_long > 0 and walked.n_short > 0)
+    meets_150 = bool(cagr >= 1.5 and ratio > 0.5 and walked.n_long > 0 and walked.n_short > 0)
     report: dict[str, Any] = {
+        "verified": True,
         "passed": passed,
+        "completion": completion(data_validated=True, path_complete=True, economic_pass=meets_150),
         "start_cny": cfg.start_cny,
         "end_cny": float(end),
         "target_cny": TARGET_CNY,
@@ -411,7 +426,16 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
         },
     }
     if write_report:
-        path = ROOT / "reports" / "btc_account_measure.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(report, indent=2) + "\n")
+        publish(ROOT / "reports" / "btc_account_measure.json", report)
     return report
+
+
+def _tape_problems() -> list[str]:
+    """The same minute-tape checks the causal replay makes, before any number is produced."""
+    from btc_perp.causal import validate_minutes
+
+    path = ROOT / "data" / "btcusdt_1m.npz"
+    if not path.exists():
+        return ["data/btcusdt_1m.npz 不存在"]
+    raw = np.load(path)
+    return list(validate_minutes(raw["ts"], raw["o"], raw["h"], raw["l"], raw["c"], raw["qv"]))

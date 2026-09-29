@@ -1,5 +1,13 @@
 {
+  "verified": true,
   "passed": true,
+  "completion": {
+    "data_validated": true,
+    "path_complete": true,
+    "execution_closed": false,
+    "economic_pass": false,
+    "note": "回放里成交是模型假设，没有真实执行，所以 execution_closed 恒为 false"
+  },
   "start_cny": 10000.0,
   "end_cny": 2029866.4296051874,
   "target_cny": 1053236.6589794934,
@@ -53,5 +61,6 @@
     "count": 706752,
     "polls": 42405120,
     "closes": 92
-  }
+  },
+  "run_id": "20260929T072516Z-98af98cd"
 }

@@ -9,8 +9,6 @@ do, and whether the drawdown lock ended a run.
 from __future__ import annotations
 
 import dataclasses
-import json
-import os
 from typing import Any
 
 import numpy as np
@@ -18,6 +16,7 @@ import numpy as np
 from btc_perp.causal import TARGET_150, _provenance, _sha256, lockout, validate_minutes
 from btc_perp.config import ROOT, AccountConfig, load_config
 from btc_perp.measure import TARGET_CNY, YEARS
+from btc_perp.reportio import completion, publish
 
 STOP_EXTRA = (0.001, 0.002, 0.005, 0.01)
 TAKER_STRESS = 0.0005
@@ -219,11 +218,6 @@ def run_robustness(write_report: bool = True) -> dict[str, Any]:
 
 
 def _write(report: dict[str, Any]) -> None:
-    REPORT.parent.mkdir(parents=True, exist_ok=True)
-    path = REPORT if report.get("verified") else REPORT.with_suffix(".unverified.json")
-    temporary = path.with_suffix(f".tmp{os.getpid()}")
-    try:
-        temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    verified = bool(report.get("verified"))
+    report.setdefault("completion", completion(data_validated=verified, path_complete=verified, economic_pass=False))
+    publish(REPORT, report)
