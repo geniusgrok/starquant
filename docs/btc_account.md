@@ -182,3 +182,7 @@ USDT 按美元折人民币，没有单独记脱锚。
 ## CI
 
 推送和 pull request 走 `.github/workflows/ci.yml`：密钥全历史扫描、格式、lint、类型、离线测试。账户账本的合成用例在 `tests/test_btc_account.py`，不依赖那份 1 分钟行情。全样本重放仍只在本地有 `data/btcusdt_1m.npz` 时运行。
+
+## 报告文件
+
+每次 `measure`、`causal`、`robustness`、`generalization` 运行都会生成唯一的 `run_id`，完整副本放在 `reports/runs/`（不入库）。`reports/btc_account_*.json` 是指针：只有行情带核验通过、路径走完时才被替换，否则结果写到同名的 `.unverified.json`，不覆盖已核验的报告。报告里的 `completion` 分开写数据已核验、路径完整、执行已闭环、经济通过四件事；回放里的成交是模型假设，`execution_closed` 恒为 false。

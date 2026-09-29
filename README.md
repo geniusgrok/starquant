@@ -44,9 +44,10 @@ python -m btc_perp causal
 python -m btc_perp check --environment demo
 python -m btc_perp run --environment demo --max-notional-usdt 200 --once
 python -m btc_perp stop --environment demo
+python -m btc_perp resolve --environment demo --client-id <编号> --yes   # 人工确认后关闭一张查不到的入场单
 ```
 
-Demo 密钥用 `STARQUANT_DEMO_API_KEY` 和 `STARQUANT_DEMO_API_SECRET`。生产还要 `STARQUANT_ALLOW_PROD_ORDERS=yes` 和填好的 [config/limits.yaml](config/limits.yaml)。细则在 [docs/forward.md](docs/forward.md)，门槛结论在 [docs/forward_audit.md](docs/forward_audit.md)。
+Demo 密钥用 `STARQUANT_DEMO_API_KEY` 和 `STARQUANT_DEMO_API_SECRET`。生产还要 `STARQUANT_ALLOW_PROD_ORDERS=yes`、`STARQUANT_ACCOUNT_UID`（账户 UID，启动时核对）和填好的 [config/limits.yaml](config/limits.yaml)。细则在 [docs/forward.md](docs/forward.md)，门槛结论在 [docs/forward_audit.md](docs/forward_audit.md)。
 
 ## 目录
 

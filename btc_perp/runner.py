@@ -196,10 +196,6 @@ def classify(body: dict[str, object], *, cancel: bool = False) -> Outcome:
     return Outcome(phase, executed, order_id)
 
 
-def interpret_body(body: dict[str, object], *, cancel: bool = False) -> str:
-    return classify(body, cancel=cancel).phase
-
-
 def _float(value: object) -> float:
     try:
         number = float(value)  # type: ignore[arg-type]
@@ -1712,12 +1708,6 @@ def _cancel(store: Store, venue: Venue, command: Command, sent: list[str], alert
     if known is not None:
         _record_outcome(store, known, outcome, "cancel")
     store.append_event("cancel", command.client_id)
-
-
-def _blocking_entry(store: Store) -> bool:
-    return any(
-        item.phase in OPEN_PHASES and item.action in {"enter", "add", "reverse"} for item in store.intents(_OPEN)
-    )
 
 
 def _blocking_reduce(store: Store) -> bool:
