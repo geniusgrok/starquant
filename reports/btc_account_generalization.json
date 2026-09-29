@@ -1,0 +1,3777 @@
+{
+  "verified": true,
+  "purpose": "Does the published BTC result carry to data it was not tuned on, and does a simpler model?",
+  "tapes": {
+    "btc": {
+      "hours": 58896,
+      "years": 6.718685831622176,
+      "note": "official funding; 2026-09 funding is a premium estimate and one slot is missing",
+      "zero_volume_minutes": 369,
+      "zero_volume_share": 0.00010442135289323553,
+      "first_ts": 1577836800000,
+      "last_ts": 1789862340000
+    },
+    "eth": {
+      "hours": 58896,
+      "years": 6.718685831622176,
+      "note": "official funding; 57 of 7362 slots missing and filled with zero",
+      "zero_volume_minutes": 302,
+      "zero_volume_share": 8.546137824866431e-05,
+      "first_ts": 1577836800000,
+      "last_ts": 1789862340000
+    },
+    "sol": {
+      "hours": 52320,
+      "years": 5.968514715947981,
+      "note": "official funding; 57 of 6540 slots missing and filled with zero",
+      "zero_volume_minutes": 7647,
+      "zero_volume_share": 0.0024359709480122325,
+      "first_ts": 1601510400000,
+      "last_ts": 1789862340000
+    },
+    "btc_spot_2017": {
+      "hours": 20448,
+      "years": 2.3326488706365502,
+      "note": "no perpetual funding on a spot tape; funding is zero; USD units (fx = 1)",
+      "zero_volume_minutes": 44575,
+      "zero_volume_share": 0.03633199660928534,
+      "first_ts": 1504224000000,
+      "last_ts": 1577836740000
+    }
+  },
+  "side_by_side": {
+    "btc": {
+      "baseline_zero_tune": {
+        "end_cny": 2039228.742932259,
+        "cagr": 1.206671820181076,
+        "min_equity_over_peak": 0.5280011467046337,
+        "trades": 92,
+        "n_stop": 80,
+        "locked_at_end": false,
+        "flat_days_at_end": 15.434027777777779
+      },
+      "candidate_pre_committed": {
+        "end_cny": 13127.527430272554,
+        "cagr": 0.04133432998486164,
+        "min_equity_over_peak": 0.4125857130565725,
+        "n_long": 76,
+        "n_short": 73,
+        "n_stop": 92,
+        "n_flatten_or_flip": 57,
+        "turnover_usdt": 408949.5613617714
+      }
+    },
+    "eth": {
+      "baseline_zero_tune": {
+        "end_cny": 11181.139024499053,
+        "cagr": 0.01675565586744021,
+        "min_equity_over_peak": 0.4760191090565326,
+        "trades": 15,
+        "n_stop": 15,
+        "locked_at_end": true,
+        "flat_days_at_end": 1461.392361111111
+      },
+      "candidate_pre_committed": {
+        "end_cny": 32428.770214735905,
+        "cagr": 0.1913687191820892,
+        "min_equity_over_peak": 0.5672057455580926,
+        "n_long": 79,
+        "n_short": 62,
+        "n_stop": 88,
+        "n_flatten_or_flip": 52,
+        "turnover_usdt": 410347.4826249423
+      }
+    },
+    "sol": {
+      "baseline_zero_tune": {
+        "end_cny": 8540.454891504007,
+        "cagr": -0.02608753364359595,
+        "min_equity_over_peak": 0.4705042047448792,
+        "trades": 16,
+        "n_stop": 16,
+        "locked_at_end": true,
+        "flat_days_at_end": 1111.9694444444444
+      },
+      "candidate_pre_committed": {
+        "end_cny": 15330.888270523632,
+        "cagr": 0.07421456884960786,
+        "min_equity_over_peak": 0.41148621310082506,
+        "n_long": 75,
+        "n_short": 72,
+        "n_stop": 91,
+        "n_flatten_or_flip": 55,
+        "turnover_usdt": 219720.91646160765
+      }
+    },
+    "btc_spot_2017": {
+      "baseline_zero_tune": {
+        "end_cny": 9635.455379381592,
+        "cagr": -0.01579384500359926,
+        "min_equity_over_peak": 0.4959052120613489,
+        "trades": 11,
+        "n_stop": 10,
+        "locked_at_end": true,
+        "flat_days_at_end": 697.4527777777778
+      },
+      "candidate_pre_committed": {
+        "end_cny": 21979.534109411954,
+        "cagr": 0.4015944208075706,
+        "min_equity_over_peak": 0.7192075326329488,
+        "n_long": 27,
+        "n_short": 21,
+        "n_stop": 31,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 747315.4365930816
+      }
+    }
+  },
+  "candidate_config": {
+    "lookback_days": [
+      20,
+      40,
+      60,
+      90
+    ],
+    "exit_fraction": 0.25,
+    "target_vol": 0.5,
+    "atr_mult": 3.0,
+    "max_leverage": 3.0,
+    "leverage": 5.0,
+    "vol_days": 30,
+    "atr_days": 14,
+    "dd_window_days": 180,
+    "dd_soft": 0.85,
+    "dd_floor": 0.55,
+    "band": 0.2,
+    "cooldown_hours": 24,
+    "flatten_ratio": 0.5
+  },
+  "grid": {
+    "size": 36,
+    "space": [
+      {
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 5.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 2.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 3.0
+      },
+      {
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      }
+    ],
+    "rows": [
+      {
+        "end_cny": 21682.33818526877,
+        "cagr": 0.12208452727271801,
+        "min_equity_over_peak": 0.5665078791023563,
+        "n_long": 148,
+        "n_short": 132,
+        "n_stop": 177,
+        "n_flatten_or_flip": 102,
+        "turnover_usdt": 710909.1543742759,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.28163032587516085
+      },
+      {
+        "end_cny": 21100.86578170003,
+        "cagr": 0.11755372097538963,
+        "min_equity_over_peak": 0.7358073615350401,
+        "n_long": 150,
+        "n_short": 128,
+        "n_stop": 173,
+        "n_flatten_or_flip": 104,
+        "turnover_usdt": 445015.3061139191,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.44495456670712985
+      },
+      {
+        "end_cny": 11254.36350903353,
+        "cagr": 0.019996335209231164,
+        "min_equity_over_peak": 0.5562261095889778,
+        "n_long": 145,
+        "n_short": 114,
+        "n_stop": 171,
+        "n_flatten_or_flip": 87,
+        "turnover_usdt": 201403.34495763827,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.04505973794607567
+      },
+      {
+        "end_cny": 22337.072820232625,
+        "cagr": 0.41132350473909174,
+        "min_equity_over_peak": 0.8652457264329532,
+        "n_long": 51,
+        "n_short": 36,
+        "n_stop": 61,
+        "n_flatten_or_flip": 26,
+        "turnover_usdt": 904711.0748318128,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 3.052396735562069
+      },
+      {
+        "end_cny": 15459.885221030412,
+        "cagr": 0.06699209394913552,
+        "min_equity_over_peak": 0.5608416694736562,
+        "n_long": 96,
+        "n_short": 92,
+        "n_stop": 70,
+        "n_flatten_or_flip": 117,
+        "turnover_usdt": 369346.31981030747,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.1525465630330719
+      },
+      {
+        "end_cny": 23441.515686890718,
+        "cagr": 0.13518897180853884,
+        "min_equity_over_peak": 0.7278623928480801,
+        "n_long": 101,
+        "n_short": 87,
+        "n_stop": 62,
+        "n_flatten_or_flip": 125,
+        "turnover_usdt": 314360.5227045437,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.49676696000736875
+      },
+      {
+        "end_cny": 19109.58780879776,
+        "cagr": 0.11460887673205655,
+        "min_equity_over_peak": 0.6028742644013381,
+        "n_long": 91,
+        "n_short": 85,
+        "n_stop": 61,
+        "n_flatten_or_flip": 114,
+        "turnover_usdt": 212071.87227374592,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.28859594445392756
+      },
+      {
+        "end_cny": 19393.476736996257,
+        "cagr": 0.32836424374500295,
+        "min_equity_over_peak": 0.8219466383521371,
+        "n_long": 35,
+        "n_short": 26,
+        "n_stop": 25,
+        "n_flatten_or_flip": 36,
+        "turnover_usdt": 599897.4616512009,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 1.8441900827147015
+      },
+      {
+        "end_cny": 24823.85435706193,
+        "cagr": 0.1449111720571561,
+        "min_equity_over_peak": 0.6027016145104004,
+        "n_long": 75,
+        "n_short": 77,
+        "n_stop": 9,
+        "n_flatten_or_flip": 142,
+        "turnover_usdt": 417224.482535893,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.36474140683602035
+      },
+      {
+        "end_cny": 22251.229374575774,
+        "cagr": 0.1264182944611798,
+        "min_equity_over_peak": 0.7219235495353314,
+        "n_long": 77,
+        "n_short": 76,
+        "n_stop": 10,
+        "n_flatten_or_flip": 142,
+        "turnover_usdt": 236147.2300789614,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.4546170459596041
+      },
+      {
+        "end_cny": 22048.0238329551,
+        "cagr": 0.1416426121344272,
+        "min_equity_over_peak": 0.6242592226595842,
+        "n_long": 71,
+        "n_short": 76,
+        "n_stop": 20,
+        "n_flatten_or_flip": 126,
+        "turnover_usdt": 213490.08435764178,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.3769689655112972
+      },
+      {
+        "end_cny": 17270.470757283696,
+        "cagr": 0.2639550565226758,
+        "min_equity_over_peak": 0.7638155500940873,
+        "n_long": 30,
+        "n_short": 23,
+        "n_stop": 11,
+        "n_flatten_or_flip": 42,
+        "turnover_usdt": 463468.5803472938,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 1.1175801651117419
+      },
+      {
+        "end_cny": 30728.058482798187,
+        "cagr": 0.18185462706306588,
+        "min_equity_over_peak": 0.44019758138005016,
+        "n_long": 148,
+        "n_short": 133,
+        "n_stop": 178,
+        "n_flatten_or_flip": 102,
+        "turnover_usdt": 1582865.5861570064,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.3248550220832952
+      },
+      {
+        "end_cny": 24600.585907688026,
+        "cagr": 0.14337261348320807,
+        "min_equity_over_peak": 0.5878057673485689,
+        "n_long": 150,
+        "n_short": 129,
+        "n_stop": 173,
+        "n_flatten_or_flip": 105,
+        "turnover_usdt": 802314.4798928105,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.347827800891261
+      },
+      {
+        "end_cny": 12048.851299880693,
+        "cagr": 0.031720615537162766,
+        "min_equity_over_peak": 0.422892709816329,
+        "n_long": 151,
+        "n_short": 119,
+        "n_stop": 176,
+        "n_flatten_or_flip": 93,
+        "turnover_usdt": 322998.0312947701,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.054964849823795014
+      },
+      {
+        "end_cny": 33529.45420985539,
+        "cagr": 0.6797662597266665,
+        "min_equity_over_peak": 0.7666652739629451,
+        "n_long": 51,
+        "n_short": 36,
+        "n_stop": 61,
+        "n_flatten_or_flip": 26,
+        "turnover_usdt": 2005491.5860570588,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 2.913266581754813
+      },
+      {
+        "end_cny": 15341.009137405374,
+        "cagr": 0.06576693982401793,
+        "min_equity_over_peak": 0.41090834829524203,
+        "n_long": 96,
+        "n_short": 93,
+        "n_stop": 71,
+        "n_flatten_or_flip": 117,
+        "turnover_usdt": 600302.1934265888,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.11164126945899945
+      },
+      {
+        "end_cny": 26782.599753981776,
+        "cagr": 0.15792655731985028,
+        "min_equity_over_peak": 0.5703836968509026,
+        "n_long": 101,
+        "n_short": 87,
+        "n_stop": 62,
+        "n_flatten_or_flip": 125,
+        "turnover_usdt": 550713.5630081628,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.3675990789042338
+      },
+      {
+        "end_cny": 23915.414728806452,
+        "cagr": 0.15729991593016313,
+        "min_equity_over_peak": 0.4444424151164618,
+        "n_long": 93,
+        "n_short": 88,
+        "n_stop": 63,
+        "n_flatten_or_flip": 117,
+        "turnover_usdt": 394228.274307455,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.2831388144275593
+      },
+      {
+        "end_cny": 27184.843388761165,
+        "cagr": 0.535305094006973,
+        "min_equity_over_peak": 0.7131095793076283,
+        "n_long": 35,
+        "n_short": 26,
+        "n_stop": 25,
+        "n_flatten_or_flip": 36,
+        "turnover_usdt": 1186777.1811112908,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 1.8658869568216523
+      },
+      {
+        "end_cny": 32163.19477594159,
+        "cagr": 0.189911456086721,
+        "min_equity_over_peak": 0.44524283897101913,
+        "n_long": 75,
+        "n_short": 78,
+        "n_stop": 9,
+        "n_flatten_or_flip": 143,
+        "turnover_usdt": 841442.5004095245,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.3423325905959777
+      },
+      {
+        "end_cny": 25582.92471441132,
+        "cagr": 0.15005536456303648,
+        "min_equity_over_peak": 0.5754966912384055,
+        "n_long": 78,
+        "n_short": 77,
+        "n_stop": 9,
+        "n_flatten_or_flip": 145,
+        "turnover_usdt": 398741.2340382096,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.3534845582259269
+      },
+      {
+        "end_cny": 29507.26880992185,
+        "cagr": 0.1987666881338115,
+        "min_equity_over_peak": 0.49804080703521636,
+        "n_long": 72,
+        "n_short": 81,
+        "n_stop": 25,
+        "n_flatten_or_flip": 127,
+        "turnover_usdt": 424230.4639348081,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.3959817668838999
+      },
+      {
+        "end_cny": 21369.416380917282,
+        "cagr": 0.3847812830930206,
+        "min_equity_over_peak": 0.6509345687693411,
+        "n_long": 30,
+        "n_short": 23,
+        "n_stop": 11,
+        "n_flatten_or_flip": 42,
+        "turnover_usdt": 768401.2403198483,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 1.1023185015383579
+      },
+      {
+        "end_cny": 41641.91801841111,
+        "cagr": 0.23654550998846413,
+        "min_equity_over_peak": 0.3416225845702297,
+        "n_long": 148,
+        "n_short": 133,
+        "n_stop": 178,
+        "n_flatten_or_flip": 102,
+        "turnover_usdt": 2921571.51489818,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.3592855776106078
+      },
+      {
+        "end_cny": 17830.95529349692,
+        "cagr": 0.08989456081201519,
+        "min_equity_over_peak": 0.3748425517112172,
+        "n_long": 150,
+        "n_short": 129,
+        "n_stop": 173,
+        "n_flatten_or_flip": 105,
+        "turnover_usdt": 992647.4236057727,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.1437950728381783
+      },
+      {
+        "end_cny": 8598.00621091951,
+        "cagr": -0.024991022339341806,
+        "min_equity_over_peak": 0.27689887195671975,
+        "n_long": 150,
+        "n_short": 120,
+        "n_stop": 176,
+        "n_flatten_or_flip": 93,
+        "turnover_usdt": 421135.5175511937,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": -0.03456089524706979
+      },
+      {
+        "end_cny": 47268.6745821831,
+        "cagr": 0.9462011597221431,
+        "min_equity_over_peak": 0.5824103285427219,
+        "n_long": 51,
+        "n_short": 36,
+        "n_stop": 61,
+        "n_flatten_or_flip": 26,
+        "turnover_usdt": 3880390.7691094736,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 2.2658634166409097
+      },
+      {
+        "end_cny": 18428.218093670886,
+        "cagr": 0.0952523087603998,
+        "min_equity_over_peak": 0.2658335611930961,
+        "n_long": 96,
+        "n_short": 93,
+        "n_stop": 71,
+        "n_flatten_or_flip": 117,
+        "turnover_usdt": 1081672.3023816114,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.12974211803415397
+      },
+      {
+        "end_cny": 17048.57326555936,
+        "cagr": 0.0826401542629489,
+        "min_equity_over_peak": 0.3523015804684501,
+        "n_long": 101,
+        "n_short": 88,
+        "n_stop": 62,
+        "n_flatten_or_flip": 126,
+        "turnover_usdt": 592681.1022812884,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.12759048311823687
+      },
+      {
+        "end_cny": 33676.85522362593,
+        "cagr": 0.22560978828111589,
+        "min_equity_over_peak": 0.30879673111242745,
+        "n_long": 95,
+        "n_short": 89,
+        "n_stop": 64,
+        "n_flatten_or_flip": 119,
+        "turnover_usdt": 664259.072304238,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.32640150652674704
+      },
+      {
+        "end_cny": 32197.88569182605,
+        "cagr": 0.6508368561464533,
+        "min_equity_over_peak": 0.5635910978680228,
+        "n_long": 35,
+        "n_short": 26,
+        "n_stop": 25,
+        "n_flatten_or_flip": 36,
+        "turnover_usdt": 1824137.7537023441,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 1.4913464252606594
+      },
+      {
+        "end_cny": 52678.95448645908,
+        "cagr": 0.2805822708488994,
+        "min_equity_over_peak": 0.35522682845424486,
+        "n_long": 75,
+        "n_short": 78,
+        "n_stop": 9,
+        "n_flatten_or_flip": 143,
+        "turnover_usdt": 1740013.5110701555,
+        "tape": "btc",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.43516430774599685
+      },
+      {
+        "end_cny": 23688.897756402144,
+        "cagr": 0.13696407709167313,
+        "min_equity_over_peak": 0.4155495120068043,
+        "n_long": 69,
+        "n_short": 73,
+        "n_stop": 7,
+        "n_flatten_or_flip": 134,
+        "turnover_usdt": 608885.4071855951,
+        "tape": "eth",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.23434675803242325
+      },
+      {
+        "end_cny": 36542.14967707076,
+        "cagr": 0.24249264526937409,
+        "min_equity_over_peak": 0.3724837085356665,
+        "n_long": 73,
+        "n_short": 84,
+        "n_stop": 26,
+        "n_flatten_or_flip": 130,
+        "turnover_usdt": 722682.7869050662,
+        "tape": "sol",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.3864324298314361
+      },
+      {
+        "end_cny": 24732.16062927737,
+        "cagr": 0.4743151782959003,
+        "min_equity_over_peak": 0.5122415147786833,
+        "n_long": 30,
+        "n_short": 23,
+        "n_stop": 11,
+        "n_flatten_or_flip": 42,
+        "turnover_usdt": 1073034.8248070728,
+        "tape": "btc_spot_2017",
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.9724385995677418
+      },
+      {
+        "end_cny": 14354.414194316072,
+        "cagr": 0.05527464363316148,
+        "min_equity_over_peak": 0.5531655253000926,
+        "n_long": 132,
+        "n_short": 109,
+        "n_stop": 194,
+        "n_flatten_or_flip": 47,
+        "turnover_usdt": 446748.1962033487,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.12370272833197068
+      },
+      {
+        "end_cny": 22583.550429385832,
+        "cagr": 0.12890643749386932,
+        "min_equity_over_peak": 0.7382745943293099,
+        "n_long": 131,
+        "n_short": 99,
+        "n_stop": 192,
+        "n_flatten_or_flip": 37,
+        "turnover_usdt": 358996.2974204125,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.4925255045972221
+      },
+      {
+        "end_cny": 9972.480943780782,
+        "cagr": -0.0004615994335089857,
+        "min_equity_over_peak": 0.527555208570325,
+        "n_long": 126,
+        "n_short": 95,
+        "n_stop": 187,
+        "n_flatten_or_flip": 33,
+        "turnover_usdt": 159531.02508840847,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": -0.000977044179304274
+      },
+      {
+        "end_cny": 20169.82916992902,
+        "cagr": 0.35090554206035063,
+        "min_equity_over_peak": 0.8057999891909078,
+        "n_long": 43,
+        "n_short": 33,
+        "n_stop": 64,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 677649.4337502118,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 1.80692854031459
+      },
+      {
+        "end_cny": 13365.876520003067,
+        "cagr": 0.04412690586107404,
+        "min_equity_over_peak": 0.5883944985529178,
+        "n_long": 75,
+        "n_short": 73,
+        "n_stop": 92,
+        "n_flatten_or_flip": 56,
+        "turnover_usdt": 244887.64555056457,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.10720679316952032
+      },
+      {
+        "end_cny": 22867.14011929009,
+        "cagr": 0.13100519656867204,
+        "min_equity_over_peak": 0.7219961482338159,
+        "n_long": 79,
+        "n_short": 62,
+        "n_stop": 88,
+        "n_flatten_or_flip": 52,
+        "turnover_usdt": 209549.25204634445,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.471235185183169
+      },
+      {
+        "end_cny": 14551.337852685201,
+        "cagr": 0.06486293927870967,
+        "min_equity_over_peak": 0.5841756234154755,
+        "n_long": 73,
+        "n_short": 65,
+        "n_stop": 87,
+        "n_flatten_or_flip": 50,
+        "turnover_usdt": 130264.78560267758,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.15598638014316843
+      },
+      {
+        "end_cny": 18214.996863431814,
+        "cagr": 0.29313903584862033,
+        "min_equity_over_peak": 0.8199550726782582,
+        "n_long": 27,
+        "n_short": 21,
+        "n_stop": 31,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 408583.7638734192,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 1.6281438205963914
+      },
+      {
+        "end_cny": 18558.036841433102,
+        "cagr": 0.09639725627992624,
+        "min_equity_over_peak": 0.5894061711175284,
+        "n_long": 43,
+        "n_short": 45,
+        "n_stop": 20,
+        "n_flatten_or_flip": 68,
+        "turnover_usdt": 205540.60310417908,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.2347752194481203
+      },
+      {
+        "end_cny": 23780.317465126725,
+        "cagr": 0.137616073521325,
+        "min_equity_over_peak": 0.6971386411070462,
+        "n_long": 44,
+        "n_short": 46,
+        "n_stop": 23,
+        "n_flatten_or_flip": 66,
+        "turnover_usdt": 140052.13889908147,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.45438637013434685
+      },
+      {
+        "end_cny": 22239.649202343033,
+        "cagr": 0.14329907471297298,
+        "min_equity_over_peak": 0.6057143232461103,
+        "n_long": 41,
+        "n_short": 41,
+        "n_stop": 27,
+        "n_flatten_or_flip": 54,
+        "turnover_usdt": 132347.08633474525,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.3634397168386597
+      },
+      {
+        "end_cny": 16013.37173239977,
+        "cagr": 0.2236612127102755,
+        "min_equity_over_peak": 0.7697685857563688,
+        "n_long": 18,
+        "n_short": 14,
+        "n_stop": 15,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 254462.4163529303,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.9714626192305662
+      },
+      {
+        "end_cny": 17550.521830922236,
+        "cagr": 0.08732605311725061,
+        "min_equity_over_peak": 0.4263530228707654,
+        "n_long": 133,
+        "n_short": 109,
+        "n_stop": 195,
+        "n_flatten_or_flip": 47,
+        "turnover_usdt": 905474.1445436407,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.1522296056614228
+      },
+      {
+        "end_cny": 30133.553515198022,
+        "cagr": 0.17842296673362634,
+        "min_equity_over_peak": 0.5834072481761424,
+        "n_long": 131,
+        "n_short": 99,
+        "n_stop": 192,
+        "n_flatten_or_flip": 37,
+        "turnover_usdt": 707018.3475738785,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.42829109712659275
+      },
+      {
+        "end_cny": 8037.949482112816,
+        "cagr": -0.035932412264131575,
+        "min_equity_over_peak": 0.35407759944025935,
+        "n_long": 130,
+        "n_short": 101,
+        "n_stop": 194,
+        "n_flatten_or_flip": 36,
+        "turnover_usdt": 234221.88110587178,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": -0.05562961159574807
+      },
+      {
+        "end_cny": 29204.61045800154,
+        "cagr": 0.5832070375462675,
+        "min_equity_over_peak": 0.6916213028385018,
+        "n_long": 43,
+        "n_short": 33,
+        "n_stop": 64,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 1450834.9199192163,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 1.891204038782359
+      },
+      {
+        "end_cny": 13127.527430272554,
+        "cagr": 0.04133432998486164,
+        "min_equity_over_peak": 0.4125857130565725,
+        "n_long": 76,
+        "n_short": 73,
+        "n_stop": 92,
+        "n_flatten_or_flip": 57,
+        "turnover_usdt": 408949.5613617714,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.07036657245764683
+      },
+      {
+        "end_cny": 32428.770214735905,
+        "cagr": 0.1913687191820892,
+        "min_equity_over_peak": 0.5672057455580926,
+        "n_long": 79,
+        "n_short": 62,
+        "n_stop": 88,
+        "n_flatten_or_flip": 52,
+        "turnover_usdt": 410347.4826249423,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.4421701933840621
+      },
+      {
+        "end_cny": 15330.888270523632,
+        "cagr": 0.07421456884960786,
+        "min_equity_over_peak": 0.41148621310082506,
+        "n_long": 75,
+        "n_short": 72,
+        "n_stop": 91,
+        "n_flatten_or_flip": 55,
+        "turnover_usdt": 219720.91646160765,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.12610506414919792
+      },
+      {
+        "end_cny": 21979.534109411954,
+        "cagr": 0.4015944208075706,
+        "min_equity_over_peak": 0.7192075326329488,
+        "n_long": 27,
+        "n_short": 21,
+        "n_stop": 31,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 747315.4365930816,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 1.430217927757326
+      },
+      {
+        "end_cny": 24151.652963141427,
+        "cagr": 0.14024266260473395,
+        "min_equity_over_peak": 0.48210857497770293,
+        "n_long": 44,
+        "n_short": 45,
+        "n_stop": 20,
+        "n_flatten_or_flip": 69,
+        "turnover_usdt": 405623.2801514281,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.2707954907704757
+      },
+      {
+        "end_cny": 27895.257367926886,
+        "cagr": 0.16496299611246434,
+        "min_equity_over_peak": 0.5390880820794869,
+        "n_long": 44,
+        "n_short": 45,
+        "n_stop": 22,
+        "n_flatten_or_flip": 66,
+        "turnover_usdt": 229129.03724225453,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.35790568587751975
+      },
+      {
+        "end_cny": 27711.627893897847,
+        "cagr": 0.1862226084773262,
+        "min_equity_over_peak": 0.4591313376557085,
+        "n_long": 42,
+        "n_short": 48,
+        "n_stop": 30,
+        "n_flatten_or_flip": 59,
+        "turnover_usdt": 268106.91300158296,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.34430282514461086
+      },
+      {
+        "end_cny": 18706.388427885777,
+        "cagr": 0.30798066615133823,
+        "min_equity_over_peak": 0.6385579549345,
+        "n_long": 18,
+        "n_short": 15,
+        "n_stop": 16,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 415278.6819180035,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.8520886553071777
+      },
+      {
+        "end_cny": 26031.96888464072,
+        "cagr": 0.15303766840809208,
+        "min_equity_over_peak": 0.3441902860190986,
+        "n_long": 133,
+        "n_short": 109,
+        "n_stop": 195,
+        "n_flatten_or_flip": 47,
+        "turnover_usdt": 1990452.4564716795,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.23335681851847176
+      },
+      {
+        "end_cny": 28787.322385292762,
+        "cagr": 0.17043389047481683,
+        "min_equity_over_peak": 0.47086699036692964,
+        "n_long": 132,
+        "n_short": 100,
+        "n_stop": 193,
+        "n_flatten_or_flip": 38,
+        "turnover_usdt": 1001703.6495041208,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.3221002798389104
+      },
+      {
+        "end_cny": 6459.365719210343,
+        "cagr": -0.07060978216623459,
+        "min_equity_over_peak": 0.23090667990398567,
+        "n_long": 125,
+        "n_short": 96,
+        "n_stop": 191,
+        "n_flatten_or_flip": 29,
+        "turnover_usdt": 294913.63465587003,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": -0.09180912162573404
+      },
+      {
+        "end_cny": 41025.97665839817,
+        "cagr": 0.8315409609738573,
+        "min_equity_over_peak": 0.5645285477677221,
+        "n_long": 43,
+        "n_short": 33,
+        "n_stop": 64,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 2883911.054766262,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 1.909518882836706
+      },
+      {
+        "end_cny": 16428.217800690945,
+        "cagr": 0.07668382247721062,
+        "min_equity_over_peak": 0.33583131464677735,
+        "n_long": 76,
+        "n_short": 73,
+        "n_stop": 92,
+        "n_flatten_or_flip": 57,
+        "turnover_usdt": 680400.1294988,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.11545835292795852
+      },
+      {
+        "end_cny": 25342.809384187418,
+        "cagr": 0.14844232330823415,
+        "min_equity_over_peak": 0.45662225397856165,
+        "n_long": 79,
+        "n_short": 62,
+        "n_stop": 88,
+        "n_flatten_or_flip": 52,
+        "turnover_usdt": 508937.339469699,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.27318439960987567
+      },
+      {
+        "end_cny": 21142.056333340046,
+        "cagr": 0.13364499588833723,
+        "min_equity_over_peak": 0.2922191490130188,
+        "n_long": 75,
+        "n_short": 72,
+        "n_stop": 90,
+        "n_flatten_or_flip": 56,
+        "turnover_usdt": 373103.14219007845,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.1888225652078223
+      },
+      {
+        "end_cny": 30212.270143048103,
+        "cagr": 0.6063983652184743,
+        "min_equity_over_peak": 0.6019708569368136,
+        "n_long": 27,
+        "n_short": 21,
+        "n_stop": 31,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 1303354.0642833207,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 1.5235024263592924
+      },
+      {
+        "end_cny": 42407.59184086504,
+        "cagr": 0.2399033917510769,
+        "min_equity_over_peak": 0.41867940547204013,
+        "n_long": 44,
+        "n_short": 45,
+        "n_stop": 21,
+        "n_flatten_or_flip": 68,
+        "turnover_usdt": 938732.6893732101,
+        "tape": "btc",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.41268689602487196
+      },
+      {
+        "end_cny": 24440.99221382761,
+        "cagr": 0.14226554131603897,
+        "min_equity_over_peak": 0.4300964066287932,
+        "n_long": 44,
+        "n_short": 45,
+        "n_stop": 22,
+        "n_flatten_or_flip": 66,
+        "turnover_usdt": 303232.77228137496,
+        "tape": "eth",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.24963089015544124
+      },
+      {
+        "end_cny": 40296.19967424914,
+        "cagr": 0.2630178821514466,
+        "min_equity_over_peak": 0.36098374206338674,
+        "n_long": 43,
+        "n_short": 49,
+        "n_stop": 32,
+        "n_flatten_or_flip": 59,
+        "turnover_usdt": 551958.1337820417,
+        "tape": "sol",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.41159810706652866
+      },
+      {
+        "end_cny": 23315.163554034607,
+        "cagr": 0.43749245845458895,
+        "min_equity_over_peak": 0.525521089983775,
+        "n_long": 18,
+        "n_short": 15,
+        "n_stop": 16,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 624555.5226661249,
+        "tape": "btc_spot_2017",
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.9220482706799944
+      },
+      {
+        "end_cny": 9692.40293174623,
+        "cagr": -0.004639328175968016,
+        "min_equity_over_peak": 0.5036349807738871,
+        "n_long": 128,
+        "n_short": 103,
+        "n_stop": 210,
+        "n_flatten_or_flip": 21,
+        "turnover_usdt": 327592.6784212743,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": -0.009346605816826564
+      },
+      {
+        "end_cny": 15973.012778220314,
+        "cagr": 0.07219016363968689,
+        "min_equity_over_peak": 0.6908968060986347,
+        "n_long": 126,
+        "n_short": 92,
+        "n_stop": 205,
+        "n_flatten_or_flip": 12,
+        "turnover_usdt": 260897.8495729043,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.23354712945063497
+      },
+      {
+        "end_cny": 8709.343590010754,
+        "cagr": -0.022886968085435,
+        "min_equity_over_peak": 0.5119626842367925,
+        "n_long": 116,
+        "n_short": 88,
+        "n_stop": 188,
+        "n_flatten_or_flip": 15,
+        "turnover_usdt": 142369.5777122889,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": -0.04689593878624561
+      },
+      {
+        "end_cny": 16872.574507819994,
+        "cagr": 0.2513880597064395,
+        "min_equity_over_peak": 0.8356027668113205,
+        "n_long": 43,
+        "n_short": 28,
+        "n_stop": 65,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 508990.9279651112,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 1.5291501859883507
+      },
+      {
+        "end_cny": 9812.679974575825,
+        "cagr": -0.0028105322360989504,
+        "min_equity_over_peak": 0.542457634105481,
+        "n_long": 72,
+        "n_short": 64,
+        "n_stop": 111,
+        "n_flatten_or_flip": 25,
+        "turnover_usdt": 195962.64355201804,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": -0.006142671030264518
+      },
+      {
+        "end_cny": 16915.675368731023,
+        "cagr": 0.08137985059159503,
+        "min_equity_over_peak": 0.6934239468460223,
+        "n_long": 72,
+        "n_short": 52,
+        "n_stop": 103,
+        "n_flatten_or_flip": 20,
+        "turnover_usdt": 163347.03194054583,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.26544751214055856
+      },
+      {
+        "end_cny": 12093.6160221872,
+        "cagr": 0.03236184800092068,
+        "min_equity_over_peak": 0.6012938825058395,
+        "n_long": 66,
+        "n_short": 55,
+        "n_stop": 95,
+        "n_flatten_or_flip": 25,
+        "turnover_usdt": 105141.50602838126,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.0811671719619267
+      },
+      {
+        "end_cny": 15981.477820587765,
+        "cagr": 0.2226158088490231,
+        "min_equity_over_peak": 0.8064697372436832,
+        "n_long": 24,
+        "n_short": 17,
+        "n_stop": 33,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 292021.9808920001,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 1.1502893949424815
+      },
+      {
+        "end_cny": 13219.22837598831,
+        "cagr": 0.042413796740394805,
+        "min_equity_over_peak": 0.596598576370226,
+        "n_long": 35,
+        "n_short": 37,
+        "n_stop": 33,
+        "n_flatten_or_flip": 39,
+        "turnover_usdt": 134316.09299653588,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.10514042404401755
+      },
+      {
+        "end_cny": 16644.073355929908,
+        "cagr": 0.0787777465409778,
+        "min_equity_over_peak": 0.7018330830154681,
+        "n_long": 36,
+        "n_short": 36,
+        "n_stop": 41,
+        "n_flatten_or_flip": 30,
+        "turnover_usdt": 94396.11618460926,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.26420686552916456
+      },
+      {
+        "end_cny": 18412.30003923362,
+        "cagr": 0.10768878383552605,
+        "min_equity_over_peak": 0.6056837400172194,
+        "n_long": 35,
+        "n_short": 34,
+        "n_stop": 39,
+        "n_flatten_or_flip": 29,
+        "turnover_usdt": 88506.07042846494,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.2731025695978875
+      },
+      {
+        "end_cny": 14742.690438418542,
+        "cagr": 0.18105025127772278,
+        "min_equity_over_peak": 0.7560817409652629,
+        "n_long": 16,
+        "n_short": 13,
+        "n_stop": 18,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 176029.96388545184,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.7422578858761817
+      },
+      {
+        "end_cny": 9765.032114541036,
+        "cagr": -0.0035327170555903287,
+        "min_equity_over_peak": 0.3354605491357732,
+        "n_long": 128,
+        "n_short": 105,
+        "n_stop": 212,
+        "n_flatten_or_flip": 21,
+        "turnover_usdt": 613299.6533070068,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": -0.005316038123840602
+      },
+      {
+        "end_cny": 16005.032880043618,
+        "cagr": 0.0725097977668343,
+        "min_equity_over_peak": 0.530065138324099,
+        "n_long": 126,
+        "n_short": 93,
+        "n_stop": 206,
+        "n_flatten_or_flip": 12,
+        "turnover_usdt": 452230.91121736605,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.1542975498949937
+      },
+      {
+        "end_cny": 7476.2697466227655,
+        "cagr": -0.047562608444697396,
+        "min_equity_over_peak": 0.3433346101971844,
+        "n_long": 126,
+        "n_short": 87,
+        "n_stop": 197,
+        "n_flatten_or_flip": 15,
+        "turnover_usdt": 224442.1989620646,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": -0.0724305090283189
+      },
+      {
+        "end_cny": 21953.459256847036,
+        "cagr": 0.4008813648595777,
+        "min_equity_over_peak": 0.7337845821123744,
+        "n_long": 43,
+        "n_short": 28,
+        "n_stop": 65,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 1013879.8177579967,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 1.5058532974555106
+      },
+      {
+        "end_cny": 8737.275259290254,
+        "cagr": -0.019890752677749424,
+        "min_equity_over_peak": 0.34224415759307353,
+        "n_long": 72,
+        "n_short": 66,
+        "n_stop": 113,
+        "n_flatten_or_flip": 25,
+        "turnover_usdt": 332456.9485984329,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": -0.03024032839444371
+      },
+      {
+        "end_cny": 18234.951291155896,
+        "cagr": 0.09353499196867232,
+        "min_equity_over_peak": 0.5397711686281098,
+        "n_long": 72,
+        "n_short": 52,
+        "n_stop": 103,
+        "n_flatten_or_flip": 20,
+        "turnover_usdt": 297998.1848129955,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.2032358374634094
+      },
+      {
+        "end_cny": 12258.900561890336,
+        "cagr": 0.03471248025417317,
+        "min_equity_over_peak": 0.42905870875603963,
+        "n_long": 73,
+        "n_short": 55,
+        "n_stop": 101,
+        "n_flatten_or_flip": 26,
+        "turnover_usdt": 184546.85040749537,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.06079868593589021
+      },
+      {
+        "end_cny": 20861.198997108426,
+        "cagr": 0.37056565216092463,
+        "min_equity_over_peak": 0.7125893436707614,
+        "n_long": 24,
+        "n_short": 17,
+        "n_stop": 33,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 549314.8812832257,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 1.2893246788192474
+      },
+      {
+        "end_cny": 16291.143771293388,
+        "cagr": 0.07534193538856515,
+        "min_equity_over_peak": 0.457738604940416,
+        "n_long": 35,
+        "n_short": 38,
+        "n_stop": 33,
+        "n_flatten_or_flip": 40,
+        "turnover_usdt": 275464.35444222443,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.13894025293887374
+      },
+      {
+        "end_cny": 17067.55118902473,
+        "cagr": 0.08281944373821704,
+        "min_equity_over_peak": 0.5471436274963509,
+        "n_long": 36,
+        "n_short": 36,
+        "n_stop": 41,
+        "n_flatten_or_flip": 30,
+        "turnover_usdt": 156377.21158107874,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.18288236351924073
+      },
+      {
+        "end_cny": 22094.383502839704,
+        "cagr": 0.14204445364632123,
+        "min_equity_over_peak": 0.43469512483539857,
+        "n_long": 39,
+        "n_short": 34,
+        "n_stop": 44,
+        "n_flatten_or_flip": 28,
+        "turnover_usdt": 188691.22391248014,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.2512705265542982
+      },
+      {
+        "end_cny": 18888.770453575402,
+        "cagr": 0.3134324545356848,
+        "min_equity_over_peak": 0.661114425442378,
+        "n_long": 16,
+        "n_short": 13,
+        "n_stop": 18,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 299809.4608585622,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.9248916981634184
+      },
+      {
+        "end_cny": 11817.520822769184,
+        "cagr": 0.02516725654736085,
+        "min_equity_over_peak": 0.25859677562181016,
+        "n_long": 128,
+        "n_short": 105,
+        "n_stop": 212,
+        "n_flatten_or_flip": 21,
+        "turnover_usdt": 1157285.7055035701,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.03394543713843229
+      },
+      {
+        "end_cny": 12568.129213455912,
+        "cagr": 0.0346067456745307,
+        "min_equity_over_peak": 0.3621251961139605,
+        "n_long": 126,
+        "n_short": 94,
+        "n_stop": 206,
+        "n_flatten_or_flip": 13,
+        "turnover_usdt": 610379.8708544308,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.05425319430035588
+      },
+      {
+        "end_cny": 7618.507139057818,
+        "cagr": -0.044550393514225295,
+        "min_equity_over_peak": 0.23068601764340183,
+        "n_long": 127,
+        "n_short": 88,
+        "n_stop": 199,
+        "n_flatten_or_flip": 15,
+        "turnover_usdt": 347978.1252571343,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": -0.057909247116185864
+      },
+      {
+        "end_cny": 28487.259455401047,
+        "cagr": 0.5664172675520258,
+        "min_equity_over_peak": 0.6358545832412266,
+        "n_long": 43,
+        "n_short": 28,
+        "n_stop": 65,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 1864347.728058218,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 1.5554699894170205
+      },
+      {
+        "end_cny": 8320.660002534096,
+        "cagr": -0.026992040946330564,
+        "min_equity_over_peak": 0.22793708072963342,
+        "n_long": 72,
+        "n_short": 66,
+        "n_stop": 113,
+        "n_flatten_or_flip": 25,
+        "turnover_usdt": 493742.0034205006,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": -0.03496093423556623
+      },
+      {
+        "end_cny": 13519.394269255466,
+        "cagr": 0.045903208680077245,
+        "min_equity_over_peak": 0.34782569917746803,
+        "n_long": 72,
+        "n_short": 54,
+        "n_stop": 104,
+        "n_flatten_or_flip": 21,
+        "turnover_usdt": 419931.4336810101,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.07038487812565357
+      },
+      {
+        "end_cny": 17517.11035862755,
+        "cagr": 0.09847741230339624,
+        "min_equity_over_peak": 0.3198793537664005,
+        "n_long": 73,
+        "n_short": 55,
+        "n_stop": 101,
+        "n_flatten_or_flip": 26,
+        "turnover_usdt": 345174.84269344964,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.14479403448307085
+      },
+      {
+        "end_cny": 28330.370393026813,
+        "cagr": 0.5627131500967919,
+        "min_equity_over_peak": 0.6289863578624031,
+        "n_long": 24,
+        "n_short": 17,
+        "n_stop": 33,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 932680.3161521831,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 1.516691264651934
+      },
+      {
+        "end_cny": 16646.731086387284,
+        "cagr": 0.0788033836733697,
+        "min_equity_over_peak": 0.31952159133843133,
+        "n_long": 35,
+        "n_short": 38,
+        "n_stop": 33,
+        "n_flatten_or_flip": 40,
+        "turnover_usdt": 492124.9875448513,
+        "tape": "btc",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.11580585463154941
+      },
+      {
+        "end_cny": 10023.624438650351,
+        "cagr": 0.00035126989935885256,
+        "min_equity_over_peak": 0.4161666372472359,
+        "n_long": 36,
+        "n_short": 38,
+        "n_stop": 42,
+        "n_flatten_or_flip": 31,
+        "turnover_usdt": 176430.46137004183,
+        "tape": "eth",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.0006016612303596716
+      },
+      {
+        "end_cny": 33272.923843319775,
+        "cagr": 0.22313441488479668,
+        "min_equity_over_peak": 0.3196402260395259,
+        "n_long": 38,
+        "n_short": 35,
+        "n_stop": 44,
+        "n_flatten_or_flip": 28,
+        "turnover_usdt": 436439.74244872894,
+        "tape": "sol",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.3279653257362623
+      },
+      {
+        "end_cny": 25385.485774369652,
+        "cagr": 0.4908867496089835,
+        "min_equity_over_peak": 0.5947025440290401,
+        "n_long": 16,
+        "n_short": 13,
+        "n_stop": 18,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 469951.0742387921,
+        "tape": "btc_spot_2017",
+        "lb_scale": 40,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 1.2111764887173537
+      },
+      {
+        "end_cny": 8536.388827642228,
+        "cagr": -0.02327805772564684,
+        "min_equity_over_peak": 0.4800752342325571,
+        "n_long": 143,
+        "n_short": 82,
+        "n_stop": 214,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 298993.7104341006,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": -0.044771973289802626
+      },
+      {
+        "end_cny": 12489.778674645999,
+        "cagr": 0.03364420860864481,
+        "min_equity_over_peak": 0.6250547953029557,
+        "n_long": 132,
+        "n_short": 77,
+        "n_stop": 202,
+        "n_flatten_or_flip": 6,
+        "turnover_usdt": 233827.64933392624,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.08973100118943868
+      },
+      {
+        "end_cny": 7215.5016385401805,
+        "cagr": -0.05321113380865872,
+        "min_equity_over_peak": 0.49633390608062466,
+        "n_long": 109,
+        "n_short": 80,
+        "n_stop": 178,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 109187.08625566191,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": -0.10564763928138574
+      },
+      {
+        "end_cny": 14195.889098369347,
+        "cagr": 0.16206836109169998,
+        "min_equity_over_peak": 0.8245943763746124,
+        "n_long": 39,
+        "n_short": 25,
+        "n_stop": 58,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 407215.7066928973,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 2.0,
+        "calmar": 0.9239633128173137
+      },
+      {
+        "end_cny": 9295.84105027118,
+        "cagr": -0.010809055671067491,
+        "min_equity_over_peak": 0.5529033873058524,
+        "n_long": 78,
+        "n_short": 45,
+        "n_stop": 113,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 182184.2631620686,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": -0.02417610727563667
+      },
+      {
+        "end_cny": 13772.614597591846,
+        "cagr": 0.04879596984788148,
+        "min_equity_over_peak": 0.6184042062539877,
+        "n_long": 74,
+        "n_short": 43,
+        "n_stop": 103,
+        "n_flatten_or_flip": 13,
+        "turnover_usdt": 150322.93143397095,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.1278734478932956
+      },
+      {
+        "end_cny": 9148.461695199561,
+        "cagr": -0.014800847952352147,
+        "min_equity_over_peak": 0.5691058790700018,
+        "n_long": 60,
+        "n_short": 52,
+        "n_stop": 101,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 81608.9044629509,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": -0.03434915268838548
+      },
+      {
+        "end_cny": 13817.716723678457,
+        "cagr": 0.14869475954722233,
+        "min_equity_over_peak": 0.7971412281473318,
+        "n_long": 23,
+        "n_short": 14,
+        "n_stop": 29,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 240888.84044087923,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 3.0,
+        "calmar": 0.7329964496443665
+      },
+      {
+        "end_cny": 11784.535200168559,
+        "cagr": 0.02474084870430593,
+        "min_equity_over_peak": 0.5515601122203617,
+        "n_long": 33,
+        "n_short": 25,
+        "n_stop": 40,
+        "n_flatten_or_flip": 18,
+        "turnover_usdt": 114470.31168398364,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.05517093679334674
+      },
+      {
+        "end_cny": 14431.82853775644,
+        "cagr": 0.056119771671326646,
+        "min_equity_over_peak": 0.6725881712609246,
+        "n_long": 37,
+        "n_short": 26,
+        "n_stop": 48,
+        "n_flatten_or_flip": 14,
+        "turnover_usdt": 80269.42489112371,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.17140422778081799
+      },
+      {
+        "end_cny": 11433.612869403672,
+        "cagr": 0.02270034493998274,
+        "min_equity_over_peak": 0.5524016027929061,
+        "n_long": 33,
+        "n_short": 30,
+        "n_stop": 46,
+        "n_flatten_or_flip": 16,
+        "turnover_usdt": 58230.406426123234,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.05071587628916328
+      },
+      {
+        "end_cny": 13429.174897006144,
+        "cagr": 0.1347348341292851,
+        "min_equity_over_peak": 0.7666173631739907,
+        "n_long": 14,
+        "n_short": 10,
+        "n_stop": 17,
+        "n_flatten_or_flip": 6,
+        "turnover_usdt": 137402.55105054769,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.3,
+        "atr_mult": 5.0,
+        "calmar": 0.5773130167765316
+      },
+      {
+        "end_cny": 8843.871883213988,
+        "cagr": -0.018120180259262098,
+        "min_equity_over_peak": 0.35965938879090825,
+        "n_long": 143,
+        "n_short": 84,
+        "n_stop": 216,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 540398.9872570864,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": -0.028297721465842307
+      },
+      {
+        "end_cny": 13439.700053499873,
+        "cagr": 0.04498324886763627,
+        "min_equity_over_peak": 0.4608073504282833,
+        "n_long": 132,
+        "n_short": 78,
+        "n_stop": 203,
+        "n_flatten_or_flip": 6,
+        "turnover_usdt": 425694.0725796266,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.0834270439394281
+      },
+      {
+        "end_cny": 6053.510641414703,
+        "cagr": -0.08065985533384534,
+        "min_equity_over_peak": 0.32771765851194873,
+        "n_long": 112,
+        "n_short": 85,
+        "n_stop": 189,
+        "n_flatten_or_flip": 8,
+        "turnover_usdt": 165712.41528737458,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": -0.11997913727037697
+      },
+      {
+        "end_cny": 16488.250518260575,
+        "cagr": 0.2390879386828355,
+        "min_equity_over_peak": 0.7328414153428502,
+        "n_long": 39,
+        "n_short": 25,
+        "n_stop": 58,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 739128.9577691439,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 2.0,
+        "calmar": 0.894928901460015
+      },
+      {
+        "end_cny": 8343.546110376827,
+        "cagr": -0.02659417349076365,
+        "min_equity_over_peak": 0.36841751656731175,
+        "n_long": 78,
+        "n_short": 47,
+        "n_stop": 115,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 301781.7791824811,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": -0.04210720561188262
+      },
+      {
+        "end_cny": 16744.581129549937,
+        "cagr": 0.07974485300021672,
+        "min_equity_over_peak": 0.499035298264371,
+        "n_long": 74,
+        "n_short": 44,
+        "n_stop": 104,
+        "n_flatten_or_flip": 13,
+        "turnover_usdt": 290387.6794538793,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.15918257858075593
+      },
+      {
+        "end_cny": 8998.150241926209,
+        "cagr": -0.017531658789157523,
+        "min_equity_over_peak": 0.4276910350519997,
+        "n_long": 65,
+        "n_short": 54,
+        "n_stop": 107,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 140442.2511892444,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": -0.030633206646955877
+      },
+      {
+        "end_cny": 16242.84304814311,
+        "cagr": 0.2311478938924869,
+        "min_equity_over_peak": 0.7200771908505171,
+        "n_long": 23,
+        "n_short": 14,
+        "n_stop": 29,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 426181.6785733061,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 3.0,
+        "calmar": 0.8257558381712673
+      },
+      {
+        "end_cny": 15121.973165710595,
+        "cagr": 0.06348820538617761,
+        "min_equity_over_peak": 0.4277423351288346,
+        "n_long": 33,
+        "n_short": 26,
+        "n_stop": 40,
+        "n_flatten_or_flip": 19,
+        "turnover_usdt": 237793.86869294714,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.11094339016056858
+      },
+      {
+        "end_cny": 14122.924564686733,
+        "cagr": 0.052724130799821634,
+        "min_equity_over_peak": 0.5180880156677745,
+        "n_long": 37,
+        "n_short": 27,
+        "n_stop": 49,
+        "n_flatten_or_flip": 14,
+        "turnover_usdt": 137986.32290383035,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.10940614160670908
+      },
+      {
+        "end_cny": 13927.76845386334,
+        "cagr": 0.057077326653275584,
+        "min_equity_over_peak": 0.4228107997542335,
+        "n_long": 37,
+        "n_short": 34,
+        "n_stop": 50,
+        "n_flatten_or_flip": 20,
+        "turnover_usdt": 119485.01519261774,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.09888841757429302
+      },
+      {
+        "end_cny": 15890.73230653732,
+        "cagr": 0.2196348580381131,
+        "min_equity_over_peak": 0.6736450123365221,
+        "n_long": 14,
+        "n_short": 10,
+        "n_stop": 17,
+        "n_flatten_or_flip": 6,
+        "turnover_usdt": 228970.27146817936,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.5,
+        "atr_mult": 5.0,
+        "calmar": 0.6729937226042654
+      },
+      {
+        "end_cny": 11547.462059278398,
+        "cagr": 0.0216459357344998,
+        "min_equity_over_peak": 0.3022428741879561,
+        "n_long": 143,
+        "n_short": 84,
+        "n_stop": 216,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 1011263.9705799186,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.031022163635102174
+      },
+      {
+        "end_cny": 13103.754695116277,
+        "cagr": 0.04105343950471596,
+        "min_equity_over_peak": 0.30979208448376816,
+        "n_long": 132,
+        "n_short": 81,
+        "n_stop": 205,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 686243.3121524648,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 0.05947981554805929
+      },
+      {
+        "end_cny": 5716.469502361611,
+        "cagr": -0.0894416510388788,
+        "min_equity_over_peak": 0.21017628258191598,
+        "n_long": 112,
+        "n_short": 83,
+        "n_stop": 188,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 248206.82857902496,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": -0.11324254902253575
+      },
+      {
+        "end_cny": 21203.30282568506,
+        "cagr": 0.38015628624207665,
+        "min_equity_over_peak": 0.6477736937243438,
+        "n_long": 39,
+        "n_short": 25,
+        "n_stop": 58,
+        "n_flatten_or_flip": 5,
+        "turnover_usdt": 1264811.7581838013,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 2.0,
+        "calmar": 1.0792955536505615
+      },
+      {
+        "end_cny": 8032.665760774394,
+        "cagr": -0.03208003621592226,
+        "min_equity_over_peak": 0.24295645980948463,
+        "n_long": 78,
+        "n_short": 47,
+        "n_stop": 115,
+        "n_flatten_or_flip": 10,
+        "turnover_usdt": 465147.6174610433,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": -0.04237541767789088
+      },
+      {
+        "end_cny": 15530.210356974905,
+        "cagr": 0.06771310507724526,
+        "min_equity_over_peak": 0.3261582292493035,
+        "n_long": 74,
+        "n_short": 46,
+        "n_stop": 106,
+        "n_flatten_or_flip": 13,
+        "turnover_usdt": 482643.12243746564,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.10048813833818757
+      },
+      {
+        "end_cny": 10186.186047892419,
+        "cagr": 0.0030955671746148994,
+        "min_equity_over_peak": 0.3241045785732174,
+        "n_long": 68,
+        "n_short": 54,
+        "n_stop": 110,
+        "n_flatten_or_flip": 11,
+        "turnover_usdt": 221065.30876907567,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 0.004579949910121164
+      },
+      {
+        "end_cny": 23396.255677092802,
+        "cagr": 0.4396336992029639,
+        "min_equity_over_peak": 0.6329516689006822,
+        "n_long": 23,
+        "n_short": 14,
+        "n_stop": 29,
+        "n_flatten_or_flip": 7,
+        "turnover_usdt": 701838.5489469907,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 3.0,
+        "calmar": 1.1977542518344966
+      },
+      {
+        "end_cny": 18988.440655182534,
+        "cagr": 0.10014509386082016,
+        "min_equity_over_peak": 0.3199995185806159,
+        "n_long": 33,
+        "n_short": 26,
+        "n_stop": 40,
+        "n_flatten_or_flip": 19,
+        "turnover_usdt": 462496.04061373044,
+        "tape": "btc",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.14727209258997065
+      },
+      {
+        "end_cny": 14481.985975304608,
+        "cagr": 0.05666527996543613,
+        "min_equity_over_peak": 0.3893731539653595,
+        "n_long": 37,
+        "n_short": 29,
+        "n_stop": 50,
+        "n_flatten_or_flip": 15,
+        "turnover_usdt": 226309.0080973505,
+        "tape": "eth",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.09279854027613707
+      },
+      {
+        "end_cny": 18334.559026361607,
+        "cagr": 0.10690380459099691,
+        "min_equity_over_peak": 0.30582572539366165,
+        "n_long": 37,
+        "n_short": 35,
+        "n_stop": 51,
+        "n_flatten_or_flip": 20,
+        "turnover_usdt": 250537.91997716948,
+        "tape": "sol",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.15400139201589017
+      },
+      {
+        "end_cny": 18596.605374233495,
+        "cagr": 0.3046843640734336,
+        "min_equity_over_peak": 0.6110560077006979,
+        "n_long": 14,
+        "n_short": 10,
+        "n_stop": 17,
+        "n_flatten_or_flip": 6,
+        "turnover_usdt": 350587.22672174626,
+        "tape": "btc_spot_2017",
+        "lb_scale": 60,
+        "target_vol": 0.8,
+        "atr_mult": 5.0,
+        "calmar": 0.7833630808185137
+      }
+    ],
+    "by_tape": {
+      "btc": {
+        "cagr_median": 0.06462757260509777,
+        "cagr_worst": -0.03208003621592226,
+        "cagr_best": 0.2805822708488994,
+        "min_ratio_median": 0.4225162141714027,
+        "share_positive_cagr": 0.7222222222222222,
+        "share_min_ratio_above_half": 0.3055555555555556
+      },
+      "eth": {
+        "cagr_median": 0.08635700227511611,
+        "cagr_worst": 0.00035126989935885256,
+        "cagr_best": 0.1913687191820892,
+        "min_ratio_median": 0.5434573980622304,
+        "share_positive_cagr": 1.0,
+        "share_min_ratio_above_half": 0.6111111111111112
+      },
+      "sol": {
+        "cagr_median": 0.04589490345372438,
+        "cagr_worst": -0.0894416510388788,
+        "cagr_best": 0.2630178821514466,
+        "min_ratio_median": 0.42529187243416433,
+        "share_positive_cagr": 0.6666666666666666,
+        "share_min_ratio_above_half": 0.3055555555555556
+      },
+      "btc_spot_2017": {
+        "cagr_median": 0.37536096920150064,
+        "cagr_worst": 0.1347348341292851,
+        "cagr_best": 0.9462011597221431,
+        "min_ratio_median": 0.7128494614891949,
+        "share_positive_cagr": 1.0,
+        "share_min_ratio_above_half": 1.0
+      }
+    }
+  },
+  "pooled_pick": {
+    "point": {
+      "lb_scale": 10,
+      "target_vol": 0.3,
+      "atr_mult": 5.0,
+      "median_calmar": 0.41579300573545064
+    },
+    "rows": {
+      "btc": {
+        "end_cny": 24823.85435706193,
+        "cagr": 0.1449111720571561,
+        "min_equity_over_peak": 0.6027016145104004,
+        "n_long": 75,
+        "n_short": 77,
+        "n_stop": 9,
+        "n_flatten_or_flip": 142,
+        "turnover_usdt": 417224.482535893
+      },
+      "eth": {
+        "end_cny": 22251.229374575774,
+        "cagr": 0.1264182944611798,
+        "min_equity_over_peak": 0.7219235495353314,
+        "n_long": 77,
+        "n_short": 76,
+        "n_stop": 10,
+        "n_flatten_or_flip": 142,
+        "turnover_usdt": 236147.2300789614
+      },
+      "sol": {
+        "end_cny": 22048.0238329551,
+        "cagr": 0.1416426121344272,
+        "min_equity_over_peak": 0.6242592226595842,
+        "n_long": 71,
+        "n_short": 76,
+        "n_stop": 20,
+        "n_flatten_or_flip": 126,
+        "turnover_usdt": 213490.08435764178
+      },
+      "btc_spot_2017": {
+        "end_cny": 17270.470757283696,
+        "cagr": 0.2639550565226758,
+        "min_equity_over_peak": 0.7638155500940873,
+        "n_long": 30,
+        "n_short": 23,
+        "n_stop": 11,
+        "n_flatten_or_flip": 42,
+        "turnover_usdt": 463468.5803472938
+      }
+    },
+    "in_sample_on_all_four_tapes": true
+  },
+  "leave_one_tape_out": [
+    {
+      "held_out": "btc",
+      "chosen_on": [
+        "eth",
+        "sol",
+        "btc_spot_2017"
+      ],
+      "chosen": {
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      "held_out_row": {
+        "end_cny": 15459.885221030412,
+        "cagr": 0.06699209394913552,
+        "min_equity_over_peak": 0.5608416694736562,
+        "n_long": 96,
+        "n_short": 92,
+        "calmar": 0.1525465630330719
+      },
+      "rank_among_grid": 11,
+      "grid_size": 36,
+      "median_of_grid": {
+        "cagr": 0.06462757260509777,
+        "min_equity_over_peak": 0.4225162141714027
+      },
+      "share_of_grid_with_positive_cagr": 0.7222222222222222
+    },
+    {
+      "held_out": "eth",
+      "chosen_on": [
+        "btc",
+        "sol",
+        "btc_spot_2017"
+      ],
+      "chosen": {
+        "lb_scale": 10,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      },
+      "held_out_row": {
+        "end_cny": 23688.897756402144,
+        "cagr": 0.13696407709167313,
+        "min_equity_over_peak": 0.4155495120068043,
+        "n_long": 69,
+        "n_short": 73,
+        "calmar": 0.23434675803242325
+      },
+      "rank_among_grid": 18,
+      "grid_size": 36,
+      "median_of_grid": {
+        "cagr": 0.08635700227511611,
+        "min_equity_over_peak": 0.5434573980622304
+      },
+      "share_of_grid_with_positive_cagr": 1.0
+    },
+    {
+      "held_out": "sol",
+      "chosen_on": [
+        "btc",
+        "eth",
+        "btc_spot_2017"
+      ],
+      "chosen": {
+        "lb_scale": 10,
+        "target_vol": 0.3,
+        "atr_mult": 3.0
+      },
+      "held_out_row": {
+        "end_cny": 19109.58780879776,
+        "cagr": 0.11460887673205655,
+        "min_equity_over_peak": 0.6028742644013381,
+        "n_long": 91,
+        "n_short": 85,
+        "calmar": 0.28859594445392756
+      },
+      "rank_among_grid": 9,
+      "grid_size": 36,
+      "median_of_grid": {
+        "cagr": 0.04589490345372438,
+        "min_equity_over_peak": 0.42529187243416433
+      },
+      "share_of_grid_with_positive_cagr": 0.6666666666666666
+    },
+    {
+      "held_out": "btc_spot_2017",
+      "chosen_on": [
+        "btc",
+        "eth",
+        "sol"
+      ],
+      "chosen": {
+        "lb_scale": 20,
+        "target_vol": 0.8,
+        "atr_mult": 5.0
+      },
+      "held_out_row": {
+        "end_cny": 23315.163554034607,
+        "cagr": 0.43749245845458895,
+        "min_equity_over_peak": 0.525521089983775,
+        "n_long": 18,
+        "n_short": 15,
+        "calmar": 0.9220482706799944
+      },
+      "rank_among_grid": 28,
+      "grid_size": 36,
+      "median_of_grid": {
+        "cagr": 0.37536096920150064,
+        "min_equity_over_peak": 0.7128494614891949
+      },
+      "share_of_grid_with_positive_cagr": 1.0
+    }
+  ],
+  "baseline_walk_forward": {
+    "family_size": 55,
+    "window_months": 6,
+    "first_test": "2022-01-01",
+    "windows": [
+      {
+        "test_start_index": 1052640,
+        "test_days": 181,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 6.792336704486798,
+        "train_calmar_published": 6.251136285487199,
+        "return_published": 1.9449802857131404,
+        "return_selected": 1.929894155425175,
+        "return_median_of_family": 1.9449802857131404,
+        "min_ratio_selected": 0.7255984153939908,
+        "min_ratio_published": 0.7255984153939908,
+        "share_of_family_positive": 1.0
+      },
+      {
+        "test_start_index": 1313280,
+        "test_days": 184,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 7.972413429829755,
+        "train_calmar_published": 7.4992284993756995,
+        "return_published": -0.23824891663028658,
+        "return_selected": -0.23824891663028658,
+        "return_median_of_family": -0.23824891663028658,
+        "min_ratio_selected": 0.6610027303434749,
+        "min_ratio_published": 0.6610027303434749,
+        "share_of_family_positive": 0.0
+      },
+      {
+        "test_start_index": 1578240,
+        "test_days": 181,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 4.9875702926938486,
+        "train_calmar_published": 4.709277247983534,
+        "return_published": 0.25784811376909933,
+        "return_selected": 0.25784811376909933,
+        "return_median_of_family": 0.25784811376909933,
+        "min_ratio_selected": 0.608621955968881,
+        "min_ratio_published": 0.608621955968881,
+        "share_of_family_positive": 1.0
+      },
+      {
+        "test_start_index": 1838880,
+        "test_days": 184,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 4.09519756905911,
+        "train_calmar_published": 3.885848011355938,
+        "return_published": 0.8811998026581331,
+        "return_selected": 0.8616806375774893,
+        "return_median_of_family": 0.8811998026581331,
+        "min_ratio_selected": 0.6665361503627576,
+        "min_ratio_published": 0.6665361503627576,
+        "share_of_family_positive": 1.0
+      },
+      {
+        "test_start_index": 2103840,
+        "test_days": 182,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 4.028418763142074,
+        "train_calmar_published": 3.8471365817378906,
+        "return_published": 0.46010837858408604,
+        "return_selected": 0.4431308831699239,
+        "return_median_of_family": 0.46010837858408604,
+        "min_ratio_selected": 0.6326158360110385,
+        "min_ratio_published": 0.6326158360110385,
+        "share_of_family_positive": 0.9818181818181818
+      },
+      {
+        "test_start_index": 2365920,
+        "test_days": 184,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 3.9629095153790086,
+        "train_calmar_published": 3.8177300133391796,
+        "return_published": 0.09760692049166053,
+        "return_selected": 0.09760692049166053,
+        "return_median_of_family": 0.09760692049166053,
+        "min_ratio_selected": 0.654262221279197,
+        "min_ratio_published": 0.654262221279197,
+        "share_of_family_positive": 1.0
+      },
+      {
+        "test_start_index": 2630880,
+        "test_days": 181,
+        "chosen": {
+          "field": "ratchet_trail",
+          "value": 0.0735
+        },
+        "train_calmar_chosen": 3.539799968571366,
+        "train_calmar_published": 3.4183030526258475,
+        "return_published": 0.2582807406302581,
+        "return_selected": 0.2582807406302581,
+        "return_median_of_family": 0.2582807406302581,
+        "min_ratio_selected": 0.7026234738975435,
+        "min_ratio_published": 0.7026234738975435,
+        "share_of_family_positive": 0.9818181818181818
+      },
+      {
+        "test_start_index": 2891520,
+        "test_days": 184,
+        "chosen": {
+          "field": "entry_scale_below",
+          "value": 0.902
+        },
+        "train_calmar_chosen": 3.2789080688673704,
+        "train_calmar_published": 3.1516113582990286,
+        "return_published": -0.21976776895058037,
+        "return_selected": -0.19700164648568952,
+        "return_median_of_family": -0.21976776895058037,
+        "min_ratio_selected": 0.644218971074321,
+        "min_ratio_published": 0.6422272611451619,
+        "share_of_family_positive": 0.0
+      },
+      {
+        "test_start_index": 3156480,
+        "test_days": 181,
+        "chosen": {
+          "field": "entry_scale_below",
+          "value": 0.902
+        },
+        "train_calmar_chosen": 2.672399934205486,
+        "train_calmar_published": 2.568832021426835,
+        "return_published": 0.6212316306537997,
+        "return_selected": 0.6212316306537997,
+        "return_median_of_family": 0.6212316306537997,
+        "min_ratio_selected": 0.663913186360522,
+        "min_ratio_published": 0.663913186360522,
+        "share_of_family_positive": 1.0
+      },
+      {
+        "test_start_index": 3417120,
+        "test_days": 81,
+        "chosen": {
+          "field": "entry_scale_below",
+          "value": 0.902
+        },
+        "train_calmar_chosen": 2.691661681317628,
+        "train_calmar_published": 2.595590944289494,
+        "return_published": 0.20117584359541096,
+        "return_selected": 0.23181927397667845,
+        "return_median_of_family": 0.20117584359541096,
+        "min_ratio_selected": 0.7932423109487047,
+        "min_ratio_published": 0.7735091682348714,
+        "share_of_family_positive": 1.0
+      }
+    ],
+    "compounded_growth": {
+      "fixed": 16.264608864165037,
+      "selected": 16.704566957454034,
+      "median_of_family": 16.264608864165037
+    },
+    "cagr": {
+      "fixed": 0.8061980563986619,
+      "selected": 0.816446514182257,
+      "median_of_family": 0.8061980563986619
+    },
+    "note": "Each test window starts flat with 10,000 CNY. The family is the published settings and their neighbours, so it already sits around a point tuned on this same tape: this is optimistic, not a clean out-of-sample."
+  },
+  "distributions": {
+    "btc": {
+      "baseline": {
+        "row": {
+          "end_cny": 2039228.742932259,
+          "cagr": 1.206671820181076,
+          "min_equity_over_peak": 0.5280011467046337,
+          "trades": 92,
+          "n_stop": 80
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": 0.3539569220401919,
+            "25": 0.7859572249242195,
+            "50": 1.21333264517115,
+            "75": 1.697848823161428,
+            "95": 2.710263706366888
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.26221404435001694,
+            "25": 0.3750678784916461,
+            "50": 0.456181759704426,
+            "75": 0.5184892078978778,
+            "95": 0.5998256964933778
+          },
+          "share_min_ratio_above_half": 0.321,
+          "share_positive_cagr": 0.998
+        },
+        "half_year_windows": {
+          "windows": 13,
+          "median": 0.2279354968166607,
+          "share_positive": 0.7692307692307693,
+          "worst": -0.22723281787776184,
+          "best": 4.922372296164121
+        }
+      },
+      "candidate": {
+        "row": {
+          "end_cny": 13127.527430272554,
+          "cagr": 0.04133432998486164,
+          "min_equity_over_peak": 0.4125857130565725,
+          "n_long": 76,
+          "n_short": 73,
+          "n_stop": 92,
+          "n_flatten_or_flip": 57,
+          "turnover_usdt": 408949.5613617714
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.14883574745927752,
+            "25": -0.04802738763692649,
+            "50": 0.046440544596187405,
+            "75": 0.1486737636527789,
+            "95": 0.3055795398205493
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.19140033579831253,
+            "25": 0.337416969462843,
+            "50": 0.44163370584602524,
+            "75": 0.5250206346155719,
+            "95": 0.6332991380872748
+          },
+          "share_min_ratio_above_half": 0.326,
+          "share_positive_cagr": 0.64
+        },
+        "half_year_windows": {
+          "windows": 13,
+          "median": -0.03643778494830696,
+          "share_positive": 0.38461538461538464,
+          "worst": -0.2548640604504778,
+          "best": 1.1826535733008483
+        }
+      }
+    },
+    "eth": {
+      "baseline": {
+        "row": {
+          "end_cny": 11181.139024499053,
+          "cagr": 0.01675565586744021,
+          "min_equity_over_peak": 0.4760191090565326,
+          "trades": 15,
+          "n_stop": 15
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.15021925853410525,
+            "25": -0.07218984946310714,
+            "50": 0.0017065119782782023,
+            "75": 0.1099627975219456,
+            "95": 0.288536499628193
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.247764303550238,
+            "25": 0.37892975424754116,
+            "50": 0.4695802928762489,
+            "75": 0.5597559170907723,
+            "95": 0.6920947669953681
+          },
+          "share_min_ratio_above_half": 0.424,
+          "share_positive_cagr": 0.505
+        },
+        "half_year_windows": {
+          "windows": 13,
+          "median": -0.01076014309881046,
+          "share_positive": 0.38461538461538464,
+          "worst": -0.1580574317073129,
+          "best": 0.40048520735447735
+        }
+      },
+      "candidate": {
+        "row": {
+          "end_cny": 32428.770214735905,
+          "cagr": 0.1913687191820892,
+          "min_equity_over_peak": 0.5672057455580926,
+          "n_long": 79,
+          "n_short": 62,
+          "n_stop": 88,
+          "n_flatten_or_flip": 52,
+          "turnover_usdt": 410347.4826249423
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.045468821001340934,
+            "25": 0.09425998404910857,
+            "50": 0.19006485265733664,
+            "75": 0.3017504440601724,
+            "95": 0.4943387590769617
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.30396111760900735,
+            "25": 0.45228998789066843,
+            "50": 0.5303705392534708,
+            "75": 0.6071749525265024,
+            "95": 0.6859087829243387
+          },
+          "share_min_ratio_above_half": 0.595,
+          "share_positive_cagr": 0.898
+        },
+        "half_year_windows": {
+          "windows": 13,
+          "median": 0.011388321137615787,
+          "share_positive": 0.5384615384615384,
+          "worst": -0.18636282325064424,
+          "best": 0.5495346796944232
+        }
+      }
+    },
+    "sol": {
+      "baseline": {
+        "row": {
+          "end_cny": 8540.454891504007,
+          "cagr": -0.02608753364359595,
+          "min_equity_over_peak": 0.4705042047448792,
+          "trades": 16,
+          "n_stop": 16
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.13608844463520567,
+            "25": -0.0700325877179688,
+            "50": -0.021581153190698754,
+            "75": 0.02430468755001458,
+            "95": 0.09556938060780205
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.36188263706127966,
+            "25": 0.5355867554389692,
+            "50": 0.64144316292017,
+            "75": 0.7446295419402975,
+            "95": 0.8461723155920086
+          },
+          "share_min_ratio_above_half": 0.795,
+          "share_positive_cagr": 0.372
+        },
+        "half_year_windows": {
+          "windows": 11,
+          "median": -0.019062431182559125,
+          "share_positive": 0.2727272727272727,
+          "worst": -0.09492229578307232,
+          "best": 0.13905595616714428
+        }
+      },
+      "candidate": {
+        "row": {
+          "end_cny": 15330.888270523632,
+          "cagr": 0.07421456884960786,
+          "min_equity_over_peak": 0.41148621310082506,
+          "n_long": 75,
+          "n_short": 72,
+          "n_stop": 91,
+          "n_flatten_or_flip": 55,
+          "turnover_usdt": 219720.91646160765
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.1489511279218186,
+            "25": -0.03376334858173974,
+            "50": 0.05652816882927625,
+            "75": 0.16967474786425862,
+            "95": 0.3488412694587198
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.22649531650239105,
+            "25": 0.3706469866366037,
+            "50": 0.48152582334507543,
+            "75": 0.5650875290797657,
+            "95": 0.6562905104114372
+          },
+          "share_min_ratio_above_half": 0.45,
+          "share_positive_cagr": 0.664
+        },
+        "half_year_windows": {
+          "windows": 11,
+          "median": -0.044333702778867834,
+          "share_positive": 0.36363636363636365,
+          "worst": -0.2780808763824274,
+          "best": 0.7280026684384118
+        }
+      }
+    },
+    "btc_spot_2017": {
+      "baseline": {
+        "row": {
+          "end_cny": 9635.455379381592,
+          "cagr": -0.01579384500359926,
+          "min_equity_over_peak": 0.4959052120613489,
+          "trades": 11,
+          "n_stop": 10
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.2234510500539686,
+            "25": -0.11899555701679321,
+            "50": -0.02358018882538082,
+            "75": 0.0903540817293938,
+            "95": 0.31366001541081645
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.418813031768425,
+            "25": 0.5291408419730605,
+            "50": 0.6092426533999475,
+            "75": 0.6760226354314685,
+            "95": 0.793822199040412
+          },
+          "share_min_ratio_above_half": 0.827,
+          "share_positive_cagr": 0.444
+        },
+        "half_year_windows": {
+          "windows": 4,
+          "median": 0.0,
+          "share_positive": 0.0,
+          "worst": -0.029685953516364494,
+          "best": 0.0
+        }
+      },
+      "candidate": {
+        "row": {
+          "end_cny": 21979.534109411954,
+          "cagr": 0.4015944208075706,
+          "min_equity_over_peak": 0.7192075326329488,
+          "n_long": 27,
+          "n_short": 21,
+          "n_stop": 31,
+          "n_flatten_or_flip": 16,
+          "turnover_usdt": 747315.4365930816
+        },
+        "bootstrap": {
+          "draws": 1000,
+          "block_days": 20,
+          "cagr_percentiles": {
+            "5": -0.04767699645748641,
+            "25": 0.18725910779977167,
+            "50": 0.42844371554807725,
+            "75": 0.7089353931877591,
+            "95": 1.2673059536245348
+          },
+          "min_equity_over_peak_percentiles": {
+            "5": 0.5594628429901993,
+            "25": 0.6614348540728321,
+            "50": 0.7254129912185914,
+            "75": 0.774571987466026,
+            "95": 0.8303024230488798
+          },
+          "share_min_ratio_above_half": 0.981,
+          "share_positive_cagr": 0.925
+        },
+        "half_year_windows": {
+          "windows": 4,
+          "median": 0.14849823555179076,
+          "share_positive": 0.75,
+          "worst": -0.11696860759814198,
+          "best": 1.155095586158526
+        }
+      }
+    }
+  },
+  "stress": {
+    "btc": {
+      "baseline": [
+        {
+          "end_cny": 2039228.742932259,
+          "cagr": 1.206671820181076,
+          "min_equity_over_peak": 0.5280011467046337,
+          "trades": 92,
+          "n_stop": 80,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 114693.67452605577,
+          "cagr": 0.4378063705293038,
+          "min_equity_over_peak": 0.47537240517173124,
+          "trades": 23,
+          "n_stop": 22,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 105431.7137355868,
+          "cagr": 0.419899618680031,
+          "min_equity_over_peak": 0.4686836172378479,
+          "trades": 23,
+          "n_stop": 22,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 1980648.3760564933,
+          "cagr": 1.19711943634482,
+          "min_equity_over_peak": 0.5264263353770611,
+          "trades": 92,
+          "n_stop": 80,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pre_committed": [
+        {
+          "end_cny": 13127.527430272554,
+          "cagr": 0.04133432998486164,
+          "min_equity_over_peak": 0.4125857130565725,
+          "n_long": 76,
+          "n_short": 73,
+          "n_stop": 92,
+          "n_flatten_or_flip": 57,
+          "turnover_usdt": 408949.5613617714,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 13297.045189765613,
+          "cagr": 0.043324837326012444,
+          "min_equity_over_peak": 0.40850958605368937,
+          "n_long": 76,
+          "n_short": 73,
+          "n_stop": 92,
+          "n_flatten_or_flip": 57,
+          "turnover_usdt": 408601.47771646443,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 11040.928978202583,
+          "cagr": 0.014847758994086746,
+          "min_equity_over_peak": 0.3619462546175852,
+          "n_long": 76,
+          "n_short": 73,
+          "n_stop": 92,
+          "n_flatten_or_flip": 57,
+          "turnover_usdt": 366660.9909295148,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 13110.883328369093,
+          "cagr": 0.04113771448907855,
+          "min_equity_over_peak": 0.4131760563026593,
+          "n_long": 76,
+          "n_short": 73,
+          "n_stop": 92,
+          "n_flatten_or_flip": 57,
+          "turnover_usdt": 410689.2621790733,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pooled_pick": [
+        {
+          "end_cny": 24823.85435706193,
+          "cagr": 0.1449111720571561,
+          "min_equity_over_peak": 0.6027016145104004,
+          "n_long": 75,
+          "n_short": 77,
+          "n_stop": 9,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 417224.482535893,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 24753.748791386326,
+          "cagr": 0.14442934263661122,
+          "min_equity_over_peak": 0.6056851831803143,
+          "n_long": 75,
+          "n_short": 77,
+          "n_stop": 9,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 417661.2535403566,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 24222.08082592862,
+          "cagr": 0.14073694172774198,
+          "min_equity_over_peak": 0.5960518187635794,
+          "n_long": 75,
+          "n_short": 77,
+          "n_stop": 9,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 410217.0126307545,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 23525.736106175056,
+          "cagr": 0.13579508321430178,
+          "min_equity_over_peak": 0.5940689977571775,
+          "n_long": 75,
+          "n_short": 77,
+          "n_stop": 9,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 404650.497571475,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ]
+    },
+    "eth": {
+      "baseline": [
+        {
+          "end_cny": 11181.139024499053,
+          "cagr": 0.01675565586744021,
+          "min_equity_over_peak": 0.4760191090565326,
+          "trades": 15,
+          "n_stop": 15,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 11038.867587711964,
+          "cagr": 0.01481955531749879,
+          "min_equity_over_peak": 0.4762843253654469,
+          "trades": 15,
+          "n_stop": 15,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 10444.260931972804,
+          "cagr": 0.006490622739951046,
+          "min_equity_over_peak": 0.47560691292435325,
+          "trades": 14,
+          "n_stop": 14,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 11104.417642800983,
+          "cagr": 0.015714215543515708,
+          "min_equity_over_peak": 0.47409680377521596,
+          "trades": 15,
+          "n_stop": 15,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pre_committed": [
+        {
+          "end_cny": 32428.770214735905,
+          "cagr": 0.1913687191820892,
+          "min_equity_over_peak": 0.5672057455580926,
+          "n_long": 79,
+          "n_short": 62,
+          "n_stop": 88,
+          "n_flatten_or_flip": 52,
+          "turnover_usdt": 410347.4826249423,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 30750.226511505538,
+          "cagr": 0.18198149105709938,
+          "min_equity_over_peak": 0.5632284743447019,
+          "n_long": 79,
+          "n_short": 62,
+          "n_stop": 88,
+          "n_flatten_or_flip": 52,
+          "turnover_usdt": 394425.28587722575,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 25532.775034847105,
+          "cagr": 0.14971953804648952,
+          "min_equity_over_peak": 0.5480657885466442,
+          "n_long": 79,
+          "n_short": 62,
+          "n_stop": 88,
+          "n_flatten_or_flip": 52,
+          "turnover_usdt": 342407.8877703983,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 31885.78113640376,
+          "cagr": 0.18837825648013506,
+          "min_equity_over_peak": 0.5657821768976682,
+          "n_long": 79,
+          "n_short": 62,
+          "n_stop": 88,
+          "n_flatten_or_flip": 52,
+          "turnover_usdt": 405794.21024474053,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pooled_pick": [
+        {
+          "end_cny": 22251.229374575774,
+          "cagr": 0.1264182944611798,
+          "min_equity_over_peak": 0.7219235495353314,
+          "n_long": 77,
+          "n_short": 76,
+          "n_stop": 10,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 236147.2300789614,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 22257.5741233976,
+          "cagr": 0.12646609393202035,
+          "min_equity_over_peak": 0.7210711395670372,
+          "n_long": 77,
+          "n_short": 76,
+          "n_stop": 10,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 235788.4112559538,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 21989.61864393982,
+          "cagr": 0.12443722207151331,
+          "min_equity_over_peak": 0.7175148318595121,
+          "n_long": 77,
+          "n_short": 76,
+          "n_stop": 10,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 233849.6200843886,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 22051.851467443397,
+          "cagr": 0.12491029729702396,
+          "min_equity_over_peak": 0.7211696674064857,
+          "n_long": 77,
+          "n_short": 76,
+          "n_stop": 10,
+          "n_flatten_or_flip": 142,
+          "turnover_usdt": 235211.89075010124,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ]
+    },
+    "sol": {
+      "baseline": [
+        {
+          "end_cny": 8540.454891504007,
+          "cagr": -0.02608753364359595,
+          "min_equity_over_peak": 0.4705042047448792,
+          "trades": 16,
+          "n_stop": 16,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 13119.74049896085,
+          "cagr": 0.04654495376462742,
+          "min_equity_over_peak": 0.4695992984356435,
+          "trades": 14,
+          "n_stop": 14,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 12446.200255142563,
+          "cagr": 0.037344529157478545,
+          "min_equity_over_peak": 0.4682523809405153,
+          "trades": 12,
+          "n_stop": 12,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 8496.527930790826,
+          "cagr": -0.02692861012076342,
+          "min_equity_over_peak": 0.4682505230026775,
+          "trades": 15,
+          "n_stop": 15,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pre_committed": [
+        {
+          "end_cny": 15330.888270523632,
+          "cagr": 0.07421456884960786,
+          "min_equity_over_peak": 0.41148621310082506,
+          "n_long": 75,
+          "n_short": 72,
+          "n_stop": 91,
+          "n_flatten_or_flip": 55,
+          "turnover_usdt": 219720.91646160765,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 15229.691016321083,
+          "cagr": 0.07302326492851119,
+          "min_equity_over_peak": 0.41088573772371717,
+          "n_long": 75,
+          "n_short": 71,
+          "n_stop": 90,
+          "n_flatten_or_flip": 55,
+          "turnover_usdt": 218950.04237590882,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 13734.73928471346,
+          "cagr": 0.05460843934171544,
+          "min_equity_over_peak": 0.396763026139442,
+          "n_long": 75,
+          "n_short": 70,
+          "n_stop": 90,
+          "n_flatten_or_flip": 54,
+          "turnover_usdt": 205510.7912758656,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 15286.797256861433,
+          "cagr": 0.07369633233445838,
+          "min_equity_over_peak": 0.41261334152410245,
+          "n_long": 75,
+          "n_short": 72,
+          "n_stop": 91,
+          "n_flatten_or_flip": 55,
+          "turnover_usdt": 219022.89957402856,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pooled_pick": [
+        {
+          "end_cny": 22048.0238329551,
+          "cagr": 0.1416426121344272,
+          "min_equity_over_peak": 0.6242592226595842,
+          "n_long": 71,
+          "n_short": 76,
+          "n_stop": 20,
+          "n_flatten_or_flip": 126,
+          "turnover_usdt": 213490.08435764178,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 21966.92345958388,
+          "cagr": 0.14093794666535553,
+          "min_equity_over_peak": 0.6236919345416638,
+          "n_long": 71,
+          "n_short": 76,
+          "n_stop": 20,
+          "n_flatten_or_flip": 126,
+          "turnover_usdt": 213014.5139363953,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 21681.732365987882,
+          "cagr": 0.13844265296714742,
+          "min_equity_over_peak": 0.6223368950450788,
+          "n_long": 71,
+          "n_short": 76,
+          "n_stop": 20,
+          "n_flatten_or_flip": 126,
+          "turnover_usdt": 211281.29955194995,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 21879.849486934585,
+          "cagr": 0.14017896278307984,
+          "min_equity_over_peak": 0.6225721866388412,
+          "n_long": 71,
+          "n_short": 76,
+          "n_stop": 20,
+          "n_flatten_or_flip": 126,
+          "turnover_usdt": 212500.60547993975,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ]
+    },
+    "btc_spot_2017": {
+      "baseline": [
+        {
+          "end_cny": 9635.455379381592,
+          "cagr": -0.01579384500359926,
+          "min_equity_over_peak": 0.4959052120613489,
+          "trades": 11,
+          "n_stop": 10,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 9579.1228698824,
+          "cagr": -0.018264718233992006,
+          "min_equity_over_peak": 0.49573829157893484,
+          "trades": 11,
+          "n_stop": 10,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 10184.260270511595,
+          "cagr": 0.007858005719139749,
+          "min_equity_over_peak": 0.5228567524283331,
+          "trades": 10,
+          "n_stop": 9,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 9599.891657284226,
+          "cagr": -0.017352787870463016,
+          "min_equity_over_peak": 0.49505732789371315,
+          "trades": 11,
+          "n_stop": 10,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pre_committed": [
+        {
+          "end_cny": 21979.534109411954,
+          "cagr": 0.4015944208075706,
+          "min_equity_over_peak": 0.7192075326329488,
+          "n_long": 27,
+          "n_short": 21,
+          "n_stop": 31,
+          "n_flatten_or_flip": 16,
+          "turnover_usdt": 747315.4365930816,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 21771.673278911923,
+          "cagr": 0.39589665463894064,
+          "min_equity_over_peak": 0.7193278935826615,
+          "n_long": 27,
+          "n_short": 21,
+          "n_stop": 31,
+          "n_flatten_or_flip": 16,
+          "turnover_usdt": 739469.780285878,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 20405.234282616027,
+          "cagr": 0.35764225114951875,
+          "min_equity_over_peak": 0.7050208789013591,
+          "n_long": 27,
+          "n_short": 21,
+          "n_stop": 31,
+          "n_flatten_or_flip": 16,
+          "turnover_usdt": 719452.7288556977,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 21917.13787269927,
+          "cagr": 0.39988729525728783,
+          "min_equity_over_peak": 0.7181402118097948,
+          "n_long": 27,
+          "n_short": 21,
+          "n_stop": 31,
+          "n_flatten_or_flip": 16,
+          "turnover_usdt": 745190.3886800322,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ],
+      "candidate_pooled_pick": [
+        {
+          "end_cny": 17270.470757283696,
+          "cagr": 0.2639550565226758,
+          "min_equity_over_peak": 0.7638155500940873,
+          "n_long": 30,
+          "n_short": 23,
+          "n_stop": 11,
+          "n_flatten_or_flip": 42,
+          "turnover_usdt": 463468.5803472938,
+          "stop_extra": 0.0,
+          "taker": null
+        },
+        {
+          "end_cny": 17230.808953478132,
+          "cagr": 0.2627098663199192,
+          "min_equity_over_peak": 0.7633460366885985,
+          "n_long": 30,
+          "n_short": 23,
+          "n_stop": 11,
+          "n_flatten_or_flip": 42,
+          "turnover_usdt": 462684.1704398082,
+          "stop_extra": 0.001,
+          "taker": null
+        },
+        {
+          "end_cny": 17067.66716006603,
+          "cagr": 0.2575707008477317,
+          "min_equity_over_peak": 0.7617209225677384,
+          "n_long": 30,
+          "n_short": 23,
+          "n_stop": 11,
+          "n_flatten_or_flip": 42,
+          "turnover_usdt": 459325.8391486017,
+          "stop_extra": 0.005,
+          "taker": null
+        },
+        {
+          "end_cny": 17217.780357491294,
+          "cagr": 0.2623004737252843,
+          "min_equity_over_peak": 0.7633579869784184,
+          "n_long": 30,
+          "n_short": 23,
+          "n_stop": 11,
+          "n_flatten_or_flip": 42,
+          "turnover_usdt": 462726.51894228265,
+          "stop_extra": 0.0,
+          "taker": 0.0005
+        }
+      ]
+    }
+  },
+  "variants_examined": {
+    "candidate_grid": 36,
+    "baseline_walk_forward_family": 55,
+    "candidate_pre_committed": 1,
+    "note": "The candidate's pre-committed values were fixed before its first run. Development runs after that fixed a bug (an ATR warm-up NaN) and checked trades; no value was moved to improve BTC. The baseline itself came from a far larger search that was not recorded."
+  },
+  "summary": {
+    "tapes_with_positive_cagr_baseline_zero_tune": 2,
+    "tapes_with_positive_cagr_candidate": 4,
+    "tapes": 4,
+    "no_clean_out_of_sample_on_btc_2020_2026": true,
+    "reading": "BTC 2020-2026 was used to choose the baseline, so no clean out-of-sample is left on it. Other assets and earlier BTC are the only untouched data, and they are far fewer independent trials than they look because crypto assets move together."
+  },
+  "inputs": {
+    "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
+    "funding.npz": "0682df98242a6fccfe86da66a1da871c2af1d0b955fac6d38734b0059b94cb7a",
+    "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5",
+    "eth_1m.npz": "236738cdb408b13c4f013d179bf370199ddf5b3bf901b7a29547694eff08900e",
+    "sol_1m.npz": "ec95318b486edd1f2e09f296453fe5bc2db5b6640d263758b97ec1a6fbbeb6b5",
+    "btc_spot_2017_1m.npz": "429239fba94821018eeb7086fe0779b953678c8ed68061b8cc8bbd5bb93a9ec3"
+  },
+  "provenance": {
+    "git_head": "bd911bf09baf01b07ff702efee2b55bc988760b5",
+    "git_dirty": false,
+    "files_sha256": {
+      "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
+      "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+      "scripts/frontier.py": "58a4f2abfa4bb566d52dab14f4fc5e52cfed9fca1b3e81e62512fc98aa77a281",
+      "btc_perp/causal.py": "487c7c058b671a4f9b5b93c041768d1a59e8a85a95f89f3ccedb84508300f0cd"
+    },
+    "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
+  }
+}
