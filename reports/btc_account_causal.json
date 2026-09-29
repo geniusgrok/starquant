@@ -48,13 +48,13 @@
     "note": "flat below the lock line means no new entry for the rest of the run"
   },
   "provenance": {
-    "git_head": "508ad58148d7bcf24c068735372acaaa5d957843",
+    "git_head": "32c6d4e748a786c0b93779101154d76bdf201d40",
     "git_dirty": false,
     "files_sha256": {
       "config/btc_account.yaml": "e86d7dd48351d39675dfe5f442181dc0d01d249543db5896e697e9725068c435",
       "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
       "scripts/frontier.py": "58a4f2abfa4bb566d52dab14f4fc5e52cfed9fca1b3e81e62512fc98aa77a281",
-      "btc_perp/causal.py": "487c7c058b671a4f9b5b93c041768d1a59e8a85a95f89f3ccedb84508300f0cd"
+      "btc_perp/causal.py": "dc5b40502c95586425ebdb79d683582e84ea16f4fa77398b715117329c8168b8"
     },
     "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
   },
@@ -67,5 +67,13 @@
     "n_stop": 80,
     "note": "同根收盘成交的旧研究，不是这次的结果"
   },
-  "why_it_can_differ": "开仓、加仓和通道出场改到下一根开盘；止损和一半峰值平仓仍在当根路径上。最后一根的信号没有下一根开盘，不会成交。"
+  "why_it_can_differ": "开仓、加仓和通道出场改到下一根开盘；止损和一半峰值平仓仍在当根路径上。最后一根的信号没有下一根开盘，不会成交。",
+  "completion": {
+    "data_validated": true,
+    "path_complete": true,
+    "execution_closed": false,
+    "economic_pass": false,
+    "note": "回放里成交是模型假设，没有真实执行，所以 execution_closed 恒为 false"
+  },
+  "run_id": "20260929T074029Z-f08ded58"
 }
