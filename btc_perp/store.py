@@ -224,7 +224,7 @@ class Store:
         self._release()
 
     def put_json(self, key: str, value: object) -> None:
-        raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
         self._db.execute(
             "insert into kv(key, value) values(?, ?) on conflict(key) do update set value=excluded.value",
             (key, raw),
