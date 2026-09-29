@@ -45,7 +45,8 @@ create table if not exists intents (
     note text not null,
     attempts integer not null default 1,
     absorbed integer not null default 1,
-    order_id text not null default ''
+    order_id text not null default '',
+    executed text not null default ''
 );
 create table if not exists kv (
     key text primary key,
@@ -94,7 +95,7 @@ class Store:
         existing = {str(row[0]) for row in self._db.execute("select name from sqlite_master where type='table'")}
         if "intents" in existing:
             columns = {str(row[1]) for row in self._db.execute("pragma table_info(intents)")}
-            missing = {"attempts", "absorbed", "order_id"} - columns
+            missing = {"attempts", "absorbed", "order_id", "executed"} - columns
             if missing:
                 self._keep_pre_upgrade_copy()
         self._db.executescript(_SCHEMA)
@@ -112,6 +113,8 @@ class Store:
             self._db.execute("alter table intents add column absorbed integer not null default 1")
         if "order_id" not in columns:
             self._db.execute("alter table intents add column order_id text not null default ''")
+        if "executed" not in columns:
+            self._db.execute("alter table intents add column executed text not null default ''")
         self._db.commit()
         self.load_book()
         self._archive()
@@ -331,8 +334,8 @@ class Store:
         self._db.execute(
             """insert into intents(
                 client_id, action, phase, side, qty, reduce_only, close_position,
-                trigger_price, environment, created_ms, note, attempts, absorbed, order_id
-            ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                trigger_price, environment, created_ms, note, attempts, absorbed, order_id, executed
+            ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 intent.client_id,
                 intent.action,
@@ -348,6 +351,7 @@ class Store:
                 intent.attempts,
                 int(intent.absorbed),
                 intent.order_id,
+                intent.executed,
             ),
         )
         self._commit()
@@ -359,16 +363,28 @@ class Store:
             self.save_book(book)
 
     def mark_intent(
-        self, client_id: str, phase: str, note: str = "", *, attempts: int | None = None, order_id: str = ""
+        self,
+        client_id: str,
+        phase: str,
+        note: str = "",
+        *,
+        attempts: int | None = None,
+        order_id: str = "",
+        executed: str | None = None,
     ) -> None:
-        if attempts is None:
-            self._db.execute("update intents set phase=?, note=? where client_id=?", (phase, note, client_id))
-        else:
-            self._db.execute(
-                "update intents set phase=?, note=?, attempts=? where client_id=?", (phase, note, attempts, client_id)
-            )
+        columns = ["phase=?", "note=?"]
+        values: list[object] = [phase, note]
+        if attempts is not None:
+            columns.append("attempts=?")
+            values.append(attempts)
         if order_id:
-            self._db.execute("update intents set order_id=? where client_id=?", (order_id, client_id))
+            columns.append("order_id=?")
+            values.append(order_id)
+        if executed is not None:
+            columns.append("executed=?")
+            values.append(executed)
+        values.append(client_id)
+        self._db.execute(f"update intents set {', '.join(columns)} where client_id=?", values)
         self._commit()
 
     def own_order_ids(self) -> set[str]:
@@ -377,7 +393,7 @@ class Store:
     def intents(self, phases: tuple[str, ...] | None = None) -> list[Intent]:
         query = (
             "select client_id, action, phase, side, qty, reduce_only, close_position, "
-            "trigger_price, environment, created_ms, note, attempts, absorbed, order_id from intents"
+            "trigger_price, environment, created_ms, note, attempts, absorbed, order_id, executed from intents"
         )
         args: tuple[str, ...] = ()
         if phases is not None:
@@ -400,6 +416,7 @@ class Store:
                 attempts=int(row[11]),
                 absorbed=bool(row[12]),
                 order_id=str(row[13]),
+                executed=str(row[14]),
             )
             for row in rows
         ]

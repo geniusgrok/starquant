@@ -161,7 +161,17 @@ def position_bounds(
             else:
                 low += move
         elif item.action in {"stop", "take"} and counted and item.client_id not in live_algo_ids:
-            closable = True
+            # A confirmed child fill explains only its own quantity. An empty
+            # quantity on a filled close-position order is a full close. Anything
+            # else, including a parent that merely ended, explains nothing.
+            amount = _executed_qty(item)
+            if amount is not None and amount > 0:
+                if item.side == "SELL":
+                    low -= amount
+                elif item.side == "BUY":
+                    high += amount
+            elif item.phase == "filled" and item.close_position and amount is None:
+                closable = True
     if closable and held > 0:
         low -= held
     elif closable and held < 0:
@@ -169,25 +179,34 @@ def position_bounds(
     return low, high
 
 
+def _executed_qty(intent: Intent) -> float | None:
+    """Cumulative confirmed fill. ``None`` means the venue has not reported one."""
+    raw = intent.executed
+    if raw == "":
+        return None
+    try:
+        number = float(raw)
+    except ValueError:
+        return None
+    if number < 0 or number != number or number in {float("inf"), float("-inf")}:
+        return None
+    return number
+
+
 def foreign_trades(
     snapshot: Snapshot, intents: list[Intent], own_orders: frozenset[str] | set[str], cursor: int
 ) -> list[int]:
-    """Fills after the cursor that no order of ours explains."""
-    pending = [
-        item for item in intents if item.action in POSITION_ACTIONS and (item.phase in OPEN_PHASES or not item.absorbed)
-    ]
-    protective = [
-        item
-        for item in intents
-        if item.action in {"stop", "take"} and item.phase in {"sent", "acked", "partial", "unknown", "filled"}
-    ]
+    """Fills after the cursor whose native order id is not one of ours.
+
+    Same side, a compatible time, or an old protection are not proof. ``intents``
+    is unused on purpose: ownership is the stored order id and nothing else.
+    """
+    _ = intents
     found: list[int] = []
     for trade in snapshot.trades:
-        if trade.trade_id <= cursor or (trade.order_id and trade.order_id in own_orders):
+        if trade.trade_id <= cursor:
             continue
-        if any(item.side == trade.side and item.created_ms <= trade.time_ms for item in pending):
-            continue
-        if any(item.side == trade.side and item.created_ms <= trade.time_ms for item in protective):
+        if trade.order_id and trade.order_id in own_orders:
             continue
         found.append(trade.trade_id)
     return found

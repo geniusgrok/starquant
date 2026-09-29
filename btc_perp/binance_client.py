@@ -266,6 +266,12 @@ class UsdMClient:
     def query_order(self, client_id: str) -> dict[str, object]:
         return self._signed("/fapi/v1/order", {"symbol": "BTCUSDT", "origClientOrderId": client_id}, "GET")[1]
 
+    def query_order_id(self, order_id: str) -> dict[str, object]:
+        """The child of a finished conditional order, read by its native id."""
+        if not order_id:
+            raise ValueError("缺少原生订单号")
+        return self._signed("/fapi/v1/order", {"symbol": "BTCUSDT", "orderId": order_id}, "GET")[1]
+
     def query_algo(self, client_id: str) -> dict[str, object]:
         return self._signed("/fapi/v1/algoOrder", {"clientAlgoId": client_id}, "GET")[1]
 

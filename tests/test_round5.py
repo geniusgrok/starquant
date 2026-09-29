@@ -370,7 +370,7 @@ def test_a_cancel_that_finds_nothing_is_not_an_expiry(tmp_path: Path) -> None:
         ({"code": -9999, "msg": "brand new"}, False, "unknown"),
         ({"code": "weird"}, False, "unknown"),
         ({"algoStatus": "FINISHED"}, False, "unknown"),
-        ({"algoStatus": "FINISHED", "actualOrderId": "88"}, False, "filled"),
+        ({"algoStatus": "FINISHED", "actualOrderId": "88"}, False, "unknown"),
         ({"status": "CANCELED", "executedQty": "0.5"}, False, "filled"),
         ({"status": "EXPIRED", "executedQty": "0"}, False, "expired"),
         ({"status": "FILLED", "executedQty": "1", "orderId": 4}, False, "filled"),
@@ -1015,6 +1015,302 @@ def test_the_run_loop_stops_only_for_a_request_that_belongs_to_it(tmp_path: Path
     assert _request_pending(tmp_path, "stop.request", "demo")
     (tmp_path / "stop.request").write_text("not json")
     assert _request_pending(tmp_path, "stop.request", "demo")
+
+
+# Wiring close: fill identity, final snapshot, and the production clock -----------------
+
+
+def _held_book(qty: float = 0.01) -> Book:
+    book = _book(side=1, qty=qty, entry=100.0, units=1, stop=96.8, last_add=100.0)
+    book.swaps["trade_cursor"] = "10"
+    return book
+
+
+def _finished_parent(venue: FakeVenue, child: dict[str, object]) -> None:
+    venue.algos["st1"] = {"algoStatus": "FINISHED", "actualOrderId": "88", "symbol": "BTCUSDT"}
+    body = {"symbol": "BTCUSDT", "side": "SELL", "positionSide": "BOTH", "orderId": "88"}
+    body.update(child)
+    venue.order_ids["88"] = body
+
+
+def test_a_same_side_pending_order_does_not_claim_someone_elses_fill(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    trade = Trade(11, "other-order", "SELL", 0.002, now)
+    snap = _fresh(position_qty=0.008, entry_price=100.0)
+    snap = dataclasses.replace(snap, trades=(trade,), server_time_ms=now)
+    venue = FakeVenue(snap)
+    store = _store(tmp_path)
+    try:
+        store.save_book(_held_book())
+        store.insert_intent(
+            Intent("rd1", "reduce", "acked", "SELL", "0.002", True, False, "", "demo", now - 1_000, "", 1, False)
+        )
+        venue.orders["rd1"] = {"status": "NEW", "executedQty": "0", "side": "SELL", "symbol": "BTCUSDT"}
+        report = _run(store, venue, bar, now)
+        assert report.frozen and "不是本程序" in report.reason
+        assert venue.market_ids == []
+        kept = store.load_book()
+        assert kept.qty == pytest.approx(0.01)
+        assert kept.swaps["trade_cursor"] == "10"
+    finally:
+        store.close()
+
+
+def test_old_protections_do_not_hide_a_flat_and_reopen(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    trades = (
+        Trade(11, "ext-1", "SELL", 0.01, now - 2_000),
+        Trade(12, "ext-2", "BUY", 0.01, now - 1_000),
+    )
+    snap = dataclasses.replace(_fresh(position_qty=0.01, entry_price=100.0), trades=trades, server_time_ms=now)
+    venue = FakeVenue(snap)
+    store = _store(tmp_path)
+    try:
+        store.save_book(_held_book())
+        store.insert_intent(
+            Intent("stold", "stop", "filled", "SELL", "", False, True, "90", "demo", now - 9_000, "", 1, True, "50")
+        )
+        store.insert_intent(
+            Intent("tpold", "take", "filled", "BUY", "", False, True, "1000", "demo", now - 8_000, "", 1, True, "51")
+        )
+        report = _run(store, venue, bar, now)
+        assert report.frozen and "不是本程序" in report.reason
+        assert store.load_book().qty == pytest.approx(0.01)
+        assert store.load_book().swaps["trade_cursor"] == "10"
+    finally:
+        store.close()
+
+
+def test_a_confirmed_partial_stop_updates_the_remainder_and_keeps_protection(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    snap = dataclasses.replace(
+        _fresh(position_qty=0.008, entry_price=100.0),
+        trades=(Trade(11, "88", "SELL", 0.002, now - 500),),
+        server_time_ms=now,
+    )
+    venue = FakeVenue(snap)
+    _finished_parent(venue, {"status": "PARTIALLY_FILLED", "executedQty": "0.002"})
+    store = _store(tmp_path)
+    try:
+        store.save_book(_held_book())
+        store.insert_intent(
+            Intent("st1", "stop", "acked", "SELL", "", False, True, "96.8", "demo", now - 5_000, "", 1, True)
+        )
+        report = _run(store, venue, bar, now)
+        assert not report.frozen
+        assert store.load_book().qty == pytest.approx(0.008)
+        child = next(item for item in store.intents() if item.client_id == "st1")
+        assert child.order_id == "88"
+        assert float(child.executed) == pytest.approx(0.002)
+        assert child.phase == "partial"
+        assert venue.algo_ids  # the remaining position gets protection again
+        assert store.load_book().swaps["trade_cursor"] == "11"
+        again = _run(store, venue, bar, now)
+        assert again.position_qty == pytest.approx(0.008)
+        assert store.load_book().units == 1
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize(
+    ("child", "phase", "position", "flat"),
+    [
+        ({"status": "NEW", "executedQty": "0"}, "acked", 0.01, False),
+        ({"status": "CANCELED", "executedQty": "0"}, "canceled", 0.01, False),
+        ({"status": "CANCELED", "executedQty": "0.002"}, "filled", 0.008, False),
+        ({"status": "FILLED", "executedQty": "0.01"}, "filled", 0.0, True),
+    ],
+)
+def test_a_finished_parent_follows_the_child_order(
+    tmp_path: Path, child: dict[str, str], phase: str, position: float, flat: bool
+) -> None:
+    bar, now = _bar(100.0)
+    trades = () if position == 0.01 else (Trade(11, "88", "SELL", round(0.01 - position, 6), now - 400),)
+    snap = dataclasses.replace(_fresh(position_qty=position, entry_price=100.0), trades=trades, server_time_ms=now)
+    if flat:
+        take = AlgoOrder("tp1", "TAKE_PROFIT_MARKET", "SELL", 1_000.0, True, False, 0.0, "NEW", "CONTRACT_PRICE")
+        snap = dataclasses.replace(snap, algos=(take,), entry_price=0.0)
+    venue = FakeVenue(snap)
+    _finished_parent(venue, child)
+    store = _store(tmp_path)
+    try:
+        store.save_book(_held_book())
+        store.insert_intent(
+            Intent("st1", "stop", "acked", "SELL", "", False, True, "96.8", "demo", now - 5_000, "", 1, True)
+        )
+        if flat:
+            store.insert_intent(
+                Intent("tp1", "take", "acked", "SELL", "", False, True, "1000", "demo", now - 5_000, "", 1, True)
+            )
+        report = _run(store, venue, bar, now, channels=(1.0e9, 1.0, 1.0e9, 1.0, bar.open_ms - 3_600_000))
+        found = next(item for item in store.intents() if item.client_id == "st1")
+        assert found.phase == phase
+        assert store.load_book().qty == pytest.approx(position)
+        if flat:
+            assert not report.frozen
+            assert "tp1" in venue.cancels
+        elif position == 0.008 and child["status"] == "CANCELED":
+            assert store.load_book().qty != pytest.approx(0.0)
+    finally:
+        store.close()
+
+
+def test_a_child_that_cannot_be_read_is_not_recorded_as_our_fill(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+
+    class Unreadable(FakeVenue):
+        def query_order_id(self, order_id: str) -> dict[str, object]:
+            raise RuntimeError("child endpoint down")
+
+    venue = Unreadable(_fresh(position_qty=0.01, entry_price=100.0, server_time_ms=now))
+    venue.algos["st1"] = {"algoStatus": "FINISHED", "actualOrderId": "88"}
+    store = _store(tmp_path)
+    try:
+        store.save_book(_held_book())
+        store.insert_intent(
+            Intent("st1", "stop", "acked", "SELL", "", False, True, "96.8", "demo", now - 1_000, "", 1, True)
+        )
+        _run(store, venue, bar, now)
+        found = next(item for item in store.intents() if item.client_id == "st1")
+        assert found.phase == "unknown" and found.order_id == ""
+        assert store.load_book().qty == pytest.approx(0.01)
+    finally:
+        store.close()
+
+
+def test_stop_does_not_keep_success_from_an_earlier_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now))
+    store = _store(tmp_path)
+    original = __import__("btc_perp.runner", fromlist=["_stop_until_safe"])._stop_until_safe
+
+    def arm(*args: object, **kwargs: object) -> bool:
+        result = original(*args, **kwargs)
+        venue.snap = dataclasses.replace(venue.snap, known=False, reason="最后一次读取失败")
+        return result
+
+    monkeypatch.setattr("btc_perp.runner._stop_until_safe", arm)
+    try:
+        report = _run(store, venue, bar, now, mode="stop")
+        assert not report.settled
+        assert report.remaining and "账户快照未知" in report.remaining[0]
+    finally:
+        store.close()
+
+
+def test_a_late_order_on_the_final_read_reopens_the_stop_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now))
+    store = _store(tmp_path)
+    original = __import__("btc_perp.runner", fromlist=["_stop_until_safe"])._stop_until_safe
+
+    def arm(*args: object, **kwargs: object) -> bool:
+        result = original(*args, **kwargs)
+        stray = RestingOrder("ext1", "BUY", "LIMIT", 1.0, 0.0, False, "NEW", 90.0)
+        venue.snap = dataclasses.replace(venue.snap, orders=(stray,))
+        return result
+
+    monkeypatch.setattr("btc_perp.runner._stop_until_safe", arm)
+    try:
+        report = _run(store, venue, bar, now, mode="stop")
+        assert not report.settled
+        assert any("ext1" in item for item in report.remaining)
+    finally:
+        store.close()
+
+
+def test_flatten_stops_naming_what_is_left_when_the_rounds_run_out(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+
+    class Stuck(FakeVenue):
+        def place_market(self, *, client_id: str, side: str, qty: str, reduce_only: bool) -> dict[str, object]:
+            self.market_ids.append(client_id)
+            self.orders[client_id] = {"status": "NEW", "executedQty": "0", "orderId": "9"}
+            return self.orders[client_id]
+
+    venue = Stuck(dataclasses.replace(_covered(2.0), server_time_ms=now))
+    store = _store(tmp_path)
+    try:
+        for name, action in (("st1", "stop"), ("tp1", "take")):
+            store.insert_intent(
+                Intent(name, action, "acked", "SELL", "2.0", True, False, "", "demo", now - 1_000, "", 1, True)
+            )
+        report = _run(store, venue, bar, now, mode="flatten")
+        assert not report.settled
+        assert report.remaining
+        assert len(venue.market_ids) <= 4
+    finally:
+        store.close()
+
+
+def test_an_expired_decision_blocks_an_entry_and_still_protects(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    snap = _snap(server_time_ms=now, position_qty=0.01, entry_price=100.0, clock_offset_ms=0, clock_rtt_ms=1)
+    venue = FakeVenue(snap)
+    store = _store(tmp_path)
+    try:
+        store.save_book(_book(side=1, qty=0.01, entry=100.0, units=1, stop=96.8, last_add=90.0))
+        report = _run(store, venue, bar, now, clock=lambda: now + 45_000)
+        assert venue.market_ids == []
+        assert venue.algo_ids
+        assert any("过期" in item for item in report.alerts)
+    finally:
+        store.close()
+
+
+def test_an_expired_decision_still_allows_a_reduce(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    snap = dataclasses.replace(_covered(2.0), server_time_ms=now, clock_offset_ms=0, clock_rtt_ms=1)
+    venue = FakeVenue(snap)
+    store = _store(tmp_path)
+    try:
+        for name, action in (("st1", "stop"), ("tp1", "take")):
+            store.insert_intent(
+                Intent(name, action, "acked", "SELL", "", False, True, "", "demo", now - 1_000, "", 1, True)
+            )
+        store.save_book(_book(side=1, qty=2.0, entry=100.0, units=1, stop=96.8, last_add=100.0))
+        _run(
+            store,
+            venue,
+            bar,
+            now,
+            clock=lambda: now + 45_000,
+            channels=(50.0, 1.0, 1.0e9, 200.0, bar.open_ms - 3_600_000),
+        )
+        assert venue.market_ids  # the channel exit is a reduce, and the age check does not block it
+    finally:
+        store.close()
+
+
+def test_an_old_reverse_plan_is_not_refreshed_with_this_cycles_clock(tmp_path: Path) -> None:
+    bar, now = _bar(100.0)
+    venue = FakeVenue(_snap(server_time_ms=now))
+    store = _store(tmp_path)
+    try:
+        book = _book()
+        book.swaps["after_flat"] = "BUY"
+        book.swaps["after_flat_ms"] = str(now - 120_000)
+        book.swaps["after_scale"] = "1"
+        store.save_book(book)
+        _run(store, venue, bar, now, channels=(1.0e9, 1.0, 1.0e9, 1.0, bar.open_ms - 3_600_000))
+        assert venue.market_ids == []
+        kept = store.load_book().swaps.get("after_flat_ms", "")
+        assert kept != str(now)
+    finally:
+        store.close()
+
+
+def test_a_negative_read_age_is_not_treated_as_fresh(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    try:
+        ahead = dataclasses.replace(_fresh(), read_ms=NOW + 45_000)
+        assert "过期" in _entry_gate(store, ahead, _book(), load_config(), _ctx(), NOW)
+        aligned = dataclasses.replace(_fresh(), read_ms=NOW + 500, clock_offset_ms=500, clock_rtt_ms=1)
+        assert _entry_gate(store, aligned, _book(), load_config(), _ctx(), NOW) == ""
+    finally:
+        store.close()
 
 
 def test_an_intent_with_an_unrecognised_phase_is_not_silently_ignored(tmp_path: Path) -> None:

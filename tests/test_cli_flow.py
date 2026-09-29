@@ -25,6 +25,7 @@ class LiveFake(FakeVenue):
         super().__init__(_snap(**snap_fields))  # type: ignore[arg-type]
         self.snapshots = 0
         self.fail_after: int | None = None
+        self.minutes: list[object] = []
         self.transport = None
 
     def snapshot(self) -> Snapshot:
@@ -34,7 +35,9 @@ class LiveFake(FakeVenue):
         now = int(time.time() * 1000)
         return dataclasses.replace(self.snap, server_time_ms=now, read_ms=now)
 
-    def klines(self, *_a: object, **_k: object) -> list[object]:
+    def klines(self, interval: str = "1m", *_a: object, **_k: object) -> list[object]:
+        if interval == "1m":
+            return list(self.minutes)
         return []
 
 
@@ -152,3 +155,86 @@ def test_the_wind_down_reports_unverified_when_it_cannot_read_the_account(
     assert "收尾没有完成" in capsys.readouterr().out
     body = _state(state)
     assert body["wind_down"] == "unverified" or body["wind_down"]["verified"] is False
+
+
+def _pinned_stamp() -> float:
+    """Five seconds after a minute boundary, so the previous close is fresh and the age is stable."""
+    now_ms = int(time.time() * 1000)
+    return ((now_ms // 60_000) * 60_000 + 5_000) / 1000
+
+
+def _minute(now_ms: int) -> list[object]:
+    open_ms = (now_ms // 60_000) * 60_000 - 60_000
+    return [open_ms, "100", "100", "100", "100", "10", open_ms + 59_999, "1000000"]
+
+
+def test_the_real_entry_uses_a_clock_that_moves(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The command line does not pass a clock. A gate 45s after the read must not still call it fresh."""
+    from btc_perp.model import Action
+
+    venue, _state_dir = wired
+    stamp = _pinned_stamp()
+    monkeypatch.setattr(time, "time", lambda: stamp)
+    venue.snap = dataclasses.replace(venue.snap, clock_offset_ms=0, clock_rtt_ms=1)
+    venue.minutes = [_minute(int(stamp * 1000))]
+    monkeypatch.setattr("btc_perp.runner.decide", lambda *_a, **_k: Action("enter", 1, 2.0, 0.0, 0.0, "probe"))
+    monkeypatch.setattr("btc_perp.runner._wall_ms", lambda: int(stamp * 1000) + 45_000)
+    code = entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"])
+    assert code == 2
+    assert venue.market_ids == []
+    assert "过期" in capsys.readouterr().out
+
+
+def test_a_fast_cycle_on_the_same_entry_still_sends(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from btc_perp.model import Action
+
+    venue, _state_dir = wired
+    stamp = _pinned_stamp()
+    monkeypatch.setattr(time, "time", lambda: stamp)
+    venue.snap = dataclasses.replace(venue.snap, clock_offset_ms=0, clock_rtt_ms=1)
+    venue.minutes = [_minute(int(stamp * 1000))]
+    monkeypatch.setattr("btc_perp.runner.decide", lambda *_a, **_k: Action("enter", 1, 2.0, 0.0, 0.0, "probe"))
+    code = entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"])
+    assert venue.market_ids
+    assert "过期" not in capsys.readouterr().out
+    assert code == 2  # the wind-down stop freezes new entries; the order itself was sent
+
+
+def test_a_failed_wind_down_after_a_clean_cycle_is_not_exit_zero(
+    wired: tuple[LiveFake, Path], capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    venue, state = wired
+    stamp = _pinned_stamp()
+    monkeypatch.setattr(time, "time", lambda: stamp)
+    venue.snap = dataclasses.replace(venue.snap, clock_offset_ms=0, clock_rtt_ms=1)
+    venue.minutes = [_minute(int(stamp * 1000))]
+    venue.fail_after = 1
+    code = entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"])
+    assert code == 2
+    assert "收尾没有完成" in capsys.readouterr().out
+    assert _state(state)["wind_down"] == "unverified"
+
+
+def test_flatten_of_a_quiet_account_exits_zero(
+    wired: tuple[LiveFake, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    _venue, state = wired
+    code = entry.main(["flatten", "--environment", "demo"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "settled=true" in out
+    body = _state(state)
+    assert isinstance(body["wind_down"], dict) and body["wind_down"]["verified"] is True
+
+
+def test_interrupt_with_a_confirmed_stop_is_named_apart_from_an_unconfirmed_one() -> None:
+    from btc_perp.__main__ import _interrupt_line
+    from btc_perp.runner import CycleReport
+
+    done = CycleReport("stop", True, "", (), 0.0, True, (), settled=True)
+    assert _interrupt_line(done) == "用户中断，收尾已确认"
+    assert _interrupt_line(None) == "用户中断，收尾未确认"

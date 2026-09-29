@@ -22,8 +22,14 @@ _FILTERS = Filters(0.1, 0.001, 0.001, 100.0, 0.1, 1_000_000.0)
 
 
 def run_cycle(store: Store, venue: FakeVenue, **kwargs: object):
-    """The fake venue reads its account at the cycle's own clock, so quotes are fresh."""
-    venue.read_ms = int(kwargs["now_ms"])  # type: ignore[call-overload]
+    """The fake venue reads its account at the cycle's own clock, so quotes are fresh.
+
+    The production default clock is the wall clock. Tests pin it to ``now_ms``
+    unless a case passes its own.
+    """
+    now = int(kwargs["now_ms"])  # type: ignore[call-overload]
+    venue.read_ms = now
+    kwargs.setdefault("clock", lambda: now)
     return _real_run_cycle(store, venue, **kwargs)  # type: ignore[arg-type]
 
 
@@ -64,6 +70,7 @@ class FakeVenue:
         self.fail_market: Exception | None = None
         self.market_body: dict[str, object] | None = None
         self.orders: dict[str, dict[str, object]] = {}
+        self.order_ids: dict[str, dict[str, object]] = {}
         self.algos: dict[str, dict[str, object]] = {}
         self.read_ms = 0
 
@@ -154,6 +161,9 @@ class FakeVenue:
 
     def query_order(self, client_id: str) -> dict[str, object]:
         return self.orders.get(client_id, {"code": -2013, "msg": "Order does not exist."})
+
+    def query_order_id(self, order_id: str) -> dict[str, object]:
+        return self.order_ids.get(order_id, {"code": -2013, "msg": "Order does not exist."})
 
     def query_algo(self, client_id: str) -> dict[str, object]:
         return self.algos.get(client_id, {"code": -2013, "msg": "Order does not exist."})

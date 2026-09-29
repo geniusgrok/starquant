@@ -75,6 +75,7 @@ def _serve(payload: bytes | None) -> int:
 def test_private_stream_url_stays_on_the_official_demo_host() -> None:
     url = user_stream_url("demo", "listen-key-test")
     assert url.startswith("wss://demo-fstream.binance.com/private/ws?listenKey=listen-key-test&events=")
+    assert "/private/ws/listen-key-test" not in url
     assert "ALGO_UPDATE" in url
     assert "ORDER_TRADE_UPDATE" in url
     assert "binancefuture" not in url

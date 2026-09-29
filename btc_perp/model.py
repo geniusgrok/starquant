@@ -121,6 +121,7 @@ class Intent:
     attempts: int = 1
     absorbed: bool = True
     order_id: str = ""
+    executed: str = ""
 
 
 @dataclass

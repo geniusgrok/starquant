@@ -28,6 +28,7 @@ from btc_perp.machine import (
     freeze_for_manual,
     new_client_id,
     plan_protection,
+    position_bounds,
     promote_protection,
     protections_cover,
     quantize_down,
@@ -81,6 +82,9 @@ class Venue(Protocol):
 
     def query_algo(self, client_id: str) -> dict[str, object]:
         """Read one algo order by its original client id."""
+
+    def query_order_id(self, order_id: str) -> dict[str, object]:
+        """Read one plain order by its native order id. Used for an algo's child."""
 
 
 @dataclass(frozen=True)
@@ -179,9 +183,11 @@ def classify(body: dict[str, object], *, cancel: bool = False) -> Outcome:
     if not status and cancel and code in (0, 200):
         return Outcome("canceled", executed, order_id)
     if status in {"CANCELED", "CANCELLED", "EXPIRED", "REJECTED"} and executed > 0:
+        # Terminal, and only this many contracts traded. Not a full close by itself.
         return Outcome("filled", executed, order_id)
     if status == "FINISHED":
-        return Outcome("filled" if order_id else "unknown", executed, order_id)
+        # The parent ended. ``actualOrderId`` only names the child to query.
+        return Outcome("unknown")
     phase = {
         "NEW": "acked",
         "PARTIALLY_FILLED": "partial",
@@ -202,6 +208,21 @@ def _float(value: object) -> float:
     except (TypeError, ValueError):
         return 0.0
     return number if math.isfinite(number) else 0.0
+
+
+def _wall_ms() -> int:
+    """The production clock. Tests replace this; they do not freeze ``time.time`` inside the cycle."""
+    return int(time.time() * 1000)
+
+
+def _observation_age(snap: Snapshot, now_ms: int) -> int:
+    """Age of the account read, in the same frame the read was stamped in.
+
+    The client stamps ``read_ms`` in exchange time (local clock plus the
+    measured offset). A negative age is a future stamp, which is not fresh.
+    """
+    frame = now_ms + snap.clock_offset_ms if snap.clock_offset_ms is not None else now_ms
+    return frame - snap.read_ms
 
 
 def _drift(snap: Snapshot, now_ms: int) -> str:
@@ -253,7 +274,9 @@ def run_cycle(
     clock: Callable[[], int] | None = None,
 ) -> CycleReport:
     """One pass. ``check`` and ``takeover`` never write to the exchange."""
-    clock_ms = clock or (lambda: now_ms)
+    # The production path must not freeze "now" at the start of the cycle.
+    # Tests and replays pass their own clock. A missing one is the wall clock.
+    clock_ms = clock if clock is not None else _wall_ms
     book = store.load_book()
     sent: list[str] = []
     would: list[str] = []
@@ -343,7 +366,7 @@ def run_cycle(
         else:
             book.entries_frozen = False
             book.freeze_reason = ""
-        _sync_book(store, book, snap, cfg, now_ms)
+        _sync_book(store, book, snap, cfg, now_ms, persist=not dry_run)
         if book.freeze_reason:
             alerts.append(book.freeze_reason)
     _track_naked(book, snap, now_ms)
@@ -371,9 +394,10 @@ def run_cycle(
         if dry_run:
             _safe_stop(store, venue, snap, book, sent, would, alerts, dry_run)
         else:
-            settled = _stop_until_safe(store, venue, book, cfg, environment, prod_enabled, owned, sent, alerts, now_ms)
+            _stop_until_safe(store, venue, book, cfg, environment, prod_enabled, owned, sent, alerts, now_ms)
             snap = venue.snapshot()
-            remaining = _own_remaining(store, snap, entries_only=True)
+            remaining = _remaining_now(store, snap, entries_only=True)
+            settled = snap.known and not remaining
         _save(store, book, dry_run)
         covered, _why = protections_cover(snap)
         return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered, settled, remaining)
@@ -385,11 +409,12 @@ def run_cycle(
         if dry_run:
             _flatten(store, venue, snap, book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
         else:
-            settled, remaining = _flatten_until_done(
-                store, venue, book, cfg, environment, prod_enabled, sent, alerts, now_ms
-            )
+            _flatten_until_done(store, venue, book, cfg, environment, prod_enabled, sent, alerts, now_ms)
             snap = venue.snapshot()
-            _sync_book(store, book, snap, cfg, now_ms)
+            if snap.known:
+                _sync_book(store, book, snap, cfg, now_ms)
+            remaining = _remaining_now(store, snap)
+            settled = snap.known and not remaining
         _save(store, book, dry_run)
         covered, _why = protections_cover(snap)
         return _finish(store, now_ms, mode, book, snap, sent, alerts, dry_run, would, covered, settled, remaining)
@@ -620,12 +645,20 @@ def _rearm(store: Store, book: Book, snap: Snapshot, fx_used: float, alerts: lis
 
 
 def _trade_cursor(book: Book, snap: Snapshot) -> int:
-    """Fills up to here are already accounted for. The first look starts from the newest fill."""
+    """Fills up to here are already accounted for.
+
+    A flat book that has never looked may start at the newest fill: there is
+    no position whose history could be skipped. A book that already holds a
+    position starts at zero, so a fill in the window still has to be proven.
+    """
     raw = book.swaps.get("trade_cursor")
     if raw is None:
-        newest = max((trade.trade_id for trade in snap.trades), default=0)
-        book.swaps["trade_cursor"] = str(newest)
-        return newest
+        if book.side == 0:
+            newest = max((trade.trade_id for trade in snap.trades), default=0)
+            book.swaps["trade_cursor"] = str(newest)
+            return newest
+        book.swaps["trade_cursor"] = "0"
+        return 0
     try:
         return int(raw)
     except ValueError:
@@ -695,7 +728,9 @@ def _init_peaks(book: Book, snap: Snapshot, fx: float | None, fx_used: float) ->
     return ""
 
 
-def _sync_book(store: Store, book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int) -> None:
+def _sync_book(
+    store: Store, book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int, *, persist: bool = True
+) -> None:
     """Follow the exchange position only when our own orders explain it."""
     if not snap.known or book.manual:
         return
@@ -703,11 +738,42 @@ def _sync_book(store: Store, book: Book, snap: Snapshot, cfg: AccountConfig, now
     cursor = _trade_cursor(book, snap)
     if freeze_for_manual(book, snap, intents, store.own_order_ids(), cursor) != "":
         return
+    own = store.own_order_ids()
+    fresh = [trade for trade in snap.trades if trade.trade_id > cursor]
+    if any(not (trade.order_id and trade.order_id in own) for trade in fresh):
+        # freeze_for_manual already refused this. Leave the cursor where it is.
+        return
+    signed = 0.0
+    for trade in fresh:
+        signed += trade.qty if trade.side == "BUY" else -trade.qty
+    delta = snap.position_qty - book.side * book.qty
+    if fresh and abs(signed - delta) > 1e-4:
+        live = {algo.client_algo_id for algo in snap.algos if algo.status == "NEW"}
+        low, high = position_bounds(book, intents, live)
+        residual = delta - signed
+        if not (low - 1e-6 <= residual <= high + 1e-6):
+            book.entries_frozen = True
+            book.freeze_reason = "成交累计和实仓对不上，已冻结"
+            return
+        # An in-flight order explains the rest, but the tape has a gap. Follow
+        # the position and do not move the cursor across that gap.
+        _absorb(book, snap, cfg, now_ms, store)
+        if persist:
+            _commit_memory(store, book, intents)
+        return
     _absorb(book, snap, cfg, now_ms, store)
-    if snap.trades:
-        book.swaps["trade_cursor"] = str(max(cursor, max(trade.trade_id for trade in snap.trades)))
-    if not any(item.action in POSITION_ACTIONS and item.phase in OPEN_PHASES for item in intents):
-        store.settle_absorbed()
+    if fresh:
+        book.swaps["trade_cursor"] = str(max(cursor, max(trade.trade_id for trade in fresh)))
+    if persist:
+        _commit_memory(store, book, intents)
+
+
+def _commit_memory(store: Store, book: Book, intents: list[Intent]) -> None:
+    """The position memory and the fill cursor land in the same commit as the absorbed marks."""
+    with store.transaction():
+        store.save_book(book)
+        if not any(item.action in POSITION_ACTIONS and item.phase in OPEN_PHASES for item in intents):
+            store.settle_absorbed()
 
 
 def _absorb(book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int, store: Store) -> None:
@@ -812,8 +878,40 @@ def resolve_intent(store: Store, venue: Venue, client_id: str) -> tuple[bool, st
     return True, f"交易所确认没有 {client_id}，已按未发送处理；仓位是否一致由下一轮归因核对"
 
 
+def _child_matches(intent: Intent, body: dict[str, object]) -> bool:
+    """The child order has to be this symbol, this side, and the one-way position."""
+    if str(body.get("symbol", "")) != "BTCUSDT":
+        return False
+    if str(body.get("side", "")) != intent.side:
+        return False
+    return str(body.get("positionSide", "BOTH")) in {"BOTH", ""}
+
+
+def _child_outcome(venue: Venue, intent: Intent, child_id: str) -> Outcome:
+    """What the child order actually did. The parent's FINISHED status is not a fill."""
+    if not child_id or child_id in {"0", "None"}:
+        return Outcome("unknown")
+    try:
+        body = venue.query_order_id(child_id)
+    except (UnknownExecution, WriteRefused, OSError, RuntimeError):
+        return Outcome("unknown")
+    if classify(body).phase == "missing":
+        return Outcome("missing")
+    if not _child_matches(intent, body):
+        return Outcome("unknown")
+    outcome = classify(body)
+    if not outcome.order_id:
+        outcome = Outcome(outcome.phase, outcome.executed, child_id)
+    return outcome
+
+
 def _record_outcome(store: Store, intent: Intent, outcome: Outcome, note: str = "") -> None:
-    store.mark_intent(intent.client_id, outcome.phase, note or intent.note, order_id=outcome.order_id)
+    executed = None
+    if outcome.phase in {"filled", "partial", "canceled", "expired", "rejected"}:
+        executed = f"{outcome.executed:.8f}"
+    store.mark_intent(
+        intent.client_id, outcome.phase, note or intent.note, order_id=outcome.order_id, executed=executed
+    )
     if outcome.phase in {"rejected", "canceled", "expired"} and outcome.executed <= 0:
         store.mark_absorbed(intent.client_id)
     elif outcome.phase == "filled" and _is_algo(intent):
@@ -866,6 +964,14 @@ def _reconcile(
         except (UnknownExecution, WriteRefused, OSError, RuntimeError):
             store.mark_intent(intent.client_id, "unknown", "query-failed")
             alerts.append("查询原订单失败")
+            continue
+        if _is_algo(intent) and str(body.get("algoStatus") or body.get("status") or "") == "FINISHED":
+            outcome = _child_outcome(venue, intent, str(body.get("actualOrderId") or ""))
+            if outcome.phase == "missing":
+                store.mark_intent(intent.client_id, "unknown", "child-missing")
+                alerts.append(f"条件单 {intent.client_id} 已结束，但子单查不到，不当作已成交")
+                continue
+            _record_outcome(store, intent, outcome, "child")
             continue
         outcome = classify(body)
         if outcome.phase != "missing":
@@ -1066,9 +1172,11 @@ def _entry_gate(
     problem = readiness(snap) or _drift(snap, now)
     if problem:
         return problem
-    if snap.read_ms <= 0 or now - snap.read_ms > MAX_DECISION_AGE_MS:
+    observed = _observation_age(snap, now)
+    if snap.read_ms <= 0 or observed > MAX_DECISION_AGE_MS or observed < -DRIFT_MS:
         return "账户读数已过期，不发送新增风险"
-    if now - decided_ms > MAX_DECISION_AGE_MS:
+    decision_age = now - decided_ms
+    if decision_age > MAX_DECISION_AGE_MS or decision_age < -DRIFT_MS:
         return "决策已过期，不发送新增风险"
     loss = _loss_block(book, snap, ctx.limits, decided_ms)
     if loss:
@@ -1109,7 +1217,7 @@ def _act(
 ) -> str:
     environment = ctx.environment
     if action.kind in {"enter", "add"}:
-        blocked = _entry_gate(store, snap, book, cfg, ctx, now_ms)
+        blocked = _entry_gate(store, snap, book, cfg, ctx, bar_open_ms + 60_000)
         if blocked:
             return blocked
         problem = _preflight(1 if action.side > 0 else -1, book, snap, cfg, action.kind == "add")
@@ -1136,7 +1244,7 @@ def _act(
             return "实仓数量无法量化"
         if action.kind == "reverse":
             book.swaps["after_flat"] = "BUY" if action.side > 0 else "SELL"
-            book.swaps["after_flat_ms"] = str(bar_open_ms)
+            book.swaps["after_flat_ms"] = str(bar_open_ms + 60_000)
             book.swaps["after_scale"] = str(action.scale)
         side = "SELL" if snap.position_qty > 0 else "BUY"
         _queue_market(store, venue, book, environment, "reduce", side, qty, True, sent, would, alerts, dry_run, now_ms)
@@ -1169,7 +1277,8 @@ def _maybe_open_after_flat(
         _drop_reverse_plan(book)
         alerts.append("反向开仓错过确认窗口")
         return
-    blocked = _entry_gate(store, snap, book, cfg, ctx, now_ms)
+    # The plan keeps the minute it was decided. This cycle's clock must not refresh it.
+    blocked = _entry_gate(store, snap, book, cfg, ctx, stamped or now_ms)
     if blocked:
         alerts.append("反向开仓被拦下：" + blocked)
         return
@@ -1348,6 +1457,13 @@ def _safe_stop(
                 _cancel(store, venue, Command("cancel_algo", algo.client_algo_id), sent, alerts)
     else:
         alerts.append("停机保留已有实仓的保护单")
+
+
+def _remaining_now(store: Store, snap: Snapshot, entries_only: bool = False) -> list[str]:
+    """Remaining work against this snapshot. An unreadable account is never "nothing left"."""
+    if not snap.known:
+        return ["账户快照未知：" + (snap.reason or "读不到")]
+    return _own_remaining(store, snap, entries_only)
 
 
 def _own_remaining(store: Store, snap: Snapshot, entries_only: bool = False) -> list[str]:

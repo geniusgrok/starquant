@@ -1,8 +1,11 @@
 """USDⓈ-M user stream. Events are hints; the REST snapshot is the position.
 
-The private path is ``/private/ws?listenKey=...&events=...``. The legacy
-``/ws/<listenKey>`` route was removed on 2026-04-23. Demo uses
-``demo-fstream.binance.com`` and never the futures testnet host.
+The connection is ``/private/ws?listenKey=...&events=...`` on the official
+host. Binance's 2026-03-06 websocket notice gives that query form for private
+streams, and the path form ``/private/ws/<listenKey>`` was later withdrawn on
+the production host. This module does not try the path form, and it does not
+fall back to another environment. A failed socket leaves the caller on REST.
+The live socket itself has not been verified from this machine.
 """
 
 from __future__ import annotations

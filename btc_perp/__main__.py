@@ -362,7 +362,8 @@ def _forward(found: argparse.Namespace) -> int:
                 f"sent={','.join(report.sent) if report.sent else '-'} "
                 f"would={','.join(report.would_send) if report.would_send else '-'} "
                 f"settled={str(report.settled).lower()} "
-                f"remaining={'|'.join(report.remaining) if report.remaining else '-'}"
+                f"remaining={'|'.join(report.remaining) if report.remaining else '-'} "
+                f"alerts={report.alerts[-1] if report.alerts else '-'}"
             )
             if once or _request_pending(state, "stop.request", environment):
                 break
@@ -377,6 +378,8 @@ def _forward(found: argparse.Namespace) -> int:
         signal.signal(signal.SIGTERM, previous_term)
         if command == "run" and not found.dry_run:
             wind = _wind_down(found, store, client, cfg, limits, report)
+        if interrupted:
+            print(_interrupt_line(wind))
         if writes:
             _write_run_state(
                 state,
@@ -384,7 +387,7 @@ def _forward(found: argparse.Namespace) -> int:
                 command=command,
                 interrupted=interrupted,
                 failure=failure,
-                wind_down=_wind_state(wind, report),
+                wind_down=_wind_state(wind, report, wind_required=command == "run" and not found.dry_run),
             )
         if stream is not None:
             stream.stop()
@@ -392,7 +395,7 @@ def _forward(found: argparse.Namespace) -> int:
     final = wind or report
     if final is None or interrupted:
         return 2
-    if command == "run" and wind is not None and not wind.settled:
+    if command == "run" and not found.dry_run and (wind is None or not wind.settled):
         return 2
     if command in {"stop", "flatten", "rearm"}:
         return 0 if final.settled else 2
@@ -429,8 +432,18 @@ def _resolve(store: Store, client: UsdMClient, client_id: str) -> int:
     return 0 if ok else 2
 
 
-def _wind_state(wind: CycleReport | None, last: CycleReport | None) -> dict[str, object] | str:
-    report = wind or last
+def _interrupt_line(wind: CycleReport | None) -> str:
+    """A stop that was confirmed is a different fact from one that was not."""
+    if wind is not None and wind.settled:
+        return "用户中断，收尾已确认"
+    return "用户中断，收尾未确认"
+
+
+def _wind_state(wind: CycleReport | None, last: CycleReport | None, *, wind_required: bool) -> dict[str, object] | str:
+    """The final check. A required wind-down that did not return is not the previous cycle."""
+    if wind_required and wind is None:
+        return "unverified"
+    report = wind if wind is not None else last
     if report is None:
         return "unverified"
     return {
