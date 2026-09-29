@@ -14,11 +14,17 @@ from btc_perp.config import load_config
 from btc_perp.gates import entry_block_reason, load_limits
 from btc_perp.machine import protections_cover
 from btc_perp.model import AlgoOrder, Filters, Intent, Limits, RestingOrder, Snapshot
-from btc_perp.runner import run_cycle
+from btc_perp.runner import run_cycle as _real_run_cycle
 from btc_perp.store import Store
 from btc_perp.stream import hint_from_event
 
 _FILTERS = Filters(0.1, 0.001, 0.001, 100.0, 0.1, 1_000_000.0)
+
+
+def run_cycle(store: Store, venue: FakeVenue, **kwargs: object):
+    """The fake venue reads its account at the cycle's own clock, so quotes are fresh."""
+    venue.read_ms = int(kwargs["now_ms"])  # type: ignore[call-overload]
+    return _real_run_cycle(store, venue, **kwargs)  # type: ignore[arg-type]
 
 
 def _snap(**kwargs: object) -> Snapshot:
@@ -43,6 +49,7 @@ def _snap(**kwargs: object) -> Snapshot:
         "brackets_ok": True,
         "recent_trades_ok": True,
         "funding_ok": True,
+        "auto_add_margin_off": True,
     }
     base.update(kwargs)
     return Snapshot(**base)  # type: ignore[arg-type]
@@ -58,9 +65,10 @@ class FakeVenue:
         self.market_body: dict[str, object] | None = None
         self.orders: dict[str, dict[str, object]] = {}
         self.algos: dict[str, dict[str, object]] = {}
+        self.read_ms = 0
 
     def snapshot(self) -> Snapshot:
-        return self.snap
+        return dataclasses.replace(self.snap, read_ms=self.read_ms) if self.read_ms else self.snap
 
     def place_market(self, *, client_id: str, side: str, qty: str, reduce_only: bool) -> dict[str, object]:
         self.market_ids.append(client_id)
@@ -808,9 +816,10 @@ def test_incomplete_minutes_and_gaps_are_rejected() -> None:
 
 
 def test_channels_ignore_the_forming_hour() -> None:
-    done = [1_000, "1", "10", "1", "9", "1", 1_000 + 3_600_000 - 1, "1"]
-    forming = [1_000 + 3_600_000, "1", "99", "1", "98", "1", 1_000 + 7_200_000 - 1, "1"]
-    now = 1_000 + 3_600_000 + 1_000
+    start = 1_700_000_000_000 - 1_700_000_000_000 % 3_600_000
+    done = [start, "1", "10", "1", "9", "1", start + 3_600_000 - 1, "1"]
+    forming = [start + 3_600_000, "1", "99", "1", "98", "1", start + 7_200_000 - 1, "1"]
+    now = start + 3_600_000 + 1_000
     levels = completed_hour_channels([done, forming], now, 1, 1)
     assert levels is not None
     assert levels[0] == pytest.approx(10.0)

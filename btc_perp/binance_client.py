@@ -17,11 +17,12 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Protocol
 
 from btc_perp.gates import assert_host_matches, hosts
 from btc_perp.machine import check_algo_shape
-from btc_perp.model import AlgoOrder, Filters, RestingOrder, Snapshot
+from btc_perp.model import AlgoOrder, Filters, Income, RestingOrder, Snapshot, Trade
 
 
 class Transport(Protocol):
@@ -46,6 +47,7 @@ class UrllibTransport:
 
     def request(self, method: str, url: str, headers: Mapping[str, str], timeout: float) -> tuple[int, bytes]:
         req = urllib.request.Request(url, method=method, headers=dict(headers))
+        self.last_retry_after = 0.0
         try:
             with self._opener.open(req, timeout=timeout) as response:
                 return int(response.status), _capped(response)
@@ -121,13 +123,10 @@ class UsdMClient:
         path: str,
         params: dict[str, str],
         method: str,
-        *,
-        priority: bool = False,
     ) -> tuple[int, dict[str, object]]:
         if method in {"POST", "DELETE"} and self.read_only:
             raise WriteRefused("这个客户端是只读的，没有发送任何写请求")
-        if time.monotonic() < self._cooldown_until and not priority:
-            raise WriteRefused("交易所限流冷却中，本次请求没有发送")
+        self._check_cooldown()
         query = dict(params)
         query["timestamp"] = str(int(time.time() * 1000) + self._offset_ms)
         query["recvWindow"] = "5000"
@@ -145,9 +144,7 @@ class UsdMClient:
             if method in {"POST", "DELETE"}:
                 raise UnknownExecution(redact(str(exc), (self.api_key, self.api_secret))) from exc
             raise
-        if status in {418, 429}:
-            wait = float(getattr(self.transport, "last_retry_after", 0.0) or 0.0)
-            self._cooldown_until = time.monotonic() + (wait if wait > 0 else (120.0 if status == 418 else 30.0))
+        self._note_status(status)
         text = redact(body.decode("utf-8", "replace"), (self.api_key, self.api_secret))
         try:
             parsed = json.loads(text) if text else {}
@@ -161,6 +158,18 @@ class UsdMClient:
             raise AlgoEndpointRequired("条件单必须走 /fapi/v1/algoOrder，不会改域名重试")
         return status, parsed
 
+    def _check_cooldown(self) -> None:
+        """A 418 or 429 is a ban or a warning from the server. No request, reducing or not, goes around it."""
+        remaining = self._cooldown_until - time.monotonic()
+        if remaining > 0:
+            raise WriteRefused(f"交易所限流冷却中（还有 {remaining:.0f} 秒），本次请求没有发送")
+
+    def _note_status(self, status: int) -> None:
+        if status in {418, 429}:
+            wait = float(getattr(self.transport, "last_retry_after", 0.0) or 0.0)
+            floor = 120.0 if status == 418 else 30.0
+            self._cooldown_until = max(self._cooldown_until, time.monotonic() + (wait if wait > 0 else floor))
+
     def _read(self, path: str, params: dict[str, str] | None = None) -> dict[str, object]:
         """A signed GET whose failure is an error. An empty list stays a valid empty answer."""
         status, parsed = self._signed(path, dict(params or {}), "GET")
@@ -170,9 +179,11 @@ class UsdMClient:
         return parsed
 
     def _public(self, path: str, params: dict[str, str] | None = None) -> dict[str, object]:
+        self._check_cooldown()
         query = urllib.parse.urlencode(params or {})
         url = f"{self.base_url}{path}" + (f"?{query}" if query else "")
         status, body = self.transport.request("GET", url, {}, self.timeout)
+        self._note_status(status)
         if status >= 400:
             raise RuntimeError(f"{path} -> {status}")
         parsed = json.loads(body.decode("utf-8", "replace") or "{}")
@@ -189,8 +200,8 @@ class UsdMClient:
         self._offset_ms = int(server - (started + finished) / 2)
         return server
 
-    def _write(self, path: str, params: dict[str, str], method: str, *, priority: bool) -> dict[str, object]:
-        status, parsed = self._signed(path, params, method, priority=priority)
+    def _write(self, path: str, params: dict[str, str], method: str) -> dict[str, object]:
+        status, parsed = self._signed(path, params, method)
         if status >= 500 or status == 429 or status == 418 or status == 0:
             raise UnknownExecution(f"{path} -> {status}")
         if status >= 400 and "code" not in parsed:
@@ -213,7 +224,6 @@ class UsdMClient:
                 "newOrderRespType": "RESULT",
             },
             "POST",
-            priority=reduce_only,
         )
 
     def place_algo(
@@ -245,15 +255,13 @@ class UsdMClient:
         else:
             params["quantity"] = qty
             params["reduceOnly"] = "true"
-        return self._write("/fapi/v1/algoOrder", params, "POST", priority=True)
+        return self._write("/fapi/v1/algoOrder", params, "POST")
 
     def cancel_order(self, client_id: str) -> dict[str, object]:
-        return self._write(
-            "/fapi/v1/order", {"symbol": "BTCUSDT", "origClientOrderId": client_id}, "DELETE", priority=True
-        )
+        return self._write("/fapi/v1/order", {"symbol": "BTCUSDT", "origClientOrderId": client_id}, "DELETE")
 
     def cancel_algo(self, client_id: str) -> dict[str, object]:
-        return self._write("/fapi/v1/algoOrder", {"clientAlgoId": client_id}, "DELETE", priority=True)
+        return self._write("/fapi/v1/algoOrder", {"clientAlgoId": client_id}, "DELETE")
 
     def query_order(self, client_id: str) -> dict[str, object]:
         return self._signed("/fapi/v1/order", {"symbol": "BTCUSDT", "origClientOrderId": client_id}, "GET")[1]
@@ -316,17 +324,58 @@ class UsdMClient:
         if not built.known:
             return built
         last = self._last_price()
-        fee, brackets, trades, funding = self._slow_checks()
+        fee, brackets = self._slow_checks()
+        income, income_ok = self._income()
         return dataclasses.replace(
             built,
             last_price=last,
             fee_taker=fee,
             brackets_ok=brackets,
-            recent_trades_ok=trades,
-            funding_ok=funding,
+            funding_ok=income_ok,
+            income=income,
             clock_offset_ms=self._offset_ms,
             clock_rtt_ms=self._rtt_ms,
+            read_ms=int(time.time() * 1000) + self._offset_ms,
         )
+
+    def _trades(self) -> tuple[Trade, ...] | None:
+        """The newest own fills. ``None`` means unreadable, which is not the same as no fills."""
+        try:
+            payload = self._read("/fapi/v1/userTrades", {"symbol": "BTCUSDT", "limit": "100"})
+            rows = _rows(payload)
+            return tuple(
+                sorted(
+                    (
+                        Trade(
+                            trade_id=_int(row.get("id")),
+                            order_id=str(row.get("orderId", "")),
+                            side=str(row.get("side", "")),
+                            qty=_need(row.get("qty")),
+                            time_ms=_int(row.get("time")),
+                        )
+                        for row in rows
+                    ),
+                    key=lambda item: item.trade_id,
+                )
+            )
+        except (UnknownExecution, WriteRefused, OSError, TimeoutError, RuntimeError, ValueError, KeyError):
+            return None
+
+    def _income(self) -> tuple[tuple[Income, ...], bool]:
+        def load() -> object:
+            payload = self._read("/fapi/v1/income", {"limit": "100"})
+            return tuple(
+                Income(
+                    kind=str(row.get("incomeType", "")), amount=_need(row.get("income")), time_ms=_int(row.get("time"))
+                )
+                for row in _rows(payload)
+            )
+
+        try:
+            found = self._cached("income", 20.0, load)
+        except (UnknownExecution, WriteRefused, OSError, TimeoutError, RuntimeError, ValueError, KeyError):
+            return (), False
+        return (tuple(found), True) if isinstance(found, tuple) else ((), False)
 
     def _read_once(self) -> Snapshot | None:
         """One pass over the account endpoints. ``None`` means the account moved while reading."""
@@ -337,14 +386,20 @@ class UsdMClient:
         orders = self._read("/fapi/v1/openOrders", {"symbol": "BTCUSDT"})
         algos = self._read("/fapi/v1/openAlgoOrders", {"symbol": "BTCUSDT"})
         positions = self._read("/fapi/v2/positionRisk", {"symbol": "BTCUSDT"})
+        trades = self._trades()
         built = _snapshot_from(server, info, account, dual, orders, algos, positions)  # type: ignore[arg-type]
         if not built.known:
             return built
-        again_positions = self._read("/fapi/v2/positionRisk", {"symbol": "BTCUSDT"})
-        again_orders = self._read("/fapi/v1/openOrders", {"symbol": "BTCUSDT"})
-        if _moved(positions, again_positions) or _order_key(orders) != _order_key(again_orders):
+        again = (
+            self._read("/fapi/v2/positionRisk", {"symbol": "BTCUSDT"}),
+            self._read("/fapi/v1/openOrders", {"symbol": "BTCUSDT"}),
+            self._read("/fapi/v1/openAlgoOrders", {"symbol": "BTCUSDT"}),
+            self._read("/fapi/v2/account"),
+            self._trades(),
+        )
+        if _state_key(positions, orders, algos, account, trades) != _state_key(*again[:4], again[4]):
             return None
-        return built
+        return dataclasses.replace(built, trades=trades or (), recent_trades_ok=trades is not None)
 
     def _last_price(self) -> float:
         try:
@@ -354,8 +409,8 @@ class UsdMClient:
         value = _num(ticker.get("price"))
         return value if value is not None and value > 0 else 0.0
 
-    def _slow_checks(self) -> tuple[float | None, bool, bool, bool]:
-        """Fee, brackets, trades, and income change slowly. A good answer is reused for five minutes."""
+    def _slow_checks(self) -> tuple[float | None, bool]:
+        """Fee and leverage brackets change slowly. A good answer is reused for five minutes."""
 
         def fee() -> object:
             found = self._optional_fee()
@@ -363,13 +418,10 @@ class UsdMClient:
                 raise LookupError
             return found
 
-        def probe(path: str, params: dict[str, str]) -> Callable[[], object]:
-            def run() -> object:
-                if not self._optional_ok(path, params):
-                    raise LookupError
-                return True
-
-            return run
+        def brackets() -> object:
+            if not self._optional_ok("/fapi/v1/leverageBracket", {"symbol": "BTCUSDT"}):
+                raise LookupError
+            return True
 
         def keep(key: str, load: Callable[[], object]) -> object | None:
             try:
@@ -378,16 +430,7 @@ class UsdMClient:
                 return None
 
         rate = keep("fee", fee)
-        return (
-            float(rate) if isinstance(rate, float) else None,
-            keep("brackets", probe("/fapi/v1/leverageBracket", {"symbol": "BTCUSDT"})) is True,
-            keep("trades", probe("/fapi/v1/userTrades", {"symbol": "BTCUSDT", "limit": "5"})) is True,
-            keep(
-                "income",
-                probe("/fapi/v1/income", {"symbol": "BTCUSDT", "incomeType": "FUNDING_FEE", "limit": "5"}),
-            )
-            is True,
-        )
+        return (float(rate) if isinstance(rate, float) else None, keep("brackets", brackets) is True)
 
     def _optional_fee(self) -> float | None:
         try:
@@ -425,28 +468,82 @@ def _unknown(reason: str) -> Snapshot:
 
 
 def _rows(payload: object) -> list[dict[str, object]]:
-    """A list endpoint answer. A dict that is not a wrapped list is an error, not an empty list."""
+    """A list endpoint answer. A dict that is not a wrapped list, or a list with a non-object, is an error."""
     if isinstance(payload, dict):
         for key in ("raw", "orders"):
             value = payload.get(key)
             if isinstance(value, list):
-                return [item for item in value if isinstance(item, dict)]
+                if not all(isinstance(item, dict) for item in value):
+                    raise ValueError("交易所返回的列表里有不是对象的元素")
+                return list(value)
     raise ValueError("交易所返回的不是订单列表")
 
 
-def _moved(first: object, second: object) -> bool:
-    def key(payload: object) -> list[tuple[str, str, str]]:
-        return sorted(
-            (str(r.get("symbol")), str(r.get("positionAmt")), str(r.get("entryPrice"))) for r in _rows(payload)
+def _state_key(
+    positions: object, orders: object, algos: object, account: object, trades: tuple[Trade, ...] | None
+) -> tuple[object, ...]:
+    """Everything that moves with a fill or a margin change, so two reads can be compared."""
+    pos = sorted(
+        (
+            str(r.get("symbol")),
+            str(r.get("positionAmt")),
+            str(r.get("entryPrice")),
+            str(r.get("isolatedMargin", "")),
+            str(r.get("marginType", "")),
+            str(r.get("leverage", "")),
         )
-
-    return key(first) != key(second)
-
-
-def _order_key(payload: object) -> list[tuple[str, str, str]]:
-    return sorted(
-        (str(r.get("clientOrderId")), str(r.get("status")), str(r.get("executedQty"))) for r in _rows(payload)
+        for r in _rows(positions)
     )
+    plain = sorted(
+        (str(r.get("clientOrderId")), str(r.get("status")), str(r.get("executedQty"))) for r in _rows(orders)
+    )
+    conditional = sorted(
+        (str(r.get("clientAlgoId")), str(r.get("algoStatus", r.get("status"))), str(r.get("triggerPrice")))
+        for r in _rows(algos)
+    )
+    wallet = ""
+    if isinstance(account, dict) and isinstance(account.get("assets"), list):
+        for asset in account["assets"]:
+            if isinstance(asset, dict) and asset.get("asset") == "USDT":
+                wallet = str(asset.get("walletBalance"))
+    last_trade = None if trades is None else (max((t.trade_id for t in trades), default=0), len(trades))
+    return (pos, plain, conditional, wallet, last_trade)
+
+
+def _flag(value: object) -> bool | None:
+    """A real boolean, or the strings the API uses for one. Anything else is unknown, not false."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.lower() in {"true", "false"}:
+        return value.lower() == "true"
+    return None
+
+
+def _need(value: object) -> float:
+    number = _num(value)
+    if number is None:
+        raise ValueError("必需的数字字段缺失或不是有限数字")
+    return number
+
+
+def _market_grid(lot: dict[str, object], market: dict[str, object]) -> tuple[float, float, float] | None:
+    """Step, minimum and maximum that satisfy both lot filters. ``None`` when they conflict."""
+    try:
+        steps = [Decimal(str(lot["stepSize"])), Decimal(str(market["stepSize"]))]
+        mins = [Decimal(str(lot["minQty"])), Decimal(str(market["minQty"]))]
+        maxes = [Decimal(str(lot.get("maxQty", "0"))), Decimal(str(market.get("maxQty", "0")))]
+    except (KeyError, ArithmeticError):
+        return None
+    if any(not value.is_finite() for value in (*steps, *mins, *maxes)) or min(steps) <= 0:
+        return None
+    step = max(steps)
+    if step % min(steps) != 0:
+        return None
+    minimum = max(mins)
+    if minimum % step != 0:
+        minimum = (minimum / step).to_integral_value(rounding="ROUND_CEILING") * step
+    positive = [value for value in maxes if value > 0]
+    return float(step), float(minimum), float(min(positive)) if positive else 0.0
 
 
 def _snapshot_from(
@@ -485,23 +582,25 @@ def _snapshot_from(
     if not isinstance(notional, dict):
         return _unknown("过滤器缺失")
     tick = _num(price.get("tickSize"))
-    step = _num(lot.get("stepSize"))
-    min_qty = _num(lot.get("minQty"))
     min_notional = _num(notional.get("notional"))
-    if tick is None or step is None or min_qty is None or min_notional is None:
-        return _unknown("过滤器字段不是有限数字")
+    grid = _market_grid(lot, market_lot)
+    if tick is None or min_notional is None or tick <= 0 or grid is None:
+        return _unknown("过滤器字段缺失、不是有限数字，或两个数量过滤器互相冲突")
     parsed_filters = Filters(
         tick_size=tick,
-        step_size=step,
-        min_qty=min_qty,
+        step_size=grid[0],
+        min_qty=grid[1],
         min_notional=min_notional,
         min_price=_num(price.get("minPrice")) or 0.0,
         max_price=_num(price.get("maxPrice")) or 0.0,
-        max_qty=_num(market_lot.get("maxQty")) or 0.0,
+        max_qty=grid[2],
     )
 
     pos_rows = [row for row in _rows(positions) if row.get("symbol") == "BTCUSDT"]
-    one_way = not bool(dual.get("dualSidePosition"))
+    dual_side = _flag(dual.get("dualSidePosition"))
+    if dual_side is None:
+        return _unknown("dualSidePosition 缺失或不是布尔值，不能当成单向持仓")
+    one_way = not dual_side
     if one_way:
         pos_rows = [row for row in pos_rows if str(row.get("positionSide", "BOTH")) == "BOTH"]
         if len(pos_rows) != 1:
@@ -515,6 +614,8 @@ def _snapshot_from(
     liquidation = _num(row.get("liquidationPrice")) or 0.0
     if qty is None or entry is None or mark is None:
         return _unknown("持仓字段不是有限数字")
+
+    auto_margin = _flag(row.get("isAutoAddMargin"))
 
     resting = tuple(
         RestingOrder(
@@ -567,6 +668,10 @@ def _snapshot_from(
             amount = _num(item.get("positionAmt"))
             if amount is None or amount != 0.0:
                 others.append(str(item.get("symbol", "?")))
+    can_trade = _flag(account.get("canTrade"))
+    multi = _flag(account.get("multiAssetsMargin"))
+    if can_trade is None or multi is None:
+        return _unknown("账户的 canTrade 或 multiAssetsMargin 缺失或不是布尔值")
     return Snapshot(
         known=True,
         reason="",
@@ -584,11 +689,12 @@ def _snapshot_from(
         server_time_ms=server,
         orders=resting,
         algos=algo_rows,
-        can_trade=bool(account.get("canTrade")),
+        can_trade=can_trade,
         fee_taker=None,
         filters=parsed_filters,
         other_exposure=",".join(others[:5]),
-        multi_assets=bool(account.get("multiAssetsMargin")),
+        multi_assets=multi,
+        auto_add_margin_off=auto_margin is False,
     )
 
 
@@ -626,6 +732,8 @@ def account_problems(snapshot: Snapshot, filters_ok: bool) -> str:
         return "BTCUSDT 不是逐仓"
     if snapshot.leverage != 20:
         return f"杠杆是 {snapshot.leverage}，配置是 20，不会自动修改"
+    if not snapshot.auto_add_margin_off:
+        return "自动追加保证金没有确认关闭（为开启或缺失），不会自动修改"
     if snapshot.multi_assets:
         return "账户是联合保证金模式，不在这个程序的模型内"
     if snapshot.other_exposure:

@@ -43,6 +43,11 @@ def _live_algos(snapshot: Snapshot, order_type: str) -> list[AlgoOrder]:
 
 
 def protections_cover(snapshot: Snapshot) -> tuple[bool, str]:
+    """At least one live stop and one live take, all of the right shape.
+
+    Several valid protections may coexist: that is safe, and cancelling a
+    healthy one only to reach "exactly one" would open a gap.
+    """
     if not snapshot.known:
         return False, "账户未知"
     if abs(snapshot.position_qty) < 1e-8:
@@ -52,16 +57,14 @@ def protections_cover(snapshot: Snapshot) -> tuple[bool, str]:
         return True, ""
     stops = _live_algos(snapshot, "STOP_MARKET")
     takes = _live_algos(snapshot, "TAKE_PROFIT_MARKET")
-    if len(stops) != 1 or len(takes) != 1:
-        return False, "活动止损或止盈不是恰好一张"
+    if not stops or not takes:
+        return False, "缺少活动的止损或止盈"
     closing_side = "SELL" if snapshot.position_qty > 0 else "BUY"
-    for algo in (stops[0], takes[0]):
+    for algo in (*stops, *takes):
         if algo.side != closing_side:
             return False, "保护单方向和持仓不一致"
         if algo.working_type != "CONTRACT_PRICE":
             return False, "保护单触发价源不是合约最新价"
-        if algo.status not in _ALGO_LIVE:
-            return False, "保护单不是活动状态"
         if algo.close_position:
             if algo.reduce_only or algo.qty:
                 return False, "closePosition 保护单还带了数量或 reduceOnly"
@@ -69,23 +72,22 @@ def protections_cover(snapshot: Snapshot) -> tuple[bool, str]:
             return False, "保护单数量盖不住实仓"
         if algo.trigger_price <= 0:
             return False, "保护单触发价无效"
-    stop_px = stops[0].trigger_price
-    take_px = takes[0].trigger_price
-    # A trailed long stop can sit above the original entry. It still has to
-    # sit below the take, and on the protective side of the last trade.
-    if snapshot.position_qty > 0 and not stop_px < take_px:
+    long = snapshot.position_qty > 0
+    stop_px = max(algo.trigger_price for algo in stops) if long else min(algo.trigger_price for algo in stops)
+    take_px = min(algo.trigger_price for algo in takes) if long else max(algo.trigger_price for algo in takes)
+    if long and not stop_px < take_px:
         return False, "多仓止损不在止盈下方"
-    if snapshot.position_qty < 0 and not stop_px > take_px:
+    if not long and not stop_px > take_px:
         return False, "空仓止损不在止盈上方"
-    if snapshot.position_qty > 0 and snapshot.last_price > 0 and stop_px >= snapshot.last_price:
+    if long and snapshot.last_price > 0 and stop_px >= snapshot.last_price:
         return False, "多仓止损不在现价下方"
-    if snapshot.position_qty < 0 and snapshot.last_price > 0 and stop_px <= snapshot.last_price:
+    if not long and snapshot.last_price > 0 and stop_px <= snapshot.last_price:
         return False, "空仓止损不在现价上方"
     liquidation = snapshot.liquidation_price
     if liquidation > 0:
-        if snapshot.position_qty > 0 and stop_px <= liquidation:
+        if long and stop_px <= liquidation:
             return False, "多仓止损不在强平价上方，可能先被强平"
-        if snapshot.position_qty < 0 and stop_px >= liquidation:
+        if not long and stop_px >= liquidation:
             return False, "空仓止损不在强平价下方，可能先被强平"
     return True, ""
 
@@ -128,25 +130,97 @@ def triggered_with_position(snapshot: Snapshot) -> bool:
     )
 
 
-def freeze_for_manual(book: Book, snapshot: Snapshot, intents: list[Intent]) -> str:
-    """Only our own position-changing orders can explain a position change.
+def _signed(intent: Intent) -> float:
+    try:
+        qty = abs(float(intent.qty or 0.0))
+    except ValueError:
+        return 0.0
+    return qty if intent.side == "BUY" else -qty if intent.side == "SELL" else 0.0
 
-    An acknowledged stop or take says nothing about how the position moved,
-    so it does not suppress the manual-change check.
+
+def position_bounds(
+    book: Book, intents: list[Intent], live_algo_ids: frozenset[str] | set[str] = frozenset()
+) -> tuple[float, float]:
+    """How far our own unfinished or uncounted orders could have moved the position.
+
+    A plain order can move it by up to its quantity in its own direction. A
+    protection of ours that has fired, or whose state is not known, can close
+    what the book holds. One that still rests on the exchange has not fired
+    and explains nothing. Nothing else explains a change.
+    """
+    low = 0.0
+    high = 0.0
+    held = book.side * book.qty
+    closable = False
+    for item in intents:
+        counted = item.phase in OPEN_PHASES or not item.absorbed
+        if item.action in POSITION_ACTIONS and counted:
+            move = _signed(item)
+            if move > 0:
+                high += move
+            else:
+                low += move
+        elif item.action in {"stop", "take"} and counted and item.client_id not in live_algo_ids:
+            closable = True
+    if closable and held > 0:
+        low -= held
+    elif closable and held < 0:
+        high -= held
+    return low, high
+
+
+def foreign_trades(
+    snapshot: Snapshot, intents: list[Intent], own_orders: frozenset[str] | set[str], cursor: int
+) -> list[int]:
+    """Fills after the cursor that no order of ours explains."""
+    pending = [
+        item for item in intents if item.action in POSITION_ACTIONS and (item.phase in OPEN_PHASES or not item.absorbed)
+    ]
+    protective = [
+        item
+        for item in intents
+        if item.action in {"stop", "take"} and item.phase in {"sent", "acked", "partial", "unknown", "filled"}
+    ]
+    found: list[int] = []
+    for trade in snapshot.trades:
+        if trade.trade_id <= cursor or (trade.order_id and trade.order_id in own_orders):
+            continue
+        if any(item.side == trade.side and item.created_ms <= trade.time_ms for item in pending):
+            continue
+        if any(item.side == trade.side and item.created_ms <= trade.time_ms for item in protective):
+            continue
+        found.append(trade.trade_id)
+    return found
+
+
+def freeze_for_manual(
+    book: Book,
+    snapshot: Snapshot,
+    intents: list[Intent],
+    own_orders: frozenset[str] | set[str] = frozenset(),
+    trade_cursor: int = 0,
+) -> str:
+    """Empty when our own orders explain the position, otherwise the reason.
+
+    Having an order in flight does not explain a different position: the
+    change has to fit inside what that order and our protections could do,
+    and fills that carry no order of ours are named.
     """
     if not snapshot.known:
         return "账户快照未知"
-    inflight = [
-        item for item in intents if item.action in POSITION_ACTIONS and (item.phase in OPEN_PHASES or not item.absorbed)
-    ]
-    if inflight:
+    if book.manual:
         return ""
-    snap_side = snapshot.position_side
-    if snap_side != book.side or abs(abs(snapshot.position_qty) - book.qty) > 1e-6:
-        if book.manual:
-            return ""
-        return "实仓和策略记忆不一致，已冻结，等待 takeover"
-    return ""
+    stray = foreign_trades(snapshot, intents, own_orders, trade_cursor)
+    if stray:
+        return f"存在不是本程序订单的成交（{len(stray)} 笔），已冻结，等待 takeover"
+    delta = snapshot.position_qty - book.side * book.qty
+    if abs(delta) <= 1e-6:
+        return ""
+    live = {algo.client_algo_id for algo in snapshot.algos if algo.status in _ALGO_LIVE}
+    low, high = position_bounds(book, intents, live)
+    if low - 1e-6 <= delta <= high + 1e-6:
+        return ""
+    return "实仓和策略记忆不一致，已冻结，等待 takeover"
 
 
 def _price_matches(live: float, wanted: float) -> bool:
@@ -169,6 +243,7 @@ def plan_protection(
     *,
     stop_price: float,
     take_price: float,
+    known: set[str] | None = None,
 ) -> tuple[list[Command], dict[str, str]]:
     """Place a new id when no live protection of the right shape sits at the wanted trigger.
 
@@ -187,7 +262,9 @@ def plan_protection(
         live = [
             algo
             for algo in _live_algos(snapshot, order_type)
-            if _price_matches(algo.trigger_price, price) and shape_ok(algo, closing, snapshot.position_qty)
+            if _price_matches(algo.trigger_price, price)
+            and shape_ok(algo, closing, snapshot.position_qty)
+            and (known is None or algo.client_algo_id in known)
         ]
         if live:
             updates[f"{kind}_id"] = live[0].client_algo_id
@@ -250,4 +327,6 @@ def apply_takeover(book: Book, snapshot: Snapshot) -> Book:
     book.entries_frozen = True
     book.freeze_reason = "已接管实仓，仍不自动加仓"
     book.alerts.append("takeover")
+    if snapshot.trades:
+        book.swaps["trade_cursor"] = str(max(trade.trade_id for trade in snapshot.trades))
     return book

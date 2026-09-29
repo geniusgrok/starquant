@@ -140,7 +140,8 @@ def test_btcusdt_row_is_found_wherever_it_sits() -> None:
 
 def test_a_position_on_another_contract_is_reported() -> None:
     account = {**ACCOUNT, "positions": [{"symbol": "ETHUSDT", "positionAmt": "1"}]}
-    snap = _snapshot_from(1, INFO, account, {}, {"raw": []}, {"raw": []}, {"raw": POSITION})  # type: ignore[arg-type]
+    dual = {"dualSidePosition": False}
+    snap = _snapshot_from(1, INFO, account, dual, {"raw": []}, {"raw": []}, {"raw": POSITION})  # type: ignore[arg-type]
     assert snap.known and snap.other_exposure == "ETHUSDT"
 
 
@@ -153,17 +154,29 @@ def test_a_read_only_client_refuses_every_write() -> None:
     assert all(method == "GET" for method, _path in transport.calls)
 
 
-def test_rate_limit_starts_a_cooldown_that_only_priority_writes_skip() -> None:
+def test_rate_limit_cooldown_cannot_be_bypassed_by_a_reducing_write_or_a_public_read() -> None:
     client, transport = _client(_routes(**{"/fapi/v1/order": (429, {"msg": "slow down"})}))
     with pytest.raises(UnknownExecution):
         client.place_market(client_id="en1", side="BUY", qty="0.001", reduce_only=False)
     before = len(transport.calls)
     with pytest.raises(WriteRefused):
         client.place_market(client_id="en2", side="BUY", qty="0.001", reduce_only=False)
-    assert len(transport.calls) == before
-    with pytest.raises(UnknownExecution):
+    with pytest.raises(WriteRefused):
         client.place_market(client_id="rd1", side="SELL", qty="0.001", reduce_only=True)
-    assert len(transport.calls) == before + 1
+    with pytest.raises(WriteRefused):
+        client.cancel_order("en1")
+    with pytest.raises(WriteRefused):
+        client.sync_time()
+    assert len(transport.calls) == before
+
+
+def test_retry_after_sets_the_cooldown_length() -> None:
+    client, transport = _client(_routes(**{"/fapi/v1/order": (418, {"msg": "banned"})}))
+    transport.last_retry_after = 300.0
+    with pytest.raises(UnknownExecution):
+        client.place_market(client_id="en1", side="BUY", qty="0.001", reduce_only=False)
+    with pytest.raises(WriteRefused, match=r"还有 (29|30)\d 秒"):
+        client.place_market(client_id="rd1", side="SELL", qty="0.001", reduce_only=True)
 
 
 def test_an_oversized_body_is_refused() -> None:

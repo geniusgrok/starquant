@@ -42,6 +42,26 @@ class RestingOrder:
 
 
 @dataclass(frozen=True)
+class Trade:
+    """One own fill from the exchange, used to say who moved the position."""
+
+    trade_id: int
+    order_id: str
+    side: str
+    qty: float
+    time_ms: int
+
+
+@dataclass(frozen=True)
+class Income:
+    """One income row. Transfers and deposits are not something this program does."""
+
+    kind: str
+    amount: float
+    time_ms: int
+
+
+@dataclass(frozen=True)
 class Snapshot:
     """One REST read of the account. ``known`` is false when the read failed."""
 
@@ -71,6 +91,10 @@ class Snapshot:
     clock_rtt_ms: int | None = None
     other_exposure: str = ""
     multi_assets: bool = False
+    auto_add_margin_off: bool = False
+    trades: tuple[Trade, ...] = ()
+    income: tuple[Income, ...] = ()
+    read_ms: int = 0
 
     @property
     def position_side(self) -> int:
@@ -96,6 +120,7 @@ class Intent:
     note: str = ""
     attempts: int = 1
     absorbed: bool = True
+    order_id: str = ""
 
 
 @dataclass
