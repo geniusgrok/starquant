@@ -11,7 +11,7 @@
 
 两种回放都让本分钟内**此前已挂的止损**生效；用这分钟高低价收紧的移动止损从下一分钟起生效。旧模型允许新止损在同一分钟触发，其 2026-09-28 数字不能与本版混用。代码中的 `passed` 是年化至少 100% 且最低比值高于 0.5 等诊断门槛；150% 经济目标（期末约 4,716,653 元）**未达到**。报告中的 `path_complete` 只表示走完回放数组，`execution_closed=false`，不表示交易所撮合已验证。
 
-[正式测量](reports/btc_account_measure.json)、[因果对照](reports/btc_account_causal.json)、[稳健性](reports/btc_account_robustness.json)和[泛化](reports/btc_account_generalization.json)由当前代码及冻结数据重跑。止损额外不利滑点 0.1% 会触发回撤锁，54 个邻近参数中 14 个跌破一半峰值或以锁结束；早期 BTC 和其他永续币种并未复现 BTC 全窗结果。详细口径见 [docs/btc_account.md](docs/btc_account.md) 与 [docs/measure_protocol.md](docs/measure_protocol.md)。
+[正式测量](reports/btc_account_measure.json)、[因果对照](reports/btc_account_causal.json)和[稳健性](reports/btc_account_robustness.json)已由当前代码及冻结输入重跑并通过各自的数据与路径校验。止损额外不利滑点 0.1% 会触发回撤锁，54 个邻近参数中 14 个跌破一半峰值或以锁结束。[泛化校验](reports/btc_account_generalization.unverified.json)因 2018-02-08 00:29 UTC 起的早期 BTC 现货源行情连续缺失 2,011 分钟而失败，旧 ETH/SOL/现货收益及候选网格结果均不再作为本版结论。详细口径见 [docs/btc_account.md](docs/btc_account.md) 与 [docs/measure_protocol.md](docs/measure_protocol.md)。
 
 资金费 7,362 个槽位中 7,305 个来自官方文件、56 个是溢价指数估算、2026-09-01 00:00 UTC 的 1 个缺失并按零计。USDT 按 USD 平价，用前一已公布的 Frankfurter USD/CNY 中间价估值并计假设兑换费；成交价代理标记价，分钟内四点路径和保证金档位均属研究假设。回放不等于 Demo 或实盘收益。
 
@@ -31,7 +31,7 @@ python scripts/assets.py
 python -m btc_perp generalization
 ```
 
-运行 `python -m btc_perp` 只打印帮助，不启动会话、不下单。研究参数在 [config/btc_account.yaml](config/btc_account.yaml)；已冻结的起始资金、杠杆和成本必须与 `btc_perp/costs.py` 一致，不一致直接拒绝运行。
+当前官方归档尚有上述现货缺口，`scripts/assets.py` 检出长缺口时返回 2；`generalization` 返回未验证并写 `.unverified.json`，不能用旧报告充当成功复现。运行 `python -m btc_perp` 只打印帮助，不启动会话、不下单。研究参数在 [config/btc_account.yaml](config/btc_account.yaml)；已冻结的起始资金、杠杆和成本必须与 `btc_perp/costs.py` 一致，不一致直接拒绝运行。
 
 ## 前向账户
 

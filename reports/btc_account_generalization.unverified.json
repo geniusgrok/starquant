@@ -1,0 +1,46 @@
+{
+  "verified": false,
+  "reason": "泛化行情校验失败",
+  "problems": {
+    "btc_spot_2017": [
+      "源行情连续缺失超过 24 小时：2018-02-08T00:29:00+00:00 起，2011 分钟"
+    ]
+  },
+  "inputs": {
+    "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
+    "funding.npz": "0682df98242a6fccfe86da66a1da871c2af1d0b955fac6d38734b0059b94cb7a",
+    "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5",
+    "eth_1m.npz": "d91a2ed6db95d646f986991a84cbd6d5dbb259cd63b61adcb6c683c90f263c68",
+    "sol_1m.npz": "de510bdd5a87ffee18ab94b093cbc22d8b1766a6afda1167956f9bbbda9ba664",
+    "btc_spot_2017_1m.npz": "f411df53426234a2ae0f55d3b88606f831c32011502de9b05677c96891b3c61f",
+    "eth_funding.npz": "b5b1bb5aa048a39bc343e25297458a58833c44867611134d9c2b3590b3353483",
+    "sol_funding.npz": "26ce7761075e99abd2a9eff6925c44b739ece384249b71913251a1e5915cca64"
+  },
+  "provenance": {
+    "git_head": "63b62fe2d5820b47c2e0bbaa72b4ea7a08690658",
+    "git_dirty": false,
+    "files_sha256": {
+      "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83",
+      "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+      "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+      "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
+      "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+      "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
+      "btc_perp/robustness.py": "7544d712159d97b92cff9e9ac4b0dc508346bb84d4cf53790437de7250cca195",
+      "btc_perp/generalization.py": "10dc21361b9c2490e377fd9a23a5d1ff24e7957eabe2d8fc94158da0be933748",
+      "btc_perp/candidate.py": "9a1b96bebae7d3f6c1464b326df8274f4ca8041d55ec11dd79d6442c01ec23b0",
+      "btc_perp/tapes.py": "2e2496142931d21d5a174e0f2e14ba09c4fc5ef6eba6113a98be17bc5dc6a9b3",
+      "config/candidate.yaml": "864e0f8a97db979a8a206bf00f73c1e4438c1b9364f773455b758b3f9dd4bd8a",
+      "scripts/assets.py": "2e3560034eaba1c7fa9df2f6528777047d92bd1ab4b8721f29ad4669d98f4e3f"
+    },
+    "statistics": "CAGR over 2454 days; min equity/peak on the intrabar path; end-of-bar equity for the curve"
+  },
+  "completion": {
+    "data_validated": false,
+    "path_complete": false,
+    "execution_closed": false,
+    "economic_pass": false,
+    "note": "path_complete 只表示数组回放至末端；data_validated 只表示输入结构已校验，代理/缺失资金费另列；回放成交是模型假设，没有真实执行，execution_closed 恒为 false。"
+  },
+  "run_id": "20260929T125105Z-007644a2"
+}
