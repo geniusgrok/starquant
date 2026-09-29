@@ -16,6 +16,9 @@ at a time. The venue mirrors the size change, including a close.
 
 from __future__ import annotations
 
+import datetime as dt
+import json
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -363,6 +366,8 @@ def _prepare(cfg: AccountConfig) -> tuple[Any, ...]:
 
 
 def run_official(write_report: bool = True) -> dict[str, Any]:
+    from btc_perp.causal import END_MS, START_MS, _funding_gap, _provenance, _sha256
+
     cfg = load_config()
     problems = _tape_problems()
     if problems:
@@ -392,12 +397,23 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
         prev = equity
     passed = bool(cagr >= 1.0 and ratio > 0.5 and end >= TARGET_CNY and walked.n_long > 0 and walked.n_short > 0)
     meets_150 = bool(cagr >= 1.5 and ratio > 0.5 and walked.n_long > 0 and walked.n_short > 0)
+    funding_gap = _funding_gap(np.arange(START_MS, END_MS, 3_600_000, dtype=np.int64))
     report: dict[str, Any] = {
         "verified": True,
         "passed": passed,
+        "meets_150": meets_150,
+        "funding_gap_unverified": bool(funding_gap["missing_slot"] or funding_gap["proxy_from_premium"]),
+        "funding_gap": funding_gap,
+        "inputs": {
+            name: _sha256(ROOT / "data" / name) for name in ("btcusdt_1m.npz", "funding.npz", "usdcny_frankfurter.json")
+        },
+        "provenance": _provenance(),
         "completion": completion(data_validated=True, path_complete=True, economic_pass=meets_150),
         "start_cny": cfg.start_cny,
         "end_cny": float(end),
+        "end_usdt": float(end / (fx[-1] * (1.0 - cfg.fx_fee))),
+        "fx_end_usdcny": float(fx[-1]),
+        "valuation_note": "USDT 按 USD 平价，以前一已公布 Frankfurter 美元兑人民币中间价估值，期末扣 0.35% 假设兑换费；非可交易报价。",
         "target_cny": TARGET_CNY,
         "cagr": float(cagr),
         "min_equity_over_peak": float(ratio),
@@ -415,7 +431,8 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
         },
         "path": (
             "successive manual sessions, one minute stepped when the session clock completes that minute; "
-            "1-minute OHLC path, previous-minute stop slippage, FX fixing from the previous date, tiered liquidation"
+            "1-minute OHLC path with prior resting stop; new trail from the next minute, previous-minute stop "
+            "slippage, FX fixing from the previous date, tiered liquidation"
         ),
         "sessions": {
             "seconds": cfg.session_seconds,
@@ -431,11 +448,38 @@ def run_official(write_report: bool = True) -> dict[str, Any]:
 
 
 def _tape_problems() -> list[str]:
-    """The same minute-tape checks the causal replay makes, before any number is produced."""
+    """Validate every input used by the frozen official replay."""
     from btc_perp.causal import validate_minutes
 
     path = ROOT / "data" / "btcusdt_1m.npz"
     if not path.exists():
         return ["data/btcusdt_1m.npz 不存在"]
-    raw = np.load(path)
-    return list(validate_minutes(raw["ts"], raw["o"], raw["h"], raw["l"], raw["c"], raw["qv"]))
+    try:
+        with np.load(path) as raw:
+            problems = list(
+                validate_minutes(raw["ts"], raw["o"], raw["h"], raw["l"], raw["c"], raw["qv"], official_window=True)
+            )
+        funding = ROOT / "data" / "funding.npz"
+        with np.load(funding) as values:
+            timestamps, rates = values["ts"], values["rate"]
+            if len(timestamps) != len(rates) or not len(timestamps):
+                problems.append("资金费数组长度不一致或为空")
+            elif (
+                np.any(np.diff(timestamps) <= 0)
+                or np.any(np.abs(timestamps % 28_800_000) >= 60_000)
+                or not np.all(np.isfinite(rates))
+            ):
+                problems.append("资金费时间或费率无效")
+        fx = json.loads((ROOT / "data" / "usdcny_frankfurter.json").read_text())
+        fixes = fx["rates"]
+        if "2019-12-31" not in fixes or max(fixes) < "2026-09-18":
+            problems.append("汇率缺少冻结窗口边界")
+        for date, value in fixes.items():
+            dt.date.fromisoformat(date)
+            rate = value["CNY"]
+            if isinstance(rate, bool) or not isinstance(rate, int | float) or not math.isfinite(rate) or rate <= 0:
+                problems.append("汇率不是正的有限数：" + date)
+                break
+    except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
+        return [f"研究输入无法验证：{type(exc).__name__}: {exc}"[:180]]
+    return problems

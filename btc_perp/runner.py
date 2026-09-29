@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import sqlite3
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -44,6 +45,7 @@ MAX_RTT_MS = 5_000
 NAKED_DEFAULT_SECONDS = 120
 STALE_SIGNAL_MS = 90_000
 MAX_DECISION_AGE_MS = 30_000
+HISTORY_WINDOW_MS = 7 * 86_400_000
 FLATTEN_ROUNDS = 4
 FLOW_KINDS = frozenset({"TRANSFER", "INTERNAL_TRANSFER", "WELCOME_BONUS", "CROSS_COLLATERAL_TRANSFER", "AUTO_EXCHANGE"})
 _OPEN = tuple(sorted(OPEN_PHASES))
@@ -329,15 +331,16 @@ def run_cycle(
     if fx is None:
         alerts.append("未提供汇率，峰值按 USDT 记")
     peak_problem = _init_peaks(book, snap, fx, fx_used)
-    flow_problem = _flow_problem(book, snap)
+    coverage_problem = _coverage_problem(book, snap)
+    flow_problem = coverage_problem or _flow_problem(book, snap)
 
     drift = _drift(snap, now_ms)
     problem = readiness(snap)
-    foreign = foreign_ids(snap, store.all_client_ids())
+    foreign = foreign_ids(snap, store.all_client_ids(), store.own_order_ids())
     cursor = _trade_cursor(book, snap)
     mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), cursor)
     if mode == "takeover":
-        apply_takeover(book, snap)
+        apply_takeover(book, snap, history_covered=not coverage_problem)
         alerts.append("已接管实仓，仍不自动加仓；保护由下一轮 run 补齐")
         mismatch = ""
     if mismatch:
@@ -437,7 +440,11 @@ def run_cycle(
 
     status = inspect_bars(bars, now_ms, book.cursor_ms)
     action_note = ""
-    if not status.fresh:
+    if mismatch and not book.manual:
+        # An unowned position must not update the strategy's extreme, stop,
+        # peak or signal cursor from bars that it did not manage.
+        action_note = "归属未确认，暂停自动策略及其记忆更新"
+    elif not status.fresh:
         book.entries_frozen = True
         book.freeze_reason = status.reason
         alerts.append(status.reason)
@@ -470,7 +477,7 @@ def run_cycle(
             if triggered_with_position(snap):
                 alerts.append("有保护单已触发但仍有实仓，保留另一张保护，等待成交结算")
             snap = resnap()
-        if snap.known and not book.manual:
+        if snap.known:
             before = book.qty
             _sync_book(store, book, snap, cfg, now_ms)
             if (
@@ -519,6 +526,11 @@ def _finish(
     settled: bool = False,
     remaining: list[str] | None = None,
 ) -> CycleReport:
+    if not dry_run:
+        try:
+            store.archive_if_due()
+        except (OSError, sqlite3.Error) as exc:
+            alerts.append("每日状态备份失败：" + str(exc)[:160])
     report = _report(mode, book, snap, sent, alerts, dry_run, would, covered, settled, remaining)
     store.append_journal(
         {
@@ -612,10 +624,23 @@ def _update_lock(book: Book, snap: Snapshot, cfg: AccountConfig, fx_used: float,
 
 def _rearm(store: Store, book: Book, snap: Snapshot, fx_used: float, alerts: list[str], dry_run: bool) -> bool:
     """Move the drawdown baseline to today's equity. Only a flat, quiet account may do it."""
+    problem = readiness(snap)
+    if problem:
+        alerts.append("账户核验未完成，不重置：" + problem)
+        return False
+    coverage = _coverage_problem(book, snap)
+    if coverage:
+        alerts.append(coverage + "；恢复完整状态备份后再核验")
+        return False
+    if not book.manual:
+        mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap))
+        if mismatch:
+            alerts.append("归属未核验，不重置：" + mismatch)
+            return False
     if abs(snap.position_qty) >= 1e-8 or book.side != 0:
         alerts.append("有持仓，不重置回撤基准")
         return False
-    if store.open_intents():
+    if store.open_intents() or _unresolved_protections(store, snap):
         alerts.append("还有未完成订单，不重置回撤基准")
         return False
     live_plain = [order.client_id or "无编号" for order in snap.orders if order.status in {"NEW", "PARTIALLY_FILLED"}]
@@ -631,16 +656,23 @@ def _rearm(store: Store, book: Book, snap: Snapshot, fx_used: float, alerts: lis
     if dry_run:
         alerts.append(f"会把峰值从 {old[1]:.2f} 重置为 {equity:.2f}（dry-run，没有写入）")
         return False
-    book.peak_equity_cny = equity
-    book.close_peak_cny = equity
-    book.dd_locked = False
-    book.swaps.pop("flow_frozen", None)
-    book.swaps["income_cursor_ms"] = str(snap.server_time_ms or int(time.time() * 1000))
-    book.swaps.setdefault("perf_peak", repr(old[1]))
-    store.append_event("rearm", f"peak {old[0]:.2f}/{old[1]:.2f} -> {equity:.2f}")
-    alerts.append(
-        f"回撤基准已重置为 {equity:.2f}；累计绩效峰值 {book.swaps['perf_peak']} 不变，这不改变止损、保护和其他限额"
-    )
+    if book.manual:
+        book.manual = False
+        book.entries_frozen = bool(book.dd_locked or book.swaps.get("flow_frozen"))
+        book.freeze_reason = "仍有资金或回撤冻结" if book.entries_frozen else ""
+        store.append_event("rearm", "manual takeover released after verified flat")
+        alerts.append("接管已解除；回撤峰值和资金锁保持不变")
+    else:
+        book.peak_equity_cny = equity
+        book.close_peak_cny = equity
+        book.dd_locked = False
+        book.swaps.pop("flow_frozen", None)
+        book.swaps["income_cursor_ms"] = str(snap.server_time_ms or int(time.time() * 1000))
+        book.swaps.setdefault("perf_peak", repr(old[1]))
+        store.append_event("rearm", f"peak {old[0]:.2f}/{old[1]:.2f} -> {equity:.2f}")
+        alerts.append(
+            f"回撤基准已重置为 {equity:.2f}；累计绩效峰值 {book.swaps['perf_peak']} 不变，这不改变止损、保护和其他限额"
+        )
     return True
 
 
@@ -680,6 +712,29 @@ def _flow_problem(book: Book, snap: Snapshot) -> str:
     if flows:
         book.swaps["flow_frozen"] = "1"
         return f"发现 {len(flows)} 笔资金划转，新增风险冻结；确认后在空仓时用 rearm 重置"
+    book.swaps["income_cursor_ms"] = str(stamp)
+    return ""
+
+
+def _coverage_problem(book: Book, snap: Snapshot) -> str:
+    """Default REST history covers at most seven days/1000 rows. Never
+    advance a cursor across a period whose fills or flows we did not see.
+    """
+    for key, rows, readable, label in (
+        ("trade_seen_ms", snap.trades, snap.recent_trades_ok, "成交"),
+        ("income_cursor_ms", snap.income, snap.funding_ok, "资金流水"),
+    ):
+        raw = book.swaps.get(key)
+        if raw is None or not readable:
+            continue
+        try:
+            since = int(raw)
+        except ValueError:
+            return f"{label}覆盖游标损坏，等待人工核验"
+        if since > snap.server_time_ms or snap.server_time_ms - since >= HISTORY_WINDOW_MS:
+            return f"{label}历史超过七天默认可读范围，等待人工核验"
+        if len(rows) >= 1000 and min(row.time_ms for row in rows) > since:
+            return f"{label}最近1000笔未覆盖上次读数，等待人工核验"
     return ""
 
 
@@ -732,10 +787,29 @@ def _sync_book(
     store: Store, book: Book, snap: Snapshot, cfg: AccountConfig, now_ms: int, *, persist: bool = True
 ) -> None:
     """Follow the exchange position only when our own orders explain it."""
-    if not snap.known or book.manual:
+    if not snap.known:
         return
+    coverage = _coverage_problem(book, snap)
     intents = store.intents()
     cursor = _trade_cursor(book, snap)
+    if book.manual:
+        # Explicit takeover owns the current position even if the earlier
+        # history cannot be proved. Keep the gap and its freeze visible.
+        _absorb(book, snap, cfg, now_ms, store)
+        if not coverage and snap.trades:
+            book.swaps["trade_cursor"] = str(max(cursor, max(trade.trade_id for trade in snap.trades)))
+        if not coverage and snap.recent_trades_ok:
+            book.swaps["trade_seen_ms"] = str(snap.server_time_ms)
+        if coverage:
+            book.entries_frozen = True
+            book.freeze_reason = coverage
+        if persist:
+            _commit_memory(store, book, intents)
+        return
+    if coverage:
+        book.entries_frozen = True
+        book.freeze_reason = coverage
+        return
     if freeze_for_manual(book, snap, intents, store.own_order_ids(), cursor) != "":
         return
     own = store.own_order_ids()
@@ -758,12 +832,16 @@ def _sync_book(
         # An in-flight order explains the rest, but the tape has a gap. Follow
         # the position and do not move the cursor across that gap.
         _absorb(book, snap, cfg, now_ms, store)
+        if snap.recent_trades_ok:
+            book.swaps["trade_seen_ms"] = str(snap.server_time_ms)
         if persist:
             _commit_memory(store, book, intents)
         return
     _absorb(book, snap, cfg, now_ms, store)
     if fresh:
         book.swaps["trade_cursor"] = str(max(cursor, max(trade.trade_id for trade in fresh)))
+    if snap.recent_trades_ok:
+        book.swaps["trade_seen_ms"] = str(snap.server_time_ms)
     if persist:
         _commit_memory(store, book, intents)
 
@@ -909,13 +987,19 @@ def _record_outcome(store: Store, intent: Intent, outcome: Outcome, note: str = 
     executed = None
     if outcome.phase in {"filled", "partial", "canceled", "expired", "rejected"}:
         executed = f"{outcome.executed:.8f}"
-    store.mark_intent(
-        intent.client_id, outcome.phase, note or intent.note, order_id=outcome.order_id, executed=executed
-    )
+    absorbed = None
     if outcome.phase in {"rejected", "canceled", "expired"} and outcome.executed <= 0:
-        store.mark_absorbed(intent.client_id)
+        absorbed = True
     elif outcome.phase == "filled" and _is_algo(intent):
-        store.mark_unabsorbed(intent.client_id)
+        absorbed = False
+    store.mark_intent(
+        intent.client_id,
+        outcome.phase,
+        note or intent.note,
+        order_id=outcome.order_id,
+        executed=executed,
+        absorbed=absorbed,
+    )
 
 
 def _reconcile(
@@ -1187,7 +1271,7 @@ def _entry_gate(
     for name in ("stop.request", "flatten.request"):
         if _control_requested(store, name, ctx.environment, alerts):
             return "有停机或平仓请求，不发送新增风险"
-    stray = foreign_ids(snap, store.all_client_ids())
+    stray = foreign_ids(snap, store.all_client_ids(), store.own_order_ids())
     if stray:
         return "存在未知外来订单：" + ",".join(stray[:5])
     mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap))
@@ -1195,6 +1279,8 @@ def _entry_gate(
         return mismatch
     if any(item.action in POSITION_ACTIONS and item.phase in OPEN_PHASES for item in store.intents(_OPEN)):
         return "已有未完成订单，不会再发一张新增风险的单"
+    if _unresolved_protections(store, snap):
+        return "旧保护订单或子单仍未结算，不发送新增风险"
     if abs(snap.position_qty) >= 1e-8 and not protections_cover(snap)[0]:
         return "现有仓位保护不完整，先补保护，不加仓"
     return ""
@@ -1219,6 +1305,9 @@ def _act(
     if action.kind in {"enter", "add"}:
         blocked = _entry_gate(store, snap, book, cfg, ctx, bar_open_ms + 60_000)
         if blocked:
+            if "已过期" in blocked:
+                book.entries_frozen = True
+                book.freeze_reason = blocked
             return blocked
         problem = _preflight(1 if action.side > 0 else -1, book, snap, cfg, action.kind == "add")
         if problem:
@@ -1233,6 +1322,10 @@ def _act(
         )
         return action.reason
     if action.kind in {"exit", "reverse"}:
+        if not book.manual:
+            mismatch = freeze_for_manual(book, snap, store.intents(), store.own_order_ids(), _trade_cursor(book, snap))
+            if mismatch:
+                return "归属未确认，不自动退出实仓：" + mismatch
         blocked = reducing_block_reason(environment, prod_enabled=ctx.prod_enabled)
         if blocked:
             return blocked
@@ -1478,6 +1571,8 @@ def _own_remaining(store: Store, snap: Snapshot, entries_only: bool = False) -> 
         return ["账户快照未知"]
     known = store.all_client_ids()
     left: list[str] = []
+    if entries_only:
+        left.extend(_unresolved_protections(store, snap))
     for item in store.open_intents():
         if item.action in _ENTRY_ACTIONS or item.action in {"reduce", "flatten"} or not entries_only:
             left.append(f"未完成意图 {item.client_id}（{item.action}，{item.phase}）")
@@ -1506,6 +1601,23 @@ def _own_remaining(store: Store, snap: Snapshot, entries_only: bool = False) -> 
             if not covered:
                 left.append("保护不完整：" + why)
     return left
+
+
+def _unresolved_protections(store: Store, snap: Snapshot) -> list[str]:
+    """An acknowledged, still resting protection is healthy; every other
+    unfinished/uncounted protection may act on a later position.
+    """
+    live = {a.client_algo_id for a in snap.algos if a.status == "NEW"}
+    flat = abs(snap.position_qty) < 1e-8
+    return [
+        f"保护未结算 {item.client_id}（{item.phase}）"
+        for item in store.intents()
+        if item.action in {"stop", "take"}
+        and (
+            (item.phase in OPEN_PHASES and not (item.phase == "acked" and item.client_id in live and not flat))
+            or not item.absorbed
+        )
+    ]
 
 
 def _stop_settled(store: Store, snap: Snapshot) -> bool:

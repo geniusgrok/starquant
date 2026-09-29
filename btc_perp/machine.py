@@ -92,10 +92,14 @@ def protections_cover(snapshot: Snapshot) -> tuple[bool, str]:
     return True, ""
 
 
-def foreign_ids(snapshot: Snapshot, known: set[str]) -> list[str]:
+def foreign_ids(snapshot: Snapshot, known: set[str], known_native: set[str] | None = None) -> list[str]:
     found: list[str] = []
     for order in snapshot.orders:
-        if order.status in _OPEN and order.client_id not in known:
+        if (
+            order.status in _OPEN
+            and order.client_id not in known
+            and not (order.order_id and order.order_id in (known_native or ()))
+        ):
             found.append(order.client_id or "order-without-id")
     for algo in snapshot.algos:
         if algo.status in _ALGO_LIVE and algo.client_algo_id not in known:
@@ -332,7 +336,7 @@ def promote_protection(
     return commands, updates
 
 
-def apply_takeover(book: Book, snapshot: Snapshot) -> Book:
+def apply_takeover(book: Book, snapshot: Snapshot, *, history_covered: bool = True) -> Book:
     book.manual = True
     book.side = snapshot.position_side
     book.qty = abs(snapshot.position_qty)
@@ -346,6 +350,6 @@ def apply_takeover(book: Book, snapshot: Snapshot) -> Book:
     book.entries_frozen = True
     book.freeze_reason = "已接管实仓，仍不自动加仓"
     book.alerts.append("takeover")
-    if snapshot.trades:
+    if history_covered and snapshot.trades:
         book.swaps["trade_cursor"] = str(max(trade.trade_id for trade in snapshot.trades))
     return book

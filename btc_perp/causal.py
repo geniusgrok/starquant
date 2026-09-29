@@ -7,6 +7,7 @@ in a separate file and never replaces the last verified report.
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import json
 import subprocess
@@ -20,6 +21,8 @@ from btc_perp.measure import TARGET_CNY, YEARS
 from btc_perp.reportio import completion, publish
 
 TARGET_150 = 10000.0 * (2.5**YEARS)
+START_MS = int(dt.datetime(2020, 1, 1, tzinfo=dt.UTC).timestamp() * 1000)
+END_MS = int(dt.datetime(2026, 9, 20, tzinfo=dt.UTC).timestamp() * 1000)
 
 
 def _sha256(path: Path) -> str:
@@ -37,6 +40,8 @@ def validate_minutes(
     low: np.ndarray,
     c: np.ndarray,
     qv: np.ndarray,
+    *,
+    official_window: bool = False,
 ) -> list[str]:
     """Timestamp, OHLC, and volume problems. An empty list means the tape is usable."""
     problems: list[str] = []
@@ -45,10 +50,25 @@ def validate_minutes(
         return ["分钟数组长度不一致"]
     if n < 2:
         return ["分钟样本太短"]
+    if not np.issubdtype(ts.dtype, np.integer):
+        return ["分钟时间不是整数毫秒"]
+    if bool(np.any(ts % 60_000 != 0)):
+        problems.append("分钟时间没有对齐 UTC 整分钟")
+    if official_window and (
+        n != (END_MS - START_MS) // 60_000 or int(ts[0]) != START_MS or int(ts[-1]) != END_MS - 60_000
+    ):
+        problems.append("分钟数据不在冻结的正式窗口")
     gaps = np.diff(ts.astype(np.int64))
     bad = np.flatnonzero(gaps != 60_000)
     if len(bad):
         problems.append(f"分钟不连续或重复：{int(bad[0])} 处起，共 {len(bad)} 处")
+    try:
+        valid = all(bool(np.all(np.isfinite(values))) for values in (o, h, low, c, qv))
+    except TypeError:
+        valid = False
+    if not valid:
+        problems.append("分钟价格或成交额包含非有限数字")
+        return problems
     if bool(np.any(np.minimum(np.minimum(o, h), np.minimum(low, c)) <= 0)):
         problems.append("存在非正价格")
     if bool(np.any(h + 1e-9 < np.maximum(np.maximum(o, c), low))):
@@ -94,12 +114,20 @@ def _provenance() -> dict[str, Any]:
             return None
         return out.stdout.strip()
 
-    status = git("status", "--porcelain", "--untracked-files=no")
+    status = git("status", "--porcelain", "--untracked-files=no", "--", "btc_perp", "scripts", "config")
     files = {
         "config/btc_account.yaml": ROOT / "config" / "btc_account.yaml",
         "btc_perp/costs.py": ROOT / "btc_perp" / "costs.py",
         "scripts/frontier.py": ROOT / "scripts" / "frontier.py",
         "btc_perp/causal.py": Path(__file__),
+        "btc_perp/measure.py": ROOT / "btc_perp" / "measure.py",
+        "btc_perp/reportio.py": ROOT / "btc_perp" / "reportio.py",
+        "btc_perp/robustness.py": ROOT / "btc_perp" / "robustness.py",
+        "btc_perp/generalization.py": ROOT / "btc_perp" / "generalization.py",
+        "btc_perp/candidate.py": ROOT / "btc_perp" / "candidate.py",
+        "btc_perp/tapes.py": ROOT / "btc_perp" / "tapes.py",
+        "config/candidate.yaml": ROOT / "config" / "candidate.yaml",
+        "scripts/assets.py": ROOT / "scripts" / "assets.py",
     }
     return {
         "git_head": git("rev-parse", "HEAD"),
@@ -145,9 +173,10 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
     from scripts.frontier import initial_state, resume
 
     raw = np.load(data)
-    problems = validate_minutes(raw["ts"], raw["o"], raw["h"], raw["l"], raw["c"], raw["qv"])
+    from btc_perp.measure import _tape_problems
+
+    problems = _tape_problems()
     cfg = load_config()
-    o, h, low, c, qv, fund, fx, days, _minute, hh, ll, xh, xl, gate = _prepare(cfg)
     if problems:
         report = {
             "verified": False,
@@ -164,6 +193,8 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
         if write_report:
             _write(report)
         return report
+
+    o, h, low, c, qv, fund, fx, days, _minute, hh, ll, xh, xl, gate = _prepare(cfg)
 
     n = len(c)
     state = initial_state(float(fx[0]))
@@ -212,9 +243,12 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
     report = {
         "verified": True,
         "funding_gap_unverified": bool(gap.get("missing_slot") or gap.get("proxy_from_premium")),
-        "fills": "signal after the minute close, fill at the next bar open; stops still use the intrabar path",
+        "fills": "signal after the minute close, fill at the next bar open; resting stop uses the intrabar path, new trail starts next minute",
         "start_cny": cfg.start_cny,
         "end_cny": float(end),
+        "end_usdt": float(end / (fx[-1] * (1.0 - cfg.fx_fee))),
+        "fx_end_usdcny": float(fx[-1]),
+        "valuation_note": "USDT 按 USD 平价，以前一已公布 Frankfurter 美元兑人民币中间价估值，期末扣 0.35% 假设兑换费；非可交易报价。",
         "cagr": float(cagr),
         "min_equity_over_peak": float(ratio),
         "min_day": int(days[min_i]),
@@ -248,7 +282,7 @@ def run_causal(write_report: bool = True) -> dict[str, Any]:
             "n_stop": previous.get("n_stop"),
             "note": "同根收盘成交的旧研究，不是这次的结果",
         },
-        "why_it_can_differ": "开仓、加仓和通道出场改到下一根开盘；止损和一半峰值平仓仍在当根路径上。最后一根的信号没有下一根开盘，不会成交。",
+        "why_it_can_differ": "开仓、加仓和通道出场在下一根开盘；已挂止损及一半峰值平仓在当根路径上，新移动止损下一分钟起生效。最后一根信号不会成交。",
     }
     if write_report:
         _write(report)

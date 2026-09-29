@@ -18,7 +18,6 @@ import math
 import os
 import shutil
 import sqlite3
-import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 from typing import IO, cast
@@ -130,19 +129,24 @@ class Store:
             backup.close()
 
     def _archive(self) -> None:
-        """A dated copy per UTC day, taken only from a database that passed the semantic load."""
+        """One consistent SQLite snapshot per UTC day, also while a process stays up."""
         folder = self.directory / "backups"
         folder.mkdir(exist_ok=True)
         today = dt.datetime.now(dt.UTC).strftime("%Y%m%d")
         dated = folder / f"account-{today}.sqlite"
         if not dated.exists():
-            copy = sqlite3.connect(dated)
+            temporary = folder / f"account-{today}.{os.getpid()}.tmp"
             try:
-                self._db.backup(copy)
+                with sqlite3.connect(temporary) as copy:
+                    self._db.backup(copy)
+                os.replace(temporary, dated)
             finally:
-                copy.close()
+                temporary.unlink(missing_ok=True)
         for old in sorted(folder.glob("account-*.sqlite"))[:-BACKUP_KEEP]:
             old.unlink(missing_ok=True)
+
+    def archive_if_due(self) -> None:
+        self._archive()
 
     def restore_latest_backup(self) -> Path | None:
         """Newest dated copy that opens and passes the integrity check. Nothing is replaced here."""
@@ -207,7 +211,9 @@ class Store:
                     raise RuntimeError("状态目录绑定的是另一组凭据，不能升级成 UID 绑定")
             elif bound != current:
                 raise RuntimeError("状态目录绑定的是另一组凭据，不会拿来跑这一组")
-        lock_dir = Path(os.environ.get("STARQUANT_LOCK_DIR", "") or tempfile.gettempdir())
+        # One fixed lock scope for this machine/user; a process cannot choose a
+        # different root and silently bypass the other process's account lock.
+        lock_dir = Path.home() / ".local" / "state" / "starquant" / "locks"
         lock_dir.mkdir(parents=True, exist_ok=True)
         tag = hashlib.sha256(current.encode()).hexdigest()[:16]
         handle = (lock_dir / f"starquant-{self.environment}-{tag}.lock").open("a+")
@@ -232,6 +238,12 @@ class Store:
     def close(self) -> None:
         self._db.close()
         self._release()
+
+    def __enter__(self) -> Store:
+        return self
+
+    def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
+        self.close()
 
     def put_json(self, key: str, value: object) -> None:
         raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
@@ -290,7 +302,7 @@ class Store:
             return float(value)
 
         def whole(key: str) -> int:
-            value = raw.get(key, 0)
+            value: object = raw.get(key, 0)
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise RuntimeError(f"策略记忆 {key} 不是非负整数，进入只读恢复")
             return value
@@ -371,6 +383,7 @@ class Store:
         attempts: int | None = None,
         order_id: str = "",
         executed: str | None = None,
+        absorbed: bool | None = None,
     ) -> None:
         columns = ["phase=?", "note=?"]
         values: list[object] = [phase, note]
@@ -383,6 +396,9 @@ class Store:
         if executed is not None:
             columns.append("executed=?")
             values.append(executed)
+        if absorbed is not None:
+            columns.append("absorbed=?")
+            values.append(int(absorbed))
         values.append(client_id)
         self._db.execute(f"update intents set {', '.join(columns)} where client_id=?", values)
         self._commit()

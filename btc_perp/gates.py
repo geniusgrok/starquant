@@ -57,6 +57,11 @@ def load_limits(path: Path | None = None) -> Limits:
     if not file.exists():
         return Limits(None, None, None, None)
     raw = yaml.safe_load(file.read_text()) or {}
+    if not isinstance(raw, dict):
+        raise ValueError("资金限额不是键值表")
+    unknown = set(raw) - set(Limits.__dataclass_fields__)
+    if unknown:
+        raise ValueError("未知资金限额配置项：" + ", ".join(sorted(map(str, unknown))))
 
     def num(key: str) -> float | None:
         value = raw.get(key)
@@ -70,13 +75,17 @@ def load_limits(path: Path | None = None) -> Limits:
         return number
 
     seconds = raw.get("max_unprotected_seconds")
-    if isinstance(seconds, bool) or (seconds not in (None, "") and int(seconds) < 0):
+    if seconds in (None, ""):
+        seconds_value = None
+    elif isinstance(seconds, int) and not isinstance(seconds, bool) and seconds >= 0:
+        seconds_value = seconds
+    else:
         raise ValueError("max_unprotected_seconds 必须是非负整数")
     return Limits(
         capital_usdt=num("capital_usdt"),
         max_notional_usdt=num("max_notional_usdt"),
         max_daily_loss_usdt=num("max_daily_loss_usdt"),
-        max_unprotected_seconds=None if seconds in (None, "") else int(seconds),
+        max_unprotected_seconds=seconds_value,
     )
 
 

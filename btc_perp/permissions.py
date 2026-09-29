@@ -48,10 +48,9 @@ def prod_permission_block(
         return "无法确认密钥没有提币或划转权限，生产拒绝下单"
     if parsed.get("enableFutures") is not True:
         return "密钥没有合约权限，生产拒绝下单"
-    if parsed.get("enableWithdrawals") is True or parsed.get("enableInternalTransfer") is True:
-        return "密钥开通了提币或划转，生产拒绝下单"
-    if parsed.get("permitsUniversalTransfer") is True:
-        return "密钥开通了提币或划转，生产拒绝下单"
+    for key in ("enableWithdrawals", "enableInternalTransfer", "permitsUniversalTransfer"):
+        if parsed.get(key) is not False:
+            return f"提币或划转权限 {key} 未明确为 false，生产拒绝新增风险"
     return ""
 
 

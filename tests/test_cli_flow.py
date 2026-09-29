@@ -65,7 +65,6 @@ class NoStream:
 def wired(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[LiveFake, Path]:
     venue = LiveFake()
     monkeypatch.setenv("STARQUANT_STATE_DIR", str(tmp_path / "state"))
-    monkeypatch.setenv("STARQUANT_LOCK_DIR", str(tmp_path / "locks"))
     monkeypatch.setenv("STARQUANT_DEMO_API_KEY", "key")
     monkeypatch.setenv("STARQUANT_DEMO_API_SECRET", "secret")
     monkeypatch.setattr(entry, "UsdMClient", lambda *_a, **_k: venue)
@@ -201,7 +200,7 @@ def test_a_fast_cycle_on_the_same_entry_still_sends(
     code = entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"])
     assert venue.market_ids
     assert "过期" not in capsys.readouterr().out
-    assert code == 2  # the wind-down stop freezes new entries; the order itself was sent
+    assert code == 0  # a healthy run and settled stop are a successful one-shot session
 
 
 def test_a_failed_wind_down_after_a_clean_cycle_is_not_exit_zero(
@@ -238,3 +237,23 @@ def test_interrupt_with_a_confirmed_stop_is_named_apart_from_an_unconfirmed_one(
     done = CycleReport("stop", True, "", (), 0.0, True, (), settled=True)
     assert _interrupt_line(done) == "用户中断，收尾已确认"
     assert _interrupt_line(None) == "用户中断，收尾未确认"
+
+
+def test_second_interrupt_during_cleanup_records_unverified_and_releases_lock(
+    wired: tuple[LiveFake, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _venue, state = wired
+
+    def interrupted(*_args: object) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(entry, "_wind_down", interrupted)
+    code = entry.main(["run", "--environment", "demo", "--max-notional-usdt", "200", "--once"])
+    assert code == 2
+    body = _state(state)
+    assert body["phase"] == "stopped" and body["exit_code"] == 2
+    assert body["wind_down"] == "unverified"
+    from btc_perp.store import Store
+
+    with Store(state, "demo"):
+        pass

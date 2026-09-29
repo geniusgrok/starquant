@@ -27,6 +27,7 @@ from btc_perp.costs import (
     FX_FEE,
     IMPACT_Y,
     LEVERAGE,
+    MARGIN_BRACKETS,
     MAX_NOTIONAL_20X,
     MIN_NOTIONAL,
     SLIP_BASE,
@@ -187,15 +188,10 @@ def load_hourly():
 @njit(cache=True)
 def _mmr_cum(notional):
     """Maintenance rate and cumulative amount for a BTCUSDT notional."""
-    if notional <= 50_000.0:
-        return 0.004, 0.0
-    if notional <= 250_000.0:
-        return 0.005, 50.0
-    if notional <= 1_000_000.0:
-        return 0.01, 1_300.0
-    if notional <= 5_000_000.0:
-        return 0.025, 16_300.0
-    return 0.05, 141_300.0
+    for limit, rate, cum in MARGIN_BRACKETS:
+        if notional <= limit:
+            return rate, cum
+    return MARGIN_BRACKETS[-1][1], MARGIN_BRACKETS[-1][2]
 
 
 @njit(cache=True)
@@ -574,9 +570,13 @@ def _loop(
             pending = 0.0
             pending_side = 0.0
         if side != 0:
-            # No 5-second tape exists. A bullish bar is ordered open, low, high,
-            # close, so the low is tested before a new high tightens the stop.
-            # A bearish bar is open, high, low, close.
+            # The resting stop for this minute was decided from the previous
+            # completed minute. This minute's high/low cannot tighten it
+            # before the forward process has observed the completed bar.
+            stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, C[i - 1] if i > 0 else O[i])
+            # No 5-second tape exists. A bullish bar is ordered open, low,
+            # high, close; a bearish bar is open, high, low, close. The path
+            # tests the old stop and floating equity, not a new trail.
             bull = C[i] >= O[i]
             hit = False
             fill = 0.0
@@ -589,7 +589,6 @@ def _loop(
                     px = H[i] if bull else L[i]
                 else:
                     px = C[i]
-                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, px)
                 if side > 0 and px <= stop_px:
                     hit = True
                     fill = (px if k == 0 else stop_px) * (1.0 - slip_b - (0.0 if k == 0 else stop_extra))
@@ -622,8 +621,11 @@ def _loop(
                     extreme = px
                 elif side < 0 and px < extreme:
                     extreme = px
-                stop_px = _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail)
                 peak, min_ratio, min_i = _mark(px, wallet, entry, qty, side, fx[i], fx_fee, peak, min_ratio, min_i, i)
+            if not hit:
+                # A newly computed trail is eligible from the next minute.
+                stop_px = _tighten(side, extreme, entry, stop_px, trail, ratchet_gain, ratchet_trail)
+                stop_px = _clamp_stop(side, stop_px, entry, qty, isolated, C[i])
             if hit:
                 fee = qty * fill * taker
                 turn_b += qty

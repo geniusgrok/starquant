@@ -20,7 +20,7 @@ from pathlib import Path
 
 from btc_perp.bars import bars_from_kline_rows, completed_hour_channels, hour_rows_from_klines
 from btc_perp.binance_client import UrllibTransport, UsdMClient
-from btc_perp.config import ROOT, AccountConfig, load_config
+from btc_perp.config import AccountConfig, load_config
 from btc_perp.gates import DEMO, PROD, load_limits, prod_orders_allowed
 from btc_perp.model import Limits
 from btc_perp.permissions import prod_permission_block, prod_uid_block
@@ -276,7 +276,11 @@ def _forward(found: argparse.Namespace) -> int:
         )
         return 2
     if command == "resume":
-        return _resume(_state_dir(environment, str(found.state_dir)), environment)
+        try:
+            return _resume(_state_dir(environment, str(found.state_dir)), environment)
+        except ValueError as exc:
+            print(exc)
+            return 2
     keys = _keys(environment)
     if keys is None:
         which = "STARQUANT_DEMO_API_KEY" if found.environment == DEMO else "STARQUANT_PROD_API_KEY"
@@ -288,7 +292,11 @@ def _forward(found: argparse.Namespace) -> int:
     if command == "run" and found.max_notional_usdt <= 0:
         print("增仓需要名义上限。\npython -m btc_perp run --environment demo --max-notional-usdt 200 --once")
         return 2
-    state = _state_dir(environment, str(found.state_dir))
+    try:
+        state = _state_dir(environment, str(found.state_dir))
+    except ValueError as exc:
+        print(exc)
+        return 2
     uid = os.environ.get("STARQUANT_ACCOUNT_UID", "").strip()
     transport = UrllibTransport()
     if environment == PROD:
@@ -312,10 +320,16 @@ def _forward(found: argparse.Namespace) -> int:
         print(str(exc))
         store.close()
         return 2
+    print(f"environment={environment} uid={uid or 'key-bound'} state={state}")
     read_only = bool(found.dry_run or command in {"check", "takeover", "rearm", "resolve"})
     client = UsdMClient(environment, keys[0], keys[1], transport, read_only=read_only)
-    cfg = load_config()
-    limits = load_limits()
+    try:
+        cfg = load_config()
+        limits = load_limits()
+    except (OSError, ValueError) as exc:
+        store.close()
+        print(f"配置错误：{exc}")
+        return 2
     if command == "resolve":
         return _resolve(store, client, str(found.client_id))
     digest = _config_digest(cfg, limits, float(found.max_notional_usdt))
@@ -328,7 +342,7 @@ def _forward(found: argparse.Namespace) -> int:
             store.close()
             return 2
         store.put_json("config_digest", digest)
-    if environment == PROD and writes:
+    if environment == PROD and writes and command == "run":
         blocked = prod_permission_block(environment, keys[0], keys[1], client.transport)
         if blocked:
             print(blocked)
@@ -341,18 +355,18 @@ def _forward(found: argparse.Namespace) -> int:
         for name in ("stop.request", "flatten.request"):
             if (state / name).exists():
                 print(f"存在 {name}，这一轮会按停机处理；确认后用 resume 清除")
+    # REST is the source of account/order truth. Stream keepalive/reconnect
+    # before a stop could delay the only path that reduces risk.
     stream: UserStream | None = None
-    if writes:
-        stream = UserStream(client, environment)
-        stream.start()
     previous_term = signal.signal(signal.SIGTERM, _raise_interrupt)
-    if writes:
-        _write_run_state(state, phase="running", command=command, wind_down="pending", config=digest)
+    previous_int = signal.signal(signal.SIGINT, _raise_interrupt)
     report: CycleReport | None = None
     wind: CycleReport | None = None
     interrupted = False
     failure = ""
     try:
+        if writes:
+            _write_run_state(state, phase="running", command=command, wind_down="pending", config=digest)
         while True:
             now_ms = int(time.time() * 1000)
             report = _one_cycle(found, store, client, stream, cfg, limits, mode, now_ms)
@@ -375,31 +389,61 @@ def _forward(found: argparse.Namespace) -> int:
         failure = f"{type(exc).__name__}: {exc}"[:300]
         raise
     finally:
-        signal.signal(signal.SIGTERM, previous_term)
-        if command == "run" and not found.dry_run:
-            wind = _wind_down(found, store, client, cfg, limits, report)
-        if interrupted:
-            print(_interrupt_line(wind))
-        if writes:
-            _write_run_state(
-                state,
-                phase="stopped",
-                command=command,
-                interrupted=interrupted,
-                failure=failure,
-                wind_down=_wind_state(wind, report, wind_required=command == "run" and not found.dry_run),
-            )
-        if stream is not None:
-            stream.stop()
-        store.close()
-    final = wind or report
-    if final is None or interrupted:
+        # The first signal starts bounded cleanup; later signals cannot leave
+        # a misleading "running" state in the middle of that cleanup.
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            if command == "run" and not found.dry_run:
+                try:
+                    wind = _wind_down(found, store, client, cfg, limits, report)
+                except BaseException as exc:
+                    failure = failure or f"收尾中断：{type(exc).__name__}: {exc}"[:300]
+                    wind = None
+            if interrupted:
+                print(_interrupt_line(wind))
+            if stream is not None:
+                try:
+                    stream.stop()
+                except Exception as exc:
+                    failure = failure or f"用户流关闭失败：{type(exc).__name__}: {exc}"[:300]
+            status = _exit_status(command, report, wind, interrupted, failure, bool(found.dry_run))
+            if writes:
+                _write_run_state(
+                    state,
+                    phase="stopped",
+                    command=command,
+                    interrupted=interrupted,
+                    failure=failure,
+                    exit_code=status,
+                    wind_down=_wind_state(wind, report, wind_required=command == "run" and not found.dry_run),
+                )
+        finally:
+            try:
+                store.close()
+            finally:
+                signal.signal(signal.SIGTERM, previous_term)
+                signal.signal(signal.SIGINT, previous_int)
+    return _exit_status(command, report, wind, interrupted, failure, bool(found.dry_run))
+
+
+def _exit_status(
+    command: str,
+    report: CycleReport | None,
+    wind: CycleReport | None,
+    interrupted: bool,
+    failure: str,
+    dry_run: bool,
+) -> int:
+    if report is None or interrupted or failure:
         return 2
-    if command == "run" and not found.dry_run and (wind is None or not wind.settled):
-        return 2
+    if command == "run" and not dry_run:
+        if wind is None or not wind.settled:
+            return 2
+        return 2 if report.mode == "run" and report.frozen else 0
     if command in {"stop", "flatten", "rearm"}:
-        return 0 if final.settled else 2
-    return 2 if final.frozen else 0
+        return 0 if report.settled else 2
+    return 2 if report.frozen else 0
 
 
 def _resume(state: Path, environment: str) -> int:
@@ -556,11 +600,17 @@ def _keys(environment: str) -> tuple[str, str] | None:
 
 def _state_dir(environment: str, explicit: str) -> Path:
     if explicit:
-        return Path(explicit)
+        chosen = Path(explicit).expanduser()
+        if not chosen.is_absolute():
+            raise ValueError("--state-dir 必须是绝对路径")
+        return chosen.resolve()
     override = os.environ.get("STARQUANT_STATE_DIR", "")
     if override:
-        return Path(override) / environment
-    return ROOT / "state" / environment
+        chosen = Path(override).expanduser()
+        if not chosen.is_absolute():
+            raise ValueError("STARQUANT_STATE_DIR 必须是绝对路径")
+        return (chosen / environment).resolve()
+    return Path.home() / ".local" / "state" / "starquant" / environment
 
 
 if __name__ == "__main__":

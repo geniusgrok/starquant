@@ -216,8 +216,7 @@ def test_caps_take_the_smaller_positive_value() -> None:
     assert risk_equity(50.0, limits) == 50.0
 
 
-def test_the_credential_is_bound_to_the_state_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("STARQUANT_LOCK_DIR", str(tmp_path / "locks"))
+def test_the_credential_is_bound_to_the_state_directory(tmp_path: Path) -> None:
     first = Store(tmp_path / "a", "demo")
     first.bind_credential("key-one")
     first.close()
@@ -227,8 +226,7 @@ def test_the_credential_is_bound_to_the_state_directory(tmp_path: Path, monkeypa
     again.close()
 
 
-def test_two_state_directories_cannot_drive_one_account(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("STARQUANT_LOCK_DIR", str(tmp_path / "locks"))
+def test_two_state_directories_cannot_drive_one_account(tmp_path: Path) -> None:
     first = Store(tmp_path / "a", "demo")
     second = Store(tmp_path / "b", "demo")
     try:

@@ -494,14 +494,15 @@ def _state_key(
             str(r.get("symbol")),
             str(r.get("positionAmt")),
             str(r.get("entryPrice")),
-            str(r.get("isolatedMargin", "")),
+            str(r.get("isolatedWallet", "")),
             str(r.get("marginType", "")),
             str(r.get("leverage", "")),
         )
         for r in _rows(positions)
     )
     plain = sorted(
-        (str(r.get("clientOrderId")), str(r.get("status")), str(r.get("executedQty"))) for r in _rows(orders)
+        (str(r.get("clientOrderId")), str(r.get("orderId")), str(r.get("status")), str(r.get("executedQty")))
+        for r in _rows(orders)
     )
     conditional = sorted(
         (str(r.get("clientAlgoId")), str(r.get("algoStatus", r.get("status"))), str(r.get("triggerPrice")))
@@ -633,6 +634,7 @@ def _snapshot_from(
             reduce_only=str(item.get("reduceOnly", "")).lower() == "true",
             status=str(item.get("status", "")),
             price=_f(item.get("price")),
+            order_id=str(item.get("orderId", "")),
         )
         for item in _rows(orders)
         if item.get("symbol", "BTCUSDT") == "BTCUSDT"

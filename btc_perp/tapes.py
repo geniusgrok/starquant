@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from btc_perp.causal import validate_minutes
 from btc_perp.config import ROOT
 
 DATA = ROOT / "data"
@@ -37,6 +38,34 @@ class Tape:
         low = self.low.reshape(n, 60).min(1)
         close = self.c[59::60]
         return high.astype(np.float64), low.astype(np.float64), close.astype(np.float64)
+
+
+EXPECTED_WINDOWS = {
+    "btc": ("2020-01-01", "2026-09-20"),
+    "eth": ("2020-01-01", "2026-09-20"),
+    "sol": ("2020-10-01", "2026-09-20"),
+    "btc_spot_2017": ("2017-09-01", "2020-01-01"),
+}
+
+
+def validate_tape(tape: Tape) -> list[str]:
+    problems = validate_minutes(tape.ts, tape.o, tape.h, tape.low, tape.c, tape.qv, official_window=tape.name == "btc")
+    if tape.name not in EXPECTED_WINDOWS:
+        return [*problems, "未知行情窗口"]
+    first, end = EXPECTED_WINDOWS[tape.name]
+    begin_ms = int(dt.datetime.fromisoformat(first).replace(tzinfo=dt.UTC).timestamp() * 1000)
+    end_ms = int(dt.datetime.fromisoformat(end).replace(tzinfo=dt.UTC).timestamp() * 1000)
+    if len(tape.ts) and (int(tape.ts[0]) != begin_ms or int(tape.ts[-1]) != end_ms - 60_000):
+        problems.append("行情不在预定时间窗口")
+    n = len(tape.ts)
+    if n % 60 or any(len(a) != n for a in (tape.fund, tape.fx, tape.days)):
+        problems.append("资金费、汇率、日期或小时数组长度不一致")
+        return problems
+    if not np.all(np.isfinite(tape.fund)):
+        problems.append("资金费有非有限数字")
+    if not np.all(np.isfinite(tape.fx)) or np.any(tape.fx <= 0):
+        problems.append("汇率有非有限或非正数字")
+    return problems
 
 
 def _fx(ts_hours: np.ndarray, use_real: bool) -> np.ndarray:
@@ -88,9 +117,14 @@ def load_tape(name: str) -> Tape:
     fund = np.zeros(n)
     note = "no perpetual funding on a spot tape; funding is zero"
     funding_path = DATA / "assets" / f"{name}_funding.npz"
+    if name in {"eth", "sol"} and not funding_path.exists():
+        raise ValueError(f"{funding_path.name} 缺失，不能按零费率替代永续合约资金费")
     if funding_path.exists():
         official = np.load(funding_path)
-        rate = {_bucket8h(int(t)): float(r) for t, r in zip(official["ts"], official["rate"], strict=True)}
+        stamps, rates = official["ts"], official["rate"]
+        if not np.all(np.isfinite(rates)) or len(np.unique(stamps)) != len(stamps):
+            raise ValueError(f"{funding_path.name} 资金费时间重复或费率非有限")
+        rate = {_bucket8h(int(t)): float(r) for t, r in zip(stamps, rates, strict=True)}
         step = 8 * 3600 * 1000
         slots = [(i, int(t)) for i, t in enumerate(hour_ts) if int(t) % step == 0]
         missing = sum(1 for _i, t in slots if t not in rate)

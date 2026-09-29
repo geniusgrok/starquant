@@ -9,11 +9,12 @@ do, and whether the drawdown lock ended a run.
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 from typing import Any
 
 import numpy as np
 
-from btc_perp.causal import TARGET_150, _provenance, _sha256, lockout, validate_minutes
+from btc_perp.causal import START_MS, TARGET_150, _provenance, _sha256, lockout
 from btc_perp.config import ROOT, AccountConfig, load_config
 from btc_perp.measure import TARGET_CNY, YEARS
 from btc_perp.reportio import completion, publish
@@ -40,11 +41,18 @@ NEIGHBOUR_FIELDS = (
 REPORT = ROOT / "reports" / "btc_account_robustness.json"
 
 
-def _replay(cfg: AccountConfig, stop_extra: float = 0.0, taker: float = 0.0) -> dict[str, Any]:
+def _replay(
+    cfg: AccountConfig, stop_extra: float = 0.0, taker: float = 0.0, uncertain_funding_rate: float | None = None
+) -> dict[str, Any]:
     from btc_perp.measure import _prepare
     from scripts.frontier import initial_state, resume
 
     o, h, low, c, qv, fund, fx, days, minute, hh, ll, xh, xl, gate = _prepare(cfg)
+    if uncertain_funding_rate is not None:
+        # All 57 September slots have no official settlement in this tape:
+        # 56 premium proxies and the first slot currently zero-filled.
+        september = (int(dt.datetime(2026, 9, 1, tzinfo=dt.UTC).timestamp() * 1000) - START_MS) // 60_000
+        fund[september::480] = uncertain_funding_rate
     n = len(c)
     state = initial_state(float(fx[0]))
     state[22] = stop_extra
@@ -164,8 +172,9 @@ def run_robustness(write_report: bool = True) -> dict[str, Any]:
         if write_report:
             _write(report)
         return report
-    raw = np.load(data)
-    problems = validate_minutes(raw["ts"], raw["o"], raw["h"], raw["l"], raw["c"], raw["qv"])
+    from btc_perp.measure import _tape_problems
+
+    problems = _tape_problems()
     if problems:
         report = {"verified": False, "reason": "行情校验没有通过", "problems": problems}
         if write_report:
@@ -181,16 +190,25 @@ def run_robustness(write_report: bool = True) -> dict[str, Any]:
         stops.append(row)
     fee = _public(_replay(cfg, taker=TAKER_STRESS))
     fee["taker"] = TAKER_STRESS
+    funding_scenarios = []
+    for rate in (-0.003, 0.003):
+        scenario = _public(_replay(cfg, uncertain_funding_rate=rate))
+        scenario["rate_per_unofficial_slot"] = rate
+        funding_scenarios.append(scenario)
     neighbours = _neighbours(cfg)
     failed = [row for row in neighbours if row["breaches_half_peak_line"] or row["locked_at_end"]]
     first_stop_failure = next((row["stop_extra"] for row in stops if row["breaches_half_peak_line"]), None)
     report = {
         "verified": True,
-        "fills": "next open after the close is known (defer=1); stops use the intrabar path",
+        "fills": "next open after close (defer=1); resting stops use intrabar path, new trail starts next minute",
         "base": _public(base),
         "concentration": _concentration(base, cfg.start_cny),
         "stop_extra_adverse": stops,
         "taker_stress": fee,
+        "funding_uncertainty": {
+            "scenarios": funding_scenarios,
+            "note": "57 个未获官方结算确认的 2026-09 槽位统一设为 ±0.3% 的情景；仅是固定情景，不是官方费率的数学上下界。",
+        },
         "neighbours": neighbours,
         "summary": {
             "neighbour_runs": len(neighbours),
@@ -202,7 +220,7 @@ def run_robustness(write_report: bool = True) -> dict[str, Any]:
             "target_cny_150": TARGET_150,
             "reading": (
                 "A stop that fills worse, or a setting moved by 5 to 10 percent, often ends in the drawdown "
-                "lock. Read the published 120% as one path on one tape, not as a robust estimate."
+                f"lock. Read the baseline {base['cagr']:.1%} as one path on one tape, not as a robust estimate."
             ),
         },
         "inputs": {

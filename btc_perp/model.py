@@ -39,6 +39,7 @@ class RestingOrder:
     reduce_only: bool
     status: str
     price: float = 0.0
+    order_id: str = ""
 
 
 @dataclass(frozen=True)

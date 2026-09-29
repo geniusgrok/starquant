@@ -18,7 +18,10 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-EXECUTION_NOTE = "回放里成交是模型假设，没有真实执行，所以 execution_closed 恒为 false"
+EXECUTION_NOTE = (
+    "path_complete 只表示数组回放至末端；data_validated 只表示输入结构已校验，代理/缺失资金费另列；"
+    "回放成交是模型假设，没有真实执行，execution_closed 恒为 false。"
+)
 
 
 def completion(

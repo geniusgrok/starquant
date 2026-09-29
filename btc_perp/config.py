@@ -95,6 +95,9 @@ def load_config(path: Path | None = None) -> AccountConfig:
     if not isinstance(loaded, dict):
         raise ConfigError("账户配置不是键值表")
     raw: dict[str, object] = loaded
+    unknown = set(raw) - set(AccountConfig.__dataclass_fields__)
+    if unknown:
+        raise ConfigError("未知账户配置项：" + ", ".join(sorted(map(str, unknown))))
     cfg = AccountConfig(
         symbol=_text(raw, "symbol", {"BTCUSDT"}),
         margin_mode=_text(raw, "margin_mode", {"isolated"}),
@@ -127,4 +130,20 @@ def load_config(path: Path | None = None) -> AccountConfig:
     )
     if cfg.stop * cfg.leverage >= 1.0:
         raise ConfigError("stop 乘杠杆必须小于 1，否则止损在强平价之外")
+    from btc_perp import costs
+
+    frozen = {
+        "start_cny": costs.START_CNY,
+        "leverage": costs.LEVERAGE,
+        "taker": costs.TAKER,
+        "slip_base": costs.SLIP_BASE,
+        "impact_y": costs.IMPACT_Y,
+        "fx_fee": costs.FX_FEE,
+        "entry_scale_below": costs.ENTRY_SCALE_BELOW,
+        "entry_scale": costs.ENTRY_SCALE,
+        "flatten_ratio": costs.FLATTEN_RATIO,
+    }
+    for field, expected in frozen.items():
+        if getattr(cfg, field) != expected:
+            raise ConfigError(f"{field} 与冻结回放内核不一致：期望 {expected}")
     return cfg

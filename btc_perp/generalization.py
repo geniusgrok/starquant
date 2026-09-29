@@ -362,10 +362,12 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
     from btc_perp.candidate import load_candidate, run_candidate
     from btc_perp.causal import _provenance, lockout
     from btc_perp.config import load_config
-    from btc_perp.tapes import DATA, load_tape
+    from btc_perp.measure import _tape_problems
+    from btc_perp.tapes import DATA, load_tape, validate_tape
 
     needed = [DATA / "btcusdt_1m.npz", DATA / "funding.npz", DATA / "usdcny_frankfurter.json"]
     needed += [DATA / "assets" / f"{name}_1m.npz" for name in TAPES if name != "btc"]
+    needed += [DATA / "assets" / f"{name}_funding.npz" for name in ("eth", "sol")]
     missing = [p.name for p in needed if not p.exists()]
     if missing:
         report: dict[str, Any] = {
@@ -377,9 +379,29 @@ def run_generalization(write_report: bool = True) -> dict[str, Any]:
             _write(report)
         return report
 
+    core_problems = _tape_problems()
+    if core_problems:
+        report = {"verified": False, "reason": "BTC 正式输入校验失败", "problems": core_problems}
+        if write_report:
+            _write(report)
+        return report
+
     base = load_config()
     cand = load_candidate()
-    tapes = {name: load_tape(name) for name in TAPES}
+    try:
+        tapes = {name: load_tape(name) for name in TAPES}
+    except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
+        report = {"verified": False, "reason": f"泛化行情读取失败：{exc}"}
+        if write_report:
+            _write(report)
+        return report
+    tape_problems = {name: validate_tape(tape) for name, tape in tapes.items()}
+    tape_problems = {name: issues for name, issues in tape_problems.items() if issues}
+    if tape_problems:
+        report = {"verified": False, "reason": "泛化行情校验失败", "problems": tape_problems}
+        if write_report:
+            _write(report)
+        return report
     span = {
         name: {
             "hours": t.hours,

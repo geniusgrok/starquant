@@ -1,7 +1,7 @@
 # One BTCUSDT USDT-M account. Both sides, one-way isolated, leverage 20.
 # taker, slip_base, impact_y, fx_fee, and leverage are recorded here.
-# The replay reads btc_perp/costs.py. tests/test_btc_account.py fails if this
-# copy drifts. take_profit_multiple is a disaster cap, not the research exit.
+# The replay reads btc_perp/costs.py. Runtime validation refuses a changed
+# copy. take_profit_multiple is a disaster cap, not the research exit.
 # Production entries stay closed until config/limits.yaml is filled and
 # STARQUANT_ALLOW_PROD_ORDERS=yes.
 symbol: BTCUSDT
@@ -13,7 +13,8 @@ session_seconds: 300
 poll_seconds: 5
 
 # Donchian on completed hours. The first entry_hours bars are not a signal:
-# a short prefix is not this window. Stops are live on every 1-minute OHLC path point.
+# a short prefix is not this window. The previously resting stop is live on
+# the current 1-minute OHLC path; a newly tightened trail starts next minute.
 entry_hours: 1008
 exit_hours: 192
 stop: 0.032

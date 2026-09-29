@@ -602,8 +602,7 @@ def test_stop_and_flatten_never_wait_for_strategy_klines(tmp_path: Path) -> None
 # S07: account scope --------------------------------------------------------------------
 
 
-def test_the_state_follows_the_uid_not_the_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("STARQUANT_LOCK_DIR", str(tmp_path / "locks"))
+def test_the_state_follows_the_uid_not_the_key(tmp_path: Path) -> None:
     first = _store(tmp_path / "a")
     first.bind_credential("key-one", "1001")
     first.close()
@@ -624,8 +623,7 @@ def test_the_state_follows_the_uid_not_the_key(tmp_path: Path, monkeypatch: pyte
         other.close()
 
 
-def test_two_directories_cannot_drive_one_uid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("STARQUANT_LOCK_DIR", str(tmp_path / "locks"))
+def test_two_directories_cannot_drive_one_uid(tmp_path: Path) -> None:
     one = _store(tmp_path / "a")
     two = _store(tmp_path / "b")
     try:
