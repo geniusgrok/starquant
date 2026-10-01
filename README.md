@@ -1,5 +1,11 @@
 # Starquant：BTCUSDT 账户研究
 
+第三轮完成共同历史模型下795次有限会话：默认−3.68% CAGR / 51.75% MDD，
+半风险−1.27% / 38.21%；Coin默认119.23% / 44.11%。完整现金核账通过，
+保留Coin合约、Spot现货为日常开发方向，Star仅作研究对照；没有原生晋升
+或正式退休。方法、输入/源码身份及简化snapshot的限制见
+[第三轮说明](docs/third_round.md)。原连续因果账户的117.31%不属于这个场景。
+
 2026-10-01 首轮：`python -m scripts.restore_btc` 按原始 SHA 恢复 BTC 输入；
 `python -m btc_perp first-round` 复现风险、加仓和空头的 25 个因果对照。
 候选未通过登记的晋升门槛，默认配置保留，详见 [首轮结果](reports/first_round.md)。
