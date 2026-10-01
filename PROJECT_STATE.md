@@ -1,4 +1,11 @@
-# 当前状态（2026-09-29）
+# 当前状态（2026-10-01）
+
+2026-10-01 第二轮：`docs/second_round.md` 固定默认与半风险对照并登记与
+Coinquant 的比较门槛；九项口径差异尚未消除，不作收益排名。
+`python -m scripts.local_checks --out reports/local-execution-NEW.json`
+记录七类本机故障/恢复场景，实际用例全部通过。完整离线套件323项通过、
+10项跳过；常规测量测试只刷新了同根账户的源码提交与run_id，经济值和输入
+字节身份不变。没有账户调用或交易，Demo/Live 仍 NO_GO。
 
 2026-10-01 首轮：`python -m btc_perp first-round` 完成 25 个 BTC 因果账户
 对照，完整原件 `reports/btc_account_first_round.json`，结论 `reports/first_round.md`。

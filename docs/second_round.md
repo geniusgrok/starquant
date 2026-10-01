@@ -16,3 +16,19 @@ protection replacement and disconnect. Save source identity and actual case
 results, separately from native Demo/Live status. A winner requires execution
 proof and acceptable maintenance burden before strategy migration and archive
 of the other runtime. No new runtime or trading account is created here.
+
+## Recorded second-round outcome
+
+`reports/local-execution-20261001.json` records seven case groups actually
+passing (parameterized replacement-failure inputs retain their individual
+pytest outcomes). Reproduce with:
+
+```sh
+python -m scripts.local_checks --out reports/local-execution-NEW.json
+```
+
+Coinquant's `evidence/second-round-20261001/comparison.json` records the original
+artifact hashes and all nine comparison blockers. No candidate is selected.
+Half-risk remains a useful fixed survival control without changing its failed
+93.85% retention threshold or the original 150% goal. Production and economic
+kernel code are unchanged; Demo/Live remain NO_GO.

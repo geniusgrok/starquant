@@ -56,3 +56,6 @@ python -m ruff format --check . && python -m ruff check . && python -m mypy && p
 ```
 
 CI 和密钥检查见 [SECURITY.md](SECURITY.md)。专有软件，第三方没有复制、修改、二次创作或交易权利；网页可见不构成许可。
+第二轮：[统一合约比较门槛与本机验收](docs/second_round.md)。
+七类故障案例通过并保存于 `reports/local-execution-20261001.json`；与
+Coinquant 的九项口径差异尚待消除，默认及半风险继续作为固定研究对照。
