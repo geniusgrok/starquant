@@ -1,5 +1,9 @@
 # Starquant：BTCUSDT 账户研究
 
+2026-10-01 首轮：`python -m scripts.restore_btc` 按原始 SHA 恢复 BTC 输入；
+`python -m btc_perp first-round` 复现风险、加仓和空头的 25 个因果对照。
+候选未通过登记的晋升门槛，默认配置保留，详见 [首轮结果](reports/first_round.md)。
+
 私人研究，使用范围见 [LICENSE](LICENSE)。生产新增仓位默认关闭。历史研究账户从人民币 10,000 元起，单向逐仓、可多可空，20 倍是保证金设置，不等于账户恒定 20 倍敞口。冻结窗口为 2020-01-01 00:00 至 2026-09-20 00:00 UTC（右端不含）。
 
 ## 当前结果
