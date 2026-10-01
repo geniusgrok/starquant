@@ -1222,6 +1222,9 @@ def _levels_for_bar(
     """
     blank = (float("inf"), float("-inf"), float("inf"), float("-inf"))
     if table:
+        hour = bar.open_ms // 3_600_000 * 3_600_000
+        if hour in table:
+            return table[hour]
         known = [stamp for stamp in table if stamp <= bar.open_ms]
         if not known:
             return blank
