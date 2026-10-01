@@ -90,6 +90,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     robust.add_argument("--no-write", action="store_true")
 
+    first_round = sub.add_parser("first-round", help="BTC 风险、加仓与空头的已登记候选对照")
+    first_round.add_argument("--no-write", action="store_true")
+
     general = sub.add_parser(
         "generalization",
         help="其他币种、早期 BTC、前进验证和自助法下的泛化检查（研究用，不改任何设置）",
@@ -128,6 +131,12 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--yes", action="store_true", help="rearm 和 resolve 使用：确认这次操作")
 
     found = parser.parse_args(args)
+    if found.command == "first-round":
+        from btc_perp.first_round import run_first_round
+
+        result = run_first_round(write_report=not found.no_write)
+        print(json.dumps(result.get("decision", result.get("problems")), ensure_ascii=False))
+        return 0 if result.get("verified") else 2
     if found.command == "measure":
         from btc_perp.measure import run_official
 
