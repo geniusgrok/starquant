@@ -1,0 +1,96 @@
+{
+  "git_head": "882b5212ed09a1c075e61399d30b50996691e24c",
+  "source_sha256": {
+    "btc_perp/__init__.py": "9d1e1cf92e6c0a14270262334d77a0adefd8d64111cb86cc66196b81e6c5c57b",
+    "btc_perp/__main__.py": "633956f8329b54a0d404cd36eb9e2f63fc995976c6f1383a054a9bf872763b34",
+    "btc_perp/bars.py": "e0dd852a9b648eb9eb4d8be446ec0b298fbd21a41f40aff2252e08aad3067c68",
+    "btc_perp/binance_client.py": "252d79ff1279196043993c4a14a81ad433548e24ce5715869079f34f7eecf87b",
+    "btc_perp/candidate.py": "9a1b96bebae7d3f6c1464b326df8274f4ca8041d55ec11dd79d6442c01ec23b0",
+    "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
+    "btc_perp/config.py": "124b0d1be93c22fe79b42544df7a400e4298aec7756571aa2f92f8a71b5ac394",
+    "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+    "btc_perp/exchange.py": "539026c2f99949094dd3097a308c82c00fdc914923bfb9398b29e0a1e1374c2d",
+    "btc_perp/first_round.py": "0f2e953146385b17c065e6795a77244e57827b9b749bd8d962636c6a53e4a87e",
+    "btc_perp/gates.py": "45362afc266b3e198d13f7c716738477b229c86ea481a555a105835242a4454a",
+    "btc_perp/generalization.py": "10dc21361b9c2490e377fd9a23a5d1ff24e7957eabe2d8fc94158da0be933748",
+    "btc_perp/machine.py": "ff6cb22f900f8de3f196d7800c8d40d173094912a65464e1e6e66d676b4de6e3",
+    "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+    "btc_perp/model.py": "f4648bbef08b53775c6185fa12a8f4cb51a85dd1d759b54aab71f305f5e951e9",
+    "btc_perp/permissions.py": "8ec7f876cff3e699f9a024ac6f482c4a303b95ee59d92c9013249aae8553bc36",
+    "btc_perp/policy.py": "d138c2c7be96c3fa2ebc448328aaa849de4a2315d6e40ff0398a783a66e19b87",
+    "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
+    "btc_perp/robustness.py": "670a1c5669fb5d83dd4ac6413c4e2561c0f2433664ce9e69554f635786054c5b",
+    "btc_perp/runner.py": "9e18b459192f478818be63e97905bf6c514e15c78221e05aa719b607c2ff34e9",
+    "btc_perp/session.py": "53dfed90525e3d28865289a4ecd463b94bd7f15c6610478d504e610220d37cf4",
+    "btc_perp/store.py": "bebff8f0d9a06be41f1e796b00c3d879d10a3fcacbc1d251308e7d55023958cb",
+    "btc_perp/stream.py": "04b94d4a2a07462d79d57a1845cbe53246d3909bd8312bd1d160b4d92b9d7d16",
+    "btc_perp/tapes.py": "2e2496142931d21d5a174e0f2e14ba09c4fc5ef6eba6113a98be17bc5dc6a9b3",
+    "btc_perp/user_stream.py": "ef848f55dcab5b9cd4bfd8dc17d3d01310fef31810ee55c9ab80b2d24ee05538",
+    "btc_perp/ws_codec.py": "752f44cd35d19d568e18ca069bdcfd5d086e4ce2c3e2728a6b46c5ff24f91512",
+    "scripts/__init__.py": "81dc4feb0eac5e4f0446b9237c909cc03e6cbbb84076f57f341c2db16bb12ab3",
+    "scripts/assets.py": "2e3560034eaba1c7fa9df2f6528777047d92bd1ab4b8721f29ad4669d98f4e3f",
+    "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+    "scripts/local_checks.py": "2b7a0143cabf03ca8aa99fff8afadd6f712f7f93935b4ed04e10ebd3fa5d5be6",
+    "scripts/restore_btc.py": "98b0c4b78c8db73a458ea5da6afca67b9d9ff406201778bbd0a6e83481c5e954",
+    "tests/test_audit_fixes.py": "3e2991332bfa55687d84f4c74ae3ec5a90bf3bcc90027c3d8c31fb6a7bbe918a",
+    "tests/test_btc_account.py": "089f4f59fb622960bfe76524f4e6dcb3141fb8b7df49855e80ae4366a2dd19f1",
+    "tests/test_causal.py": "d745dd273e03102a9dd21c845ed386dc5b22449e761a705b77d36df26487201e",
+    "tests/test_cli_flow.py": "86e40fbf1c4f5776c124c5216b3950e1877ba47e66bbc68e5aac50f3c41d2246",
+    "tests/test_data_integrity.py": "099ffb87dc905cdefc357ce6b61440cd0ce335e219a38b90b50c82b796f56cee",
+    "tests/test_execution.py": "41a18d93ed443ad2a1f0f6677b32349420cc31d25f20d80f80b15587481ae393",
+    "tests/test_first_round.py": "22907add1fb4f30fb88758ab55ae81becb4107865cf12d3cf90f1b65331a7ba6",
+    "tests/test_forward.py": "b6ba3e075085d94401d89ca3142cec07231056e6f6788625ddf7728d767c7dd5",
+    "tests/test_generalization.py": "9843ed618a2876e223c34e82258c7e227b9f97a4734afae492c85601caf8bb4c",
+    "tests/test_kernel_parity.py": "efb7e948cf134733a62756e82f95b021c497f5dfe2792e703739cc22c0b33616",
+    "tests/test_measure.py": "0f1ade0af411f2c611ffd66367ce15f71419dc8e7e165727ecd9cd53ccbf3194",
+    "tests/test_restore_btc.py": "3dc66dd5568a66183d149f9bc97cb9234a744d7a6f4d71cf1af9b917b7ff6f9c",
+    "tests/test_robustness.py": "a5a5c7f89cfed3f932ebf83c14765ff7672eb1feec84bd9ca366fd202d5d7164",
+    "tests/test_round5.py": "7e5da2b7f7c17088e60b66d4cb37bfd53e7f91341df79397ef9599ebf0b363b5",
+    "tests/test_safety_contract.py": "bd3043e2ca8d1ced2763fdb0a5f2a8321d2a938f6504b98d3250585178ee90b3",
+    "tests/test_secret_scanning.py": "ab7e8298b496672ee34f92cb80413d798824485680faf047400be492902436f1",
+    "tests/test_session_tape.py": "6808f8a7f2325c0b2b54de799a276e83c0521ef092a324ec43213d189a72da29",
+    "tests/test_user_stream.py": "5aaa63bb414d8cfe29e80475d07b1dc19c3036dbd185b639a1dbfaea67a3035f"
+  },
+  "cases": {
+    "partial_fill": {
+      "test": "tests/test_forward.py::test_a_partial_fill_does_not_open_a_second_order",
+      "tests_run": 1,
+      "passed": true
+    },
+    "lost_ack": {
+      "test": "tests/test_forward.py::test_an_entry_that_did_fill_is_found_by_the_original_id",
+      "tests_run": 1,
+      "passed": true
+    },
+    "restart_unknown": {
+      "test": "tests/test_forward.py::test_restart_queries_the_saved_id_and_does_not_mint_another",
+      "tests_run": 1,
+      "passed": true
+    },
+    "replacement": {
+      "test": "tests/test_safety_contract.py::test_verified_new_stop_retires_old_stop",
+      "tests_run": 1,
+      "passed": true
+    },
+    "replacement_failed": {
+      "test": "tests/test_safety_contract.py::test_bad_new_stop_never_retires_healthy_old_stop",
+      "tests_run": 5,
+      "passed": true
+    },
+    "disconnect": {
+      "test": "tests/test_forward.py::test_unknown_snapshot_sends_nothing",
+      "tests_run": 1,
+      "passed": true
+    },
+    "stopped_protection": {
+      "test": "tests/test_forward.py::test_stop_cancels_risk_orders_and_keeps_protection",
+      "tests_run": 1,
+      "passed": true
+    }
+  },
+  "log": "...........                                                              [100%]\n11 passed in 0.15s\n",
+  "offline_passed": true,
+  "native_execution_verified": false,
+  "DEMO_GO": "NO_GO",
+  "SMALL_LIVE_GO": "NO_GO"
+}

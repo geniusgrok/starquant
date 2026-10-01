@@ -1,5 +1,21 @@
 # Starquant：BTCUSDT 账户研究
 
+完整交付补充：首次 signal／订单差异及四项实际90日单因素诊断已保存于
+[差异报告](docs/complete_delivery.md)。有限账户最早2020-02-11多头，旧连续
+kernel最早2020-03-08空头；預热及会话时钟不同，收益差额不能直接归因alpha。
+不改变Star策略、不迁移旧117.31%到手动会话，Star仍是研究项目，原生NO_GO。
+
+
+第三轮完成共同历史模型下795次有限会话：默认−3.68% CAGR / 51.75% MDD，
+半风险−1.27% / 38.21%；Coin默认119.23% / 44.11%。完整现金核账通过，
+保留Coin合约、Spot现货为日常开发方向，Star仅作研究对照；没有原生晋升
+或正式退休。方法、输入/源码身份及简化snapshot的限制见
+[第三轮说明](docs/third_round.md)。原连续因果账户的117.31%不属于这个场景。
+
+2026-10-01 首轮：`python -m scripts.restore_btc` 按原始 SHA 恢复 BTC 输入；
+`python -m btc_perp first-round` 复现风险、加仓和空头的 25 个因果对照。
+候选未通过登记的晋升门槛，默认配置保留，详见 [首轮结果](reports/first_round.md)。
+
 私人研究，使用范围见 [LICENSE](LICENSE)。生产新增仓位默认关闭。历史研究账户从人民币 10,000 元起，单向逐仓、可多可空，20 倍是保证金设置，不等于账户恒定 20 倍敞口。冻结窗口为 2020-01-01 00:00 至 2026-09-20 00:00 UTC（右端不含）。
 
 ## 当前结果
@@ -52,3 +68,6 @@ python -m ruff format --check . && python -m ruff check . && python -m mypy && p
 ```
 
 CI 和密钥检查见 [SECURITY.md](SECURITY.md)。专有软件，第三方没有复制、修改、二次创作或交易权利；网页可见不构成许可。
+第二轮：[统一合约比较门槛与本机验收](docs/second_round.md)。
+七类故障案例通过并保存于 `reports/local-execution-20261001.json`；与
+Coinquant 的九项口径差异尚待消除，默认及半风险继续作为固定研究对照。

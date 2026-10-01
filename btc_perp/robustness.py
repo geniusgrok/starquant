@@ -42,12 +42,20 @@ REPORT = ROOT / "reports" / "btc_account_robustness.json"
 
 
 def _replay(
-    cfg: AccountConfig, stop_extra: float = 0.0, taker: float = 0.0, uncertain_funding_rate: float | None = None
+    cfg: AccountConfig,
+    stop_extra: float = 0.0,
+    taker: float = 0.0,
+    uncertain_funding_rate: float | None = None,
+    *,
+    long_only: bool = False,
 ) -> dict[str, Any]:
     from btc_perp.measure import _prepare
     from scripts.frontier import initial_state, resume
 
     o, h, low, c, qv, fund, fx, days, minute, hh, ll, xh, xl, gate = _prepare(cfg)
+    if long_only:
+        # Only the entry channel is masked; existing long exits and stops are unchanged.
+        ll = np.full_like(ll, -np.inf)
     if uncertain_funding_rate is not None:
         # All 57 September slots have no official settlement in this tape:
         # 56 premium proxies and the first slot currently zero-filled.
@@ -100,6 +108,8 @@ def _replay(
         "cagr": float(cagr),
         "min_equity_over_peak": float(ratio),
         "trades": int(n_long + n_short),
+        "n_long": int(n_long),
+        "n_short": int(n_short),
         "n_stop": int(n_stop),
         "breaches_half_peak_line": bool(ratio <= 0.5),
         "locked_at_end": lock["locked_at_end"],
@@ -107,6 +117,7 @@ def _replay(
         "_equity": equity,
         "_minute": minute,
         "_days": days,
+        "_side": trace[:, 0],
     }
 
 

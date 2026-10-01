@@ -24,7 +24,7 @@
     "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
   },
   "provenance": {
-    "git_head": "63b62fe2d5820b47c2e0bbaa72b4ea7a08690658",
+    "git_head": "3a564a4e099241a94059a572f2a6e3db8d5ea627",
     "git_dirty": false,
     "files_sha256": {
       "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83",
@@ -33,7 +33,7 @@
       "btc_perp/causal.py": "27c1686a813304f10ca8aabe11803fc3a6684f9035b7d6e184279c1bcef5b536",
       "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
       "btc_perp/reportio.py": "3671d8bf55702892f362d791446f67cab07d909d491903219af1a7250f1dbb81",
-      "btc_perp/robustness.py": "7544d712159d97b92cff9e9ac4b0dc508346bb84d4cf53790437de7250cca195",
+      "btc_perp/robustness.py": "670a1c5669fb5d83dd4ac6413c4e2561c0f2433664ce9e69554f635786054c5b",
       "btc_perp/generalization.py": "10dc21361b9c2490e377fd9a23a5d1ff24e7957eabe2d8fc94158da0be933748",
       "btc_perp/candidate.py": "9a1b96bebae7d3f6c1464b326df8274f4ca8041d55ec11dd79d6442c01ec23b0",
       "btc_perp/tapes.py": "2e2496142931d21d5a174e0f2e14ba09c4fc5ef6eba6113a98be17bc5dc6a9b3",
@@ -106,5 +106,5 @@
     "polls": 42405120,
     "closes": 92
   },
-  "run_id": "20260929T125054Z-bcf7e9b9"
+  "run_id": "20261001T122634Z-b6ccf443"
 }

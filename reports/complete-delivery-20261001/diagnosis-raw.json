@@ -1,0 +1,778 @@
+{
+  "identity": {
+    "star_head": "b4c3949fb50c33539d5df996b9f25c95537bb83d",
+    "coin_head": "995d0530889d8b609f41218b6904ff55499fd578",
+    "script_sha256": "b378bf4488549b0164acad3df61ca1ed572ab2a972dbe850e1790fcdfb635c12",
+    "causal_report_sha256": "bdfb5cdb240cf870cdc4684ba5605b87e8ce62b63f151636969159cf25fd5ecd",
+    "shared_accounts_sha256": "b1a4f74ca6c2c4b6e098bdfc3746379fee8289f5f4995fa07ae58a0740b915db",
+    "causal_recorded_head": "63b62fe2d5820b47c2e0bbaa72b4ea7a08690658",
+    "shared_sources": {
+      "coinquant": {
+        "git_head": "00a6849f72cd6785d17f71db804564e9b82e998a",
+        "dirty": false,
+        "python_sha256": "f2b451da2f6a452cb8a00c2b921a882d7ec6bd29003948f46f440b812768859a"
+      },
+      "starquant": {
+        "git_head": "882b5212ed09a1c075e61399d30b50996691e24c",
+        "dirty": false,
+        "python_sha256": "6331e9d2f36b8cba8406de5bf6863511626b12f6091ac174661fa3c5f1b0fcce"
+      }
+    },
+    "kernel_source_matches_causal_report": {
+      "config/btc_account.yaml": true,
+      "btc_perp/costs.py": true,
+      "scripts/frontier.py": true,
+      "btc_perp/causal.py": true,
+      "btc_perp/measure.py": true,
+      "btc_perp/reportio.py": true,
+      "btc_perp/robustness.py": false,
+      "btc_perp/generalization.py": true,
+      "btc_perp/candidate.py": true,
+      "btc_perp/tapes.py": true,
+      "config/candidate.yaml": true,
+      "scripts/assets.py": true
+    },
+    "inputs": {
+      "btcusdt_1m.npz": "259ceaae3bbc7fc7d11f128b3b7ff0658651e56ef0fdd57cf0d4e9c95d197c0a",
+      "funding.npz": "0682df98242a6fccfe86da66a1da871c2af1d0b955fac6d38734b0059b94cb7a",
+      "usdcny_frankfurter.json": "67606315ea34c0301e0129ac8fc27056099986d9fbd58a552a07f140cdd05bb5"
+    },
+    "warmup_trade_sha256": "62e9a9ecddccac737f99032a224f7a2a1932756cf200db34fb5c5641b72c4094",
+    "schedule_sha256": "f8fb73bebf142ddcc3ed4a3e6b12b4dd7abed1e27bcd8a4ff1c93aec4fe0b32a",
+    "kernel_module_hashes": {
+      "scripts/frontier.py": "4dd027f09edc6a8f379b958c892b0dceac190b80ab589e17308c2f2bcda319ed",
+      "btc_perp/measure.py": "08bcce1420555267b8bffa5659ca3399b1f0677c15cdf7d91de25954c2c2c5f9",
+      "btc_perp/costs.py": "b0864b1f1e6b93c8eaceccd6c8c8c6bf58a09846e10375843e3a52face1b245c",
+      "btc_perp/config.py": "124b0d1be93c22fe79b42544df7a400e4298aec7756571aa2f92f8a71b5ac394",
+      "config/btc_account.yaml": "8d164ba9ac6eba6ea32f42145ed59d7edd1d26e87c163b567d13b975a6f08d83"
+    }
+  },
+  "scope": "90-day historical kernel diagnostics, not a full account nor a finite actual-runner counterfactual",
+  "one_factor_caveat": "schedule diagnostic masks only entry/add gate; continuous trailing/channel/risk kernel remains active; fee diagnostic changes only kernel taker fee",
+  "runs": {
+    "continuous_recorded_kernel": {
+      "window_start": "2020-01-01T00:00:00+00:00",
+      "end_exclusive": "2020-03-31T00:00:00+00:00",
+      "final_cny": 21287.17644640353,
+      "min_equity_over_peak": 0.7845063276460051,
+      "long_entries": 0,
+      "short_entries": 2,
+      "stops": 2,
+      "initial_wallet": 1431.4619080292164,
+      "first_equity_cny": 9930.24414549078,
+      "events": [
+        {
+          "minute_index": 97440,
+          "bar_open_ms": 1583683200000,
+          "bar_open_utc": "2020-03-08T16:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.255,
+          "entry": 8398.856013244997,
+          "wallet": 1430.6052247158655,
+          "equity_cny_close": 9904.832122569118
+        },
+        {
+          "minute_index": 98220,
+          "bar_open_ms": 1583730000000,
+          "bar_open_utc": "2020-03-09T05:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.554,
+          "entry": 8106.1164450009965,
+          "wallet": 1429.8705868700042,
+          "equity_cny_close": 10805.837017042159
+        },
+        {
+          "minute_index": 102720,
+          "bar_open_ms": 1584000000000,
+          "bar_open_utc": "2020-03-12T08:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.924,
+          "entry": 7821.917708775099,
+          "wallet": 1433.6881418141995,
+          "equity_cny_close": 12740.856577215038
+        },
+        {
+          "minute_index": 102888,
+          "bar_open_ms": 1584010080000,
+          "bar_open_utc": "2020-03-12T10:48:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 7821.917708775099,
+          "wallet": 3168.685273883558,
+          "equity_cny_close": 21949.705017029104
+        },
+        {
+          "minute_index": 103680,
+          "bar_open_ms": 1584057600000,
+          "bar_open_utc": "2020-03-13T00:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.998,
+          "entry": 4760.340136439798,
+          "wallet": 3166.784946101091,
+          "equity_cny_close": 21344.857588824325
+        },
+        {
+          "minute_index": 103681,
+          "bar_open_ms": 1584057660000,
+          "bar_open_utc": "2020-03-13T00:01:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 4760.340136439798,
+          "wallet": 3010.3779890039214,
+          "equity_cny_close": 21051.388891452596
+        }
+      ],
+      "state": [
+        3010.3779890039214,
+        0.0,
+        0.0,
+        4760.340136439798,
+        0.0,
+        0.0,
+        4722.0,
+        0.0,
+        4760.340136439798,
+        104041.0,
+        26718.450743454436,
+        24034.41778347622,
+        0.7845063276460051,
+        0.0,
+        2.0,
+        2.0,
+        105120.0,
+        0.0,
+        0.0,
+        1.0,
+        3.8440000000000003,
+        22373.794453964074,
+        0.0,
+        0.0
+      ]
+    },
+    "entry_add_gate_only_795_schedule": {
+      "window_start": "2020-01-01T00:00:00+00:00",
+      "end_exclusive": "2020-03-31T00:00:00+00:00",
+      "final_cny": 10122.244556606642,
+      "min_equity_over_peak": 0.9783604901339886,
+      "long_entries": 0,
+      "short_entries": 0,
+      "stops": 0,
+      "initial_wallet": 1431.4619080292164,
+      "first_equity_cny": 9930.24414549078,
+      "events": [],
+      "state": [
+        1431.4619080292164,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10149.204495463178,
+        10149.204495463178,
+        0.9783604901339886,
+        0.0,
+        0.0,
+        0.0,
+        24480.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "taker_fee_only_0.00075": {
+      "window_start": "2020-01-01T00:00:00+00:00",
+      "end_exclusive": "2020-03-31T00:00:00+00:00",
+      "final_cny": 21234.107141829183,
+      "min_equity_over_peak": 0.783064096868423,
+      "long_entries": 0,
+      "short_entries": 2,
+      "stops": 2,
+      "initial_wallet": 1431.4619080292164,
+      "first_equity_cny": 9930.24414549078,
+      "events": [
+        {
+          "minute_index": 97440,
+          "bar_open_ms": 1583683200000,
+          "bar_open_utc": "2020-03-08T16:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.255,
+          "entry": 8398.856013244997,
+          "wallet": 1429.8556268166833,
+          "equity_cny_close": 9899.658727916916
+        },
+        {
+          "minute_index": 98220,
+          "bar_open_ms": 1583730000000,
+          "bar_open_utc": "2020-03-09T05:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.554,
+          "entry": 8106.1164450009965,
+          "wallet": 1428.2988108913187,
+          "equity_cny_close": 10794.989311290234
+        },
+        {
+          "minute_index": 102720,
+          "bar_open_ms": 1584000000000,
+          "bar_open_utc": "2020-03-12T08:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.924,
+          "entry": 7821.917708775099,
+          "wallet": 1431.158533627182,
+          "equity_cny_close": 12723.333803978032
+        },
+        {
+          "minute_index": 102888,
+          "bar_open_ms": 1584010080000,
+          "bar_open_utc": "2020-03-12T10:48:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 7821.917708775099,
+          "wallet": 3164.234075141969,
+          "equity_cny_close": 21918.871251317087
+        },
+        {
+          "minute_index": 103680,
+          "bar_open_ms": 1584057600000,
+          "bar_open_utc": "2020-03-13T00:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.996,
+          "entry": 4760.341603743986,
+          "wallet": 3160.678099963972,
+          "equity_cny_close": 21303.766766221706
+        },
+        {
+          "minute_index": 103681,
+          "bar_open_ms": 1584057660000,
+          "bar_open_utc": "2020-03-13T00:01:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 4760.341603743986,
+          "wallet": 3002.873063830562,
+          "equity_cny_close": 20998.90740939196
+        }
+      ],
+      "state": [
+        3002.873063830562,
+        0.0,
+        0.0,
+        4760.341603743986,
+        0.0,
+        0.0,
+        4722.0,
+        0.0,
+        4760.341603743986,
+        104041.0,
+        26700.92797021743,
+        24016.895010239212,
+        0.783064096868423,
+        0.0,
+        2.0,
+        2.0,
+        105120.0,
+        0.0,
+        0.0,
+        1.0,
+        3.8400000000000003,
+        22354.444625773875,
+        0.0,
+        0.00075
+      ]
+    },
+    "december_warmup_only": {
+      "window_start": "2020-01-01T00:00:00+00:00",
+      "end_exclusive": "2020-03-31T00:00:00+00:00",
+      "final_cny": 15205.294720042906,
+      "min_equity_over_peak": 0.687359451096529,
+      "long_entries": 2,
+      "short_entries": 2,
+      "stops": 4,
+      "initial_wallet": 1431.4619080292164,
+      "first_equity_cny": 9930.24414549078,
+      "events": [
+        {
+          "minute_index": 19020,
+          "bar_open_ms": 1578978000000,
+          "bar_open_utc": "2020-01-14T05:00:00+00:00",
+          "side": 1.0,
+          "qty": 0.251,
+          "entry": 8531.027934064723,
+          "wallet": 1430.6053928246363,
+          "equity_cny_close": 9816.968261845848
+        },
+        {
+          "minute_index": 23640,
+          "bar_open_ms": 1579255200000,
+          "bar_open_utc": "2020-01-17T10:00:00+00:00",
+          "side": 1.0,
+          "qty": 0.507,
+          "entry": 8755.729844704078,
+          "wallet": 1424.8135808526386,
+          "equity_cny_close": 10550.530198495931
+        },
+        {
+          "minute_index": 26583,
+          "bar_open_ms": 1579431780000,
+          "bar_open_utc": "2020-01-19T11:03:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 8755.729844704078,
+          "wallet": 1308.5466195741874,
+          "equity_cny_close": 8943.516449224622
+        },
+        {
+          "minute_index": 40320,
+          "bar_open_ms": 1580256000000,
+          "bar_open_utc": "2020-01-29T00:00:00+00:00",
+          "side": 1.0,
+          "qty": 0.104,
+          "entry": 9400.879445374872,
+          "wallet": 1308.1555429892599,
+          "equity_cny_close": 9066.311095851699
+        },
+        {
+          "minute_index": 55800,
+          "bar_open_ms": 1581184800000,
+          "bar_open_utc": "2020-02-08T18:00:00+00:00",
+          "side": 1.0,
+          "qty": 0.307,
+          "entry": 9713.45075681253,
+          "wallet": 1290.6107356261862,
+          "equity_cny_close": 9340.565219553797
+        },
+        {
+          "minute_index": 60960,
+          "bar_open_ms": 1581494400000,
+          "bar_open_utc": "2020-02-12T08:00:00+00:00",
+          "side": 1.0,
+          "qty": 0.517,
+          "entry": 9981.361160566554,
+          "wallet": 1254.5282102469566,
+          "equity_cny_close": 10077.519505791843
+        },
+        {
+          "minute_index": 65753,
+          "bar_open_ms": 1581781980000,
+          "bar_open_utc": "2020-02-15T15:53:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 9981.361160566554,
+          "wallet": 1161.3634390873806,
+          "equity_cny_close": 8086.508706149187
+        },
+        {
+          "minute_index": 97440,
+          "bar_open_ms": 1583683200000,
+          "bar_open_utc": "2020-03-08T16:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.103,
+          "entry": 8398.963157598972,
+          "wallet": 1161.0174018052876,
+          "equity_cny_close": 8025.600213168772
+        },
+        {
+          "minute_index": 98220,
+          "bar_open_ms": 1583730000000,
+          "bar_open_utc": "2020-03-09T05:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.335,
+          "entry": 8023.267877313815,
+          "wallet": 1160.3711227888207,
+          "equity_cny_close": 8383.722523178683
+        },
+        {
+          "minute_index": 102720,
+          "bar_open_ms": 1584000000000,
+          "bar_open_utc": "2020-03-12T08:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.613,
+          "entry": 7738.9865625899465,
+          "wallet": 1162.51902711592,
+          "equity_cny_close": 9564.64423976413
+        },
+        {
+          "minute_index": 102888,
+          "bar_open_ms": 1584010080000,
+          "bar_open_utc": "2020-03-12T10:48:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 7738.9865625899465,
+          "wallet": 2263.0260890255613,
+          "equity_cny_close": 15676.140356808904
+        },
+        {
+          "minute_index": 103680,
+          "bar_open_ms": 1584057600000,
+          "bar_open_utc": "2020-03-13T00:00:00+00:00",
+          "side": -1.0,
+          "qty": 0.712,
+          "entry": 4760.567518088675,
+          "wallet": 2261.6702793964096,
+          "equity_cny_close": 15245.915778834915
+        },
+        {
+          "minute_index": 103681,
+          "bar_open_ms": 1584057660000,
+          "bar_open_utc": "2020-03-13T00:01:00+00:00",
+          "side": 0.0,
+          "qty": 0.0,
+          "entry": 4760.567518088675,
+          "wallet": 2150.2938474147977,
+          "equity_cny_close": 15036.873169473527
+        }
+      ],
+      "state": [
+        2150.2938474147977,
+        0.0,
+        0.0,
+        4760.567518088675,
+        0.0,
+        0.0,
+        4722.0,
+        0.0,
+        4760.567518088675,
+        104041.0,
+        18837.65855134936,
+        17057.017637424415,
+        0.687359451096529,
+        2.0,
+        2.0,
+        4.0,
+        100142.0,
+        0.0,
+        0.0,
+        1.0,
+        4.698,
+        34314.23313733837,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "first_threshold_signals": {
+    "original_no_pre2020_warmup": {
+      "signal_close_utc": "2020-03-08T16:00:00+00:00",
+      "signal_close_ms": 1583683200000,
+      "close": 8400.0,
+      "entry_high": 10540.0,
+      "entry_low": 8409.0,
+      "side": -1,
+      "attended_at_signal": false,
+      "preceding_start_utc": "2020-03-05T07:00:00+00:00",
+      "following_start_utc": "2020-03-11T14:00:00+00:00",
+      "count_first90days": 9,
+      "first_attended_threshold": null
+    },
+    "shared_december_warmup_thresholds": {
+      "signal_close_utc": "2020-01-14T05:00:00+00:00",
+      "signal_close_ms": 1578978000000,
+      "close": 8530.02,
+      "entry_high": 8485.0,
+      "entry_low": 6427.0,
+      "side": 1,
+      "attended_at_signal": false,
+      "preceding_start_utc": "2020-01-10T06:00:00+00:00",
+      "following_start_utc": "2020-01-14T19:00:00+00:00",
+      "count_first90days": 23,
+      "first_attended_threshold": {
+        "signal_close_utc": "2020-02-11T17:00:00+00:00",
+        "close": 10268.52,
+        "upper": 10240.0,
+        "lower": 6863.44
+      }
+    }
+  },
+  "shared_first_sent_cycles": [
+    {
+      "session_index": 15,
+      "start_ms": 1581440400000,
+      "start_utc": "2020-02-11T17:00:00+00:00",
+      "cycle_index": 0,
+      "report": {
+        "mode": "run",
+        "frozen": false,
+        "reason": "",
+        "sent": [
+          "en0ff0d19ef3a24eebaa2f",
+          "st0e91231956dc4849ac0e",
+          "tp37ce3d71faee445b82df"
+        ],
+        "position_qty": 0.069,
+        "covered": true,
+        "alerts": [
+          "\u901a\u9053\u7a81\u7834"
+        ],
+        "dry_run": false,
+        "would_send": [],
+        "settled": false,
+        "locked": false,
+        "remaining": []
+      }
+    },
+    {
+      "session_index": 124,
+      "start_ms": 1609977600000,
+      "start_utc": "2021-01-07T00:00:00+00:00",
+      "cycle_index": 0,
+      "report": {
+        "mode": "run",
+        "frozen": false,
+        "reason": "",
+        "sent": [
+          "en18f8b1df84484da9b81d",
+          "stb5f4644c509648b9b5c4",
+          "tp2747c616b3804e01af35"
+        ],
+        "position_qty": 0.057,
+        "covered": true,
+        "alerts": [
+          "\u901a\u9053\u7a81\u7834"
+        ],
+        "dry_run": false,
+        "would_send": [],
+        "settled": false,
+        "locked": false,
+        "remaining": []
+      }
+    },
+    {
+      "session_index": 125,
+      "start_ms": 1610046000000,
+      "start_utc": "2021-01-07T19:00:00+00:00",
+      "cycle_index": 0,
+      "report": {
+        "mode": "run",
+        "frozen": false,
+        "reason": "",
+        "sent": [
+          "adfeb70e4936234cd3bd79",
+          "st2e08e4fdea5740f68e76",
+          "tpcbd8f8c9e56a4c06a78f",
+          "stb5f4644c509648b9b5c4",
+          "tp2747c616b3804e01af35"
+        ],
+        "position_qty": 0.115,
+        "covered": true,
+        "alerts": [
+          "\u52a0\u4ed3"
+        ],
+        "dry_run": false,
+        "would_send": [],
+        "settled": false,
+        "locked": false,
+        "remaining": []
+      }
+    }
+  ],
+  "shared_early_daily_cny": [
+    {
+      "date": "2020-02-11T00:00:00+00:00",
+      "equity_cny": "9983.379833869018692594647701"
+    },
+    {
+      "date": "2020-02-12T00:00:00+00:00",
+      "equity_cny": "9997.793670438117309966971386"
+    },
+    {
+      "date": "2020-03-31T00:00:00+00:00",
+      "equity_cny": "9953.996613063729872090958430"
+    }
+  ],
+  "shared_first_trades": [
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 2,
+      "id": 1,
+      "time": 1581440402338,
+      "qty": "0.02",
+      "price": "10268.99"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 2,
+      "id": 2,
+      "time": 1581440402886,
+      "qty": "0.029",
+      "price": "10269.27"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 2,
+      "id": 3,
+      "time": 1581440402953,
+      "qty": "0.02",
+      "price": "10269.96"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "SELL",
+      "orderId": 5,
+      "id": 4,
+      "time": 1581781980000,
+      "qty": "0.069",
+      "price": "9940.8"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 6,
+      "id": 5,
+      "time": 1609977602078,
+      "qty": "0.057",
+      "price": "36846.1"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 9,
+      "id": 6,
+      "time": 1610046002002,
+      "qty": "0.058",
+      "price": "38913.58"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "SELL",
+      "orderId": 12,
+      "id": 7,
+      "time": 1610073480000,
+      "qty": "0.115",
+      "price": "37060.6"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 13,
+      "id": 8,
+      "time": 1634317202019,
+      "qty": "0.001",
+      "price": "61503.96"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "BUY",
+      "orderId": 13,
+      "id": 9,
+      "time": 1634317202019,
+      "qty": "0.014",
+      "price": "61503.88"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "SELL",
+      "orderId": 16,
+      "id": 10,
+      "time": 1634500920000,
+      "qty": "0.015",
+      "price": "59535.8"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "SELL",
+      "orderId": 17,
+      "id": 11,
+      "time": 1655121602014,
+      "qty": "0.033",
+      "price": "23717.8"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "positionSide": "BOTH",
+      "side": "SELL",
+      "orderId": 17,
+      "id": 12,
+      "time": 1655121602046,
+      "qty": "0.006",
+      "price": "23719.5"
+    }
+  ],
+  "shared_all_trade_times": [
+    "2020-02-11T17:00:02.338000+00:00",
+    "2020-02-11T17:00:02.886000+00:00",
+    "2020-02-11T17:00:02.953000+00:00",
+    "2020-02-15T15:53:00+00:00",
+    "2021-01-07T00:00:02.078000+00:00",
+    "2021-01-07T19:00:02.002000+00:00",
+    "2021-01-08T02:38:00+00:00",
+    "2021-10-15T17:00:02.019000+00:00",
+    "2021-10-15T17:00:02.019000+00:00",
+    "2021-10-17T20:02:00+00:00",
+    "2022-06-13T12:00:02.014000+00:00",
+    "2022-06-13T12:00:02.046000+00:00",
+    "2022-06-16T13:00:02.013000+00:00",
+    "2022-06-21T02:00:03+00:00",
+    "2024-01-23T10:00:02.110000+00:00",
+    "2024-01-23T10:00:02.110000+00:00",
+    "2024-01-23T10:00:02.110000+00:00",
+    "2024-01-23T10:00:02.165000+00:00",
+    "2024-01-24T00:52:00+00:00",
+    "2024-02-14T09:00:02.036000+00:00",
+    "2024-02-28T11:00:02.280000+00:00",
+    "2024-03-04T00:00:02+00:00",
+    "2024-03-05T19:56:00+00:00",
+    "2024-10-29T03:00:02.011000+00:00",
+    "2024-11-01T02:10:00+00:00",
+    "2025-08-14T01:00:02.010000+00:00",
+    "2025-08-14T01:00:02.240000+00:00",
+    "2025-08-14T12:33:00+00:00",
+    "2025-10-02T00:00:02.001000+00:00",
+    "2025-10-02T00:00:02.026000+00:00",
+    "2025-10-02T00:00:02.031000+00:00",
+    "2025-10-10T20:55:00+00:00",
+    "2025-11-20T18:00:02.013000+00:00",
+    "2025-11-20T18:00:02.013000+00:00",
+    "2025-11-20T18:00:02.014000+00:00",
+    "2025-11-26T17:58:00+00:00",
+    "2026-02-05T05:00:02.030000+00:00",
+    "2026-02-05T05:00:02.043000+00:00",
+    "2026-02-05T05:00:02.059000+00:00",
+    "2026-02-06T00:00:02.055000+00:00",
+    "2026-02-06T00:00:02.055000+00:00",
+    "2026-02-06T00:00:02.055000+00:00",
+    "2026-02-06T00:00:02.055000+00:00",
+    "2026-02-06T00:00:02.055000+00:00",
+    "2026-02-06T00:00:02.067000+00:00",
+    "2026-02-06T05:50:00+00:00",
+    "2026-05-05T14:00:02.086000+00:00",
+    "2026-05-05T14:00:02.364000+00:00",
+    "2026-05-15T13:51:00+00:00"
+  ],
+  "shared_initial_daily_cny": [
+    [
+      18262,
+      "9980.009999999999999999999996"
+    ],
+    [
+      18263,
+      "9980.009999999999999999999996"
+    ],
+    [
+      18264,
+      "9983.307281189398836457659983"
+    ]
+  ],
+  "shared_fees": "36.2765650125000000",
+  "shared_funding": "80.7649505955561183257",
+  "trace_artifact_sha256": "2e84db06cd93bc0dbe06c58f4f10497b137409fc2b3465af1f8d99c8fa37df00"
+}
