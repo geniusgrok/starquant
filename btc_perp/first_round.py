@@ -41,6 +41,13 @@ def choose(results: dict[str, Any]) -> dict[str, Any]:
 
 def run_first_round(write_report: bool = True) -> dict[str, Any]:
     problems = _tape_problems()
+    premium = [ROOT / "data" / "premium" / f"BTCUSDT-8h-2026-09-{day:02d}.zip" for day in range(1, 20)]
+    for path in premium:
+        checksum = path.with_suffix(path.suffix + ".CHECKSUM")
+        if not path.is_file() or not checksum.is_file():
+            problems.append(f"missing premium archive/checksum: {path.name}")
+        elif _sha256(path) != checksum.read_text().split()[0]:
+            problems.append(f"premium checksum mismatch: {path.name}")
     if problems:
         report: dict[str, Any] = {
             "verified": False,
@@ -86,6 +93,7 @@ def run_first_round(write_report: bool = True) -> dict[str, Any]:
     inputs = {
         name: _sha256(ROOT / "data" / name) for name in ("btcusdt_1m.npz", "funding.npz", "usdcny_frankfurter.json")
     }
+    inputs.update({f"premium/{path.name}": _sha256(path) for path in premium})
     provenance = _provenance()
     provenance["files_sha256"]["btc_perp/first_round.py"] = _sha256(ROOT / "btc_perp/first_round.py")
     report = {
