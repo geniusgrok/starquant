@@ -6,8 +6,6 @@ import math
 from dataclasses import dataclass
 from itertools import pairwise
 
-import numpy as np
-
 
 @dataclass(frozen=True)
 class MinuteBar:
@@ -136,16 +134,12 @@ def completed_hour_channels(
     hour. A minute may use them only when its own hour begins after that hour
     ends (the runner checks this); a minute inside hour H never sees hour H.
     """
-    from scripts.frontier import rolling_max, rolling_min
-
     found = hour_rows_from_klines(rows, now_ms)
     if found is None:
         return None
     last_open = found[-1][0]
-    high = np.asarray([item[1] for item in found], dtype=np.float64)
-    low = np.asarray([item[2] for item in found], dtype=np.float64)
-    hh = float("inf") if len(high) < entry_hours else float(rolling_max(high, entry_hours)[-1])
-    ll = float("-inf") if len(low) < entry_hours else float(rolling_min(low, entry_hours)[-1])
-    xh = float("inf") if len(high) < exit_hours else float(rolling_max(high, exit_hours)[-1])
-    xl = float("-inf") if len(low) < exit_hours else float(rolling_min(low, exit_hours)[-1])
+    hh = math.inf if len(found) < entry_hours else max(item[1] for item in found[-entry_hours:])
+    ll = -math.inf if len(found) < entry_hours else min(item[2] for item in found[-entry_hours:])
+    xh = math.inf if len(found) < exit_hours else max(item[1] for item in found[-exit_hours:])
+    xl = -math.inf if len(found) < exit_hours else min(item[2] for item in found[-exit_hours:])
     return hh, ll, xh, xl, last_open

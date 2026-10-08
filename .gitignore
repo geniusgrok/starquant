@@ -1,4 +1,4 @@
-# local market tapes (large; the measurement reads them when present)
+# local market data
 data/
 
 # environments
@@ -42,7 +42,7 @@ state/
 *.sqlite
 *.sqlite-*
 
-# per-run research reports (the pointer files in reports/ are the ones tracked)
+# local research outputs
 reports/runs/
 reports/*.unverified.json
 !reports/btc_account_generalization.unverified.json

@@ -1,7 +1,6 @@
 # One BTCUSDT USDT-M account. Both sides, one-way isolated, leverage 20.
-# taker, slip_base, impact_y, fx_fee, and leverage are recorded here.
-# The replay reads btc_perp/costs.py. Runtime validation refuses a changed
-# copy. take_profit_multiple is a disaster cap, not the research exit.
+# Fixed fields remain part of the persisted account configuration digest.
+# Runtime uses exchange commission rates; cost metadata is not a fee forecast.
 # Production entries stay closed until config/limits.yaml is filled and
 # STARQUANT_ALLOW_PROD_ORDERS=yes.
 symbol: BTCUSDT
@@ -13,8 +12,7 @@ session_seconds: 300
 poll_seconds: 5
 
 # Donchian on completed hours. The first entry_hours bars are not a signal:
-# a short prefix is not this window. The previously resting stop is live on
-# the current 1-minute OHLC path; a newly tightened trail starts next minute.
+# a short prefix is not this window. Signals use completed minutes only.
 entry_hours: 1008
 exit_hours: 192
 stop: 0.032
@@ -34,9 +32,7 @@ cooldown_hours: 6
 ratchet_gain: 0.35
 ratchet_trail: 0.07
 heat: 0.6
-# Disaster cap resting on the exchange while a position is open. The research
-# exit is the trail, the channel, or the half-peak flatten. The historical
-# simulator does not fill this price.
+# Disaster cap resting on the exchange while a position is open.
 take_profit_multiple: 10.0
 
 taker: 0.0004

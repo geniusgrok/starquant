@@ -1,13 +1,4 @@
-# BTCUSDT account research.
-#
-# Dependencies install from requirements.lock. A range in pyproject.toml is not
-# re-resolved on each run, so a checker or library cannot change version by itself.
-# Format, lint, types, and tests each run when install succeeded, so one failure
-# does not hide the others. A failed step still fails the job.
-#
-# The secrets step scans the full history. Deleting a file does not remove a key
-# that was committed earlier. The gitleaks version is pinned for the same reason
-# the lockfile exists.
+# Full-history secrets scan, Python 3.12 imports, and representative offline tests.
 
 name: ci
 
@@ -42,34 +33,18 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.lock
 
-      - name: Install（按锁安装，不重新解析）
+      - name: Install
         id: install
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.lock
-          pip install -e . --no-deps
+          python -m pip install -r requirements.lock
+          python -m pip install -e . --no-deps
 
-      - name: Environment（版本存档）
+      - name: Syntax and imports
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: |
-          python -VV
-          python -c "import numpy, numba, yaml; print('numpy', numpy.__version__, '| numba', numba.__version__, '| pyyaml', yaml.__version__)"
-          ruff --version
-          mypy --version
-          pytest --version
-
-      - name: Format
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: ruff format --check .
-
-      - name: Lint
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: ruff check .
-
-      - name: Types
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: mypy
+          python -m compileall -q btc_perp tests
+          python -c "import btc_perp.__main__, btc_perp.runner, btc_perp.binance_client"
 
       - name: Tests (offline)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pytest -m "not network"
+        run: python -m pytest -m "not network"

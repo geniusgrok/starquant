@@ -18,16 +18,10 @@ import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Protocol
 
-from btc_perp.gates import assert_host_matches, hosts
+from btc_perp.gates import assert_host_matches, rest_host
 from btc_perp.machine import check_algo_shape
 from btc_perp.model import AlgoOrder, Filters, Income, RestingOrder, Snapshot, Trade
-
-
-class Transport(Protocol):
-    def request(self, method: str, url: str, headers: Mapping[str, str], timeout: float) -> tuple[int, bytes]:
-        """Return the status code and the body."""
 
 
 MAX_BODY_BYTES = 8 * 1024 * 1024
@@ -95,13 +89,13 @@ class UsdMClient:
     environment: str
     api_key: str
     api_secret: str
-    transport: Transport
+    transport: UrllibTransport
     base_url: str | None = None
     timeout: float = 10.0
     read_only: bool = False
 
     def __post_init__(self) -> None:
-        official, self.ws_base = hosts(self.environment)
+        official = rest_host(self.environment)
         self.base_url = (self.base_url or official).rstrip("/")
         assert_host_matches(self.environment, self.base_url)
         self._offset_ms = 0
@@ -275,34 +269,6 @@ class UsdMClient:
     def query_algo(self, client_id: str) -> dict[str, object]:
         return self._signed("/fapi/v1/algoOrder", {"clientAlgoId": client_id}, "GET")[1]
 
-    def create_listen_key(self) -> str:
-        parsed = self._listen("POST")
-        key = parsed.get("listenKey")
-        if not isinstance(key, str) or not key:
-            raise RuntimeError("listenKey 缺失")
-        return key
-
-    def keepalive_listen_key(self) -> None:
-        self._listen("PUT")
-
-    def close_listen_key(self) -> None:
-        self._listen("DELETE")
-
-    def _listen(self, method: str) -> dict[str, object]:
-        url = f"{self.base_url}/fapi/v1/listenKey"
-        try:
-            status, body = self.transport.request(method, url, {"X-MBX-APIKEY": self.api_key}, self.timeout)
-        except (TimeoutError, OSError) as exc:
-            raise RuntimeError(redact(str(exc), (self.api_key, self.api_secret))) from exc
-        text = redact(body.decode("utf-8", "replace"), (self.api_key, self.api_secret))
-        try:
-            parsed = json.loads(text) if text else {}
-        except json.JSONDecodeError as exc:
-            raise RuntimeError("listenKey 响应无法解析") from exc
-        if not isinstance(parsed, dict) or status >= 400 or parsed.get("code") not in (None, 0):
-            raise RuntimeError("listenKey 请求失败")
-        return parsed
-
     def klines(self, interval: str, limit: int, start_ms: int | None = None) -> list[object]:
         params = {"symbol": "BTCUSDT", "interval": interval, "limit": str(limit)}
         if start_ms is not None:
@@ -425,8 +391,10 @@ class UsdMClient:
             return found
 
         def brackets() -> object:
-            if not self._optional_ok("/fapi/v1/leverageBracket", {"symbol": "BTCUSDT"}):
-                raise LookupError
+            try:
+                self._read("/fapi/v1/leverageBracket", {"symbol": "BTCUSDT"})
+            except (UnknownExecution, WriteRefused, OSError, TimeoutError, RuntimeError, json.JSONDecodeError):
+                raise LookupError from None
             return True
 
         def keep(key: str, load: Callable[[], object]) -> object | None:
@@ -446,12 +414,6 @@ class UsdMClient:
         rate = _num(body.get("takerCommissionRate"))
         return rate if rate is not None and 0.0 <= rate < 0.01 else None
 
-    def _optional_ok(self, path: str, params: dict[str, str]) -> bool:
-        try:
-            self._read(path, params)
-        except (UnknownExecution, WriteRefused, OSError, TimeoutError, RuntimeError, json.JSONDecodeError):
-            return False
-        return True
 
 
 def _unknown(reason: str) -> Snapshot:

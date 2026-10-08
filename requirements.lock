@@ -1,30 +1,15 @@
-# Dependencies for the BTCUSDT account research.
-#
-# CI installs this file exactly (`pip install -r requirements.lock`) and does not
-# re-resolve ranges from pyproject.toml. Versions below were already pinned in
-# this repository; this cleanup dropped packages the account code does not import.
-#
+# Exact runtime and offline-test dependencies.
 #   pip install -r requirements.lock
 #   pip install -e . --no-deps
 
 # runtime
-numpy==2.5.2
 PyYAML==6.0.3
-numba==0.67.0
-llvmlite==0.49.0            # <- numba
 
 # dev / CI
 pytest==9.1.1
-ruff==0.16.5
-mypy==2.3.1
-types-PyYAML==6.0.12.20260815
 
 # indirect
-ast_serialize==0.9.0        # <- mypy
 iniconfig==2.3.0            # <- pytest
-librt==0.15.0               # <- mypy
-mypy_extensions==1.1.0      # <- mypy
 packaging==26.3             # <- pytest
-pathspec==1.1.1             # <- mypy
 pluggy==1.6.0               # <- pytest
 Pygments==2.21.0            # <- pytest

@@ -1,13 +1,4 @@
-"""The one config for the one research account.
-
-``scripts.frontier.run`` reads the strategy fields (windows, stops, risk,
-``dd_flat``, ``flatten_ratio``, entry scale, heat, ratchet, and cooldown).
-Fee rates and those scale lines live in ``btc_perp.costs`` and are copied
-into the YAML. A test rejects a drift between the two. ``take_profit_multiple`` is a disaster cap (long entry times the multiple,
-short entry divided by it). The research exit is the trail, the channel, or
-the half-peak flatten. The forward runner rests that cap on the exchange and
-does not count it as the strategy exit.
-"""
+"""The account configuration, including fields bound into persisted order digests."""
 
 from __future__ import annotations
 
@@ -145,5 +136,5 @@ def load_config(path: Path | None = None) -> AccountConfig:
     }
     for field, expected in frozen.items():
         if getattr(cfg, field) != expected:
-            raise ConfigError(f"{field} 与冻结回放内核不一致：期望 {expected}")
+            raise ConfigError(f"{field} 与当前账户固定配置不一致：期望 {expected}")
     return cfg

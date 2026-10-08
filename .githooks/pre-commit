@@ -1,16 +1,6 @@
 #!/bin/bash
-# 提交前密钥扫描
-#
-# 装法不是 `cp` 到 `.git/hooks/`：那份不进版本库，于是每个 clone、每个 `git worktree`
-# 都得有人记得再装一次，而「有人记得」正是这一层想替换掉的东西。改用
-# `git config core.hooksPath .githooks`。目录跟着仓库走，worktree 自动继承。
-#
-# 这一层挡的是**手滑**，不是恶意：`git commit --no-verify` 一个开关就能绕过它，
-# 任何本地 hook 都一样。所以它不是最后一道——最后一道在 GitHub 侧（push protection，
-# 2026-09-19 开启），那个不在本机，绕不过去。两层各自的位置写在 SECURITY.md 里。
-#
-# 只扫**暂存区**，不扫历史：历史每次提交都扫要 6 秒，而 6 秒的 hook 三天之内就会被
-# `--no-verify` 常态化绕过。暂存区扫描是毫秒级的。全历史扫描归 CI。
+# 扫暂存区；启用：git config core.hooksPath .githooks。
+# 本地 hook 可被绕过，完整历史扫描由 CI 执行。凭据约定见 SECURITY.md。
 
 set -uo pipefail
 
@@ -28,7 +18,7 @@ fi
 
 repo_root="$(git rev-parse --show-toplevel)"
 
-# `git` 子命令用 protect --staged：它只看 `git diff --cached`，即这次真要提交的内容。
+# 只扫描本次暂存内容。
 if gitleaks protect --staged \
         --source "$repo_root" \
         --config "$repo_root/.gitleaks.toml" \

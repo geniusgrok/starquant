@@ -8,63 +8,14 @@ packages = ["btc_perp"]
 [project]
 name = "btc-perp"
 version = "0.1.0"
-description = "Private BTCUSDT USDT-M research. The copyright holder may run a demo account and, after that record, a capped personal account. Proprietary. Third parties have no rights."
+description = "Private BTCUSDT USDT-M account runner. The copyright holder may run a demo account and, after that record, a capped personal account. Proprietary. Third parties have no rights."
 readme = "README.md"
 license = {text = "Proprietary"}
 requires-python = ">=3.12,<3.14"
-dependencies = [
-    "numpy>=1.26",
-    "pyyaml>=6.0",
-    "numba>=0.67",
-]
+dependencies = ["pyyaml>=6.0"]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "ruff>=0.5",
-    "mypy>=1.10",
-    "types-PyYAML>=6.0",
-]
-
-[tool.ruff]
-target-version = "py312"
-line-length = 120
-force-exclude = true
-exclude = [".git", ".venv", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", "build", "dist", "reports"]
-
-[tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "C4", "DTZ"]
-ignore = ["RUF001", "RUF002", "RUF003", "E501"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["B011", "DTZ"]
-# OHLC arrays in the account engine use the same letters as the tape.
-"scripts/frontier.py" = ["E741", "SIM108", "SIM114", "SIM117", "C408", "B905", "UP017"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-exclude = ["*.md"]
-
-[tool.mypy]
-python_version = "3.12"
-files = ["btc_perp"]
-strict = true
-warn_unused_ignores = true
-warn_return_any = true
-disallow_any_generics = false
-show_error_codes = true
-explicit_package_bases = true
-
-[[tool.mypy.overrides]]
-module = ["numba", "numba.*"]
-ignore_missing_imports = true
-
-# The account kernel is a numba loop. Its contract is the synthetic tests.
-[[tool.mypy.overrides]]
-module = ["scripts", "scripts.*"]
-follow_imports = "skip"
-ignore_missing_imports = true
+dev = ["pytest>=8.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

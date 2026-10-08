@@ -130,7 +130,7 @@ class Store:
         finally:
             backup.close()
 
-    def _archive(self) -> None:
+    def archive_if_due(self) -> None:
         """One consistent SQLite snapshot per UTC day, also while a process stays up."""
         folder = self.directory / "backups"
         folder.mkdir(exist_ok=True)
@@ -146,9 +146,6 @@ class Store:
                 temporary.unlink(missing_ok=True)
         for old in sorted(folder.glob("account-*.sqlite"))[:-BACKUP_KEEP]:
             old.unlink(missing_ok=True)
-
-    def archive_if_due(self) -> None:
-        self._archive()
 
     def restore_latest_backup(self) -> Path | None:
         """Newest dated copy that opens and passes the integrity check. Nothing is replaced here."""
@@ -444,11 +441,6 @@ class Store:
 
     def mark_absorbed(self, client_id: str) -> None:
         self._db.execute("update intents set absorbed=1 where client_id=?", (client_id,))
-        self._commit()
-
-    def mark_unabsorbed(self, client_id: str) -> None:
-        """A finished order whose effect on the position the book has not counted yet."""
-        self._db.execute("update intents set absorbed=0 where client_id=?", (client_id,))
         self._commit()
 
     def settle_absorbed(self) -> None:

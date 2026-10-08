@@ -15,10 +15,9 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Protocol
 
 from btc_perp.bars import BarStatus, MinuteBar, inspect_bars
-from btc_perp.binance_client import AlgoEndpointRequired, UnknownExecution, WriteRefused, account_problems
+from btc_perp.binance_client import AlgoEndpointRequired, UnknownExecution, UsdMClient, WriteRefused, account_problems
 from btc_perp.config import AccountConfig
 from btc_perp.gates import entry_block_reason, notional_cap, reducing_block_reason, risk_equity
 from btc_perp.machine import (
@@ -51,42 +50,6 @@ FLOW_KINDS = frozenset({"TRANSFER", "INTERNAL_TRANSFER", "WELCOME_BONUS", "CROSS
 _OPEN = tuple(sorted(OPEN_PHASES))
 _ENTRY_ACTIONS = frozenset({"enter", "add"})
 _RISK_DOWN_ACTIONS = frozenset({"reduce", "flatten", "stop", "take"})
-
-
-class Venue(Protocol):
-    def snapshot(self) -> Snapshot:
-        """REST account snapshot."""
-
-    def place_market(self, *, client_id: str, side: str, qty: str, reduce_only: bool) -> dict[str, object]:
-        """Send one market order."""
-
-    def place_algo(
-        self,
-        *,
-        client_id: str,
-        side: str,
-        order_type: str,
-        trigger_price: str,
-        close_position: bool,
-        qty: str = "",
-        reduce_only: bool = False,
-    ) -> dict[str, object]:
-        """Send one conditional order."""
-
-    def cancel_order(self, client_id: str) -> dict[str, object]:
-        """Cancel one plain order."""
-
-    def cancel_algo(self, client_id: str) -> dict[str, object]:
-        """Cancel one algo order."""
-
-    def query_order(self, client_id: str) -> dict[str, object]:
-        """Read one plain order by its original client id."""
-
-    def query_algo(self, client_id: str) -> dict[str, object]:
-        """Read one algo order by its original client id."""
-
-    def query_order_id(self, order_id: str) -> dict[str, object]:
-        """Read one plain order by its native order id. Used for an algo's child."""
 
 
 @dataclass(frozen=True)
@@ -258,7 +221,7 @@ def _control_requested(store: Store, name: str, environment: str, alerts: list[s
 
 def run_cycle(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     *,
     environment: str,
     limits: Limits,
@@ -271,7 +234,6 @@ def run_cycle(
     mode: str,
     prod_enabled: bool,
     dry_run: bool = False,
-    stream_expired: bool = False,
     hour_rows: tuple[tuple[int, float, float], ...] | None = None,
     clock: Callable[[], int] | None = None,
 ) -> CycleReport:
@@ -289,9 +251,6 @@ def run_cycle(
             mode = "flatten"
         elif _control_requested(store, "stop.request", environment, alerts):
             mode = "stop"
-    if stream_expired:
-        alerts.append("用户流过期或断开，本轮只采用 REST 快照")
-        store.append_event("stream", "rest-snapshot")
     cap = notional_cap(max_notional, limits)
     ctx = EntryContext(environment, limits, max_notional, cap, prod_enabled, clock_ms)
     writes = not dry_run and mode in {"run", "stop", "flatten"}
@@ -411,7 +370,7 @@ def run_cycle(
         if dry_run:
             _flatten(store, venue, snap, book, environment, prod_enabled, sent, would, alerts, dry_run, now_ms)
         else:
-            _flatten_until_done(store, venue, book, cfg, environment, prod_enabled, sent, alerts, now_ms)
+            _flatten_until_done(store, venue, book, environment, prod_enabled, sent, alerts, now_ms)
             snap = venue.snapshot()
             if snap.known:
                 _sync_book(store, book, snap, cfg, now_ms)
@@ -549,7 +508,22 @@ def _finish(
             store.archive_if_due()
         except (OSError, sqlite3.Error) as exc:
             alerts.append("每日状态备份失败：" + str(exc)[:160])
-    report = _report(mode, book, snap, sent, alerts, dry_run, would, covered, settled, remaining)
+    if covered is None:
+        covered = protections_cover(snap)[0] if snap.known else False
+    report = CycleReport(
+        mode=mode,
+        frozen=book.entries_frozen,
+        reason=book.freeze_reason,
+        sent=tuple(sent),
+        position_qty=snap.position_qty if snap.known else 0.0,
+        covered=covered,
+        alerts=tuple(alerts),
+        dry_run=dry_run,
+        would_send=tuple(would),
+        settled=settled,
+        locked=book.dd_locked,
+        remaining=tuple(remaining or ()),
+    )
     store.append_journal(
         {
             "ts_ms": now_ms,
@@ -592,36 +566,6 @@ def _finish(
         }
     )
     return report
-
-
-def _report(
-    mode: str,
-    book: Book,
-    snap: Snapshot,
-    sent: list[str],
-    alerts: list[str],
-    dry_run: bool,
-    would: list[str],
-    covered: bool | None = None,
-    settled: bool = False,
-    remaining: list[str] | None = None,
-) -> CycleReport:
-    if covered is None:
-        covered = protections_cover(snap)[0] if snap.known else False
-    return CycleReport(
-        mode=mode,
-        frozen=book.entries_frozen,
-        reason=book.freeze_reason,
-        sent=tuple(sent),
-        position_qty=snap.position_qty if snap.known else 0.0,
-        covered=covered,
-        alerts=tuple(alerts),
-        dry_run=dry_run,
-        would_send=tuple(would),
-        settled=settled,
-        locked=book.dd_locked,
-        remaining=tuple(remaining or ()),
-    )
 
 
 def _update_lock(book: Book, snap: Snapshot, cfg: AccountConfig, fx_used: float, alerts: list[str]) -> None:
@@ -951,7 +895,7 @@ def _may_send(action: str, allow: str) -> bool:
     return allow == "reduce" and action in _RISK_DOWN_ACTIONS
 
 
-def resolve_intent(store: Store, venue: Venue, client_id: str) -> tuple[bool, str]:
+def resolve_intent(store: Store, venue: UsdMClient, client_id: str) -> tuple[bool, str]:
     """Let go of an unresolved order, but only when the exchange itself says it does not exist.
 
     An operator asks for this after checking the account. A fresh answer that
@@ -985,7 +929,7 @@ def _child_matches(intent: Intent, body: dict[str, object]) -> bool:
     return str(body.get("positionSide", "BOTH")) in {"BOTH", ""}
 
 
-def _child_outcome(venue: Venue, intent: Intent, child_id: str) -> Outcome:
+def _child_outcome(venue: UsdMClient, intent: Intent, child_id: str) -> Outcome:
     """What the child order actually did. The parent's FINISHED status is not a fill."""
     if not child_id or child_id in {"0", "None"}:
         return Outcome("unknown")
@@ -1024,7 +968,7 @@ def _record_outcome(store: Store, intent: Intent, outcome: Outcome, note: str = 
 
 def _reconcile(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     sent: list[str],
@@ -1152,7 +1096,7 @@ def _walk_bars(
     cap: float | None,
     now_ms: int,
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     ctx: EntryContext,
     sent: list[str],
     would: list[str],
@@ -1204,7 +1148,7 @@ def _walk_bars(
             if action.kind in {"enter", "add"}:
                 continue
             if action.kind == "reverse":
-                action = Action("exit", action.side, action.qty, action.stop, action.disaster_take, action.reason)
+                action = Action("exit", action.side, action.qty, action.stop, action.reason)
         return _act(action, store, venue, snap, book, cfg, ctx, sent, would, alerts, dry_run, now_ms, bar.open_ms)
     return ""
 
@@ -1242,32 +1186,19 @@ def _channel_table(
     entry_hours: int,
     exit_hours: int,
 ) -> dict[int, tuple[float, float, float, float]]:
-    import numpy as np
-
-    from scripts.frontier import rolling_max, rolling_min
-
-    ordered = tuple(sorted(rows))
-    if not ordered:
-        return {}
-    high = np.array([item[1] for item in ordered], dtype=np.float64)
-    low = np.array([item[2] for item in ordered], dtype=np.float64)
-    hh = np.full(len(ordered), np.inf)
-    ll = np.full(len(ordered), -np.inf)
-    xh = np.full(len(ordered), np.inf)
-    xl = np.full(len(ordered), -np.inf)
-    if len(ordered) >= entry_hours:
-        hh = rolling_max(high, entry_hours)
-        ll = rolling_min(low, entry_hours)
-        hh[: entry_hours - 1] = np.inf
-        ll[: entry_hours - 1] = -np.inf
-    if len(ordered) >= exit_hours:
-        xh = rolling_max(high, exit_hours)
-        xl = rolling_min(low, exit_hours)
-        xh[: exit_hours - 1] = np.inf
-        xl[: exit_hours - 1] = -np.inf
-    return {
-        ordered[i][0] + 3_600_000: (float(hh[i]), float(ll[i]), float(xh[i]), float(xl[i])) for i in range(len(ordered))
-    }
+    ordered = tuple((hour, float(high), float(low)) for hour, high, low in sorted(rows))
+    table: dict[int, tuple[float, float, float, float]] = {}
+    # ponytail: bounded hourly windows; use a deque if the 1,400-hour cap grows.
+    for i, (hour_open, _high, _low) in enumerate(ordered):
+        levels: list[float] = []
+        for window in (entry_hours, exit_hours):
+            if i + 1 < window:
+                levels.extend((float("inf"), float("-inf")))
+            else:
+                recent = ordered[i + 1 - window : i + 1]
+                levels.extend((max(row[1] for row in recent), min(row[2] for row in recent)))
+        table[hour_open + 3_600_000] = (levels[0], levels[1], levels[2], levels[3])
+    return table
 
 
 def _save(store: Store, book: Book, dry_run: bool) -> None:
@@ -1356,7 +1287,7 @@ def _entry_gate(
 def _act(
     action: Action,
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     cfg: AccountConfig,
@@ -1409,13 +1340,12 @@ def _act(
         side = "SELL" if snap.position_qty > 0 else "BUY"
         _queue_market(store, venue, book, environment, "reduce", side, qty, True, sent, would, alerts, dry_run, now_ms)
         return action.reason
-    _ = cfg
     return ""
 
 
 def _maybe_open_after_flat(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     cfg: AccountConfig,
@@ -1495,7 +1425,7 @@ def _owned_now(store: Store, book: Book, snap: Snapshot, alerts: list[str], *, f
 
 def _keep_protected(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     cfg: AccountConfig,
@@ -1574,7 +1504,7 @@ def _in_band(low: float, high: float, *prices: float) -> bool:
     return all((low <= 0 or price >= low) and (high <= 0 or price <= high) for price in prices)
 
 
-def _siblings(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
+def _siblings(store: Store, venue: UsdMClient, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
     if not snap.known:
         return
     for command in sibling_cancels(snap, store.all_client_ids()):
@@ -1583,7 +1513,7 @@ def _siblings(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alert
 
 def _naked(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     limits: Limits,
@@ -1607,7 +1537,7 @@ def _naked(
     _flatten(store, venue, current, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
 
 
-def _clear_own_orders(store: Store, venue: Venue, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
+def _clear_own_orders(store: Store, venue: UsdMClient, snap: Snapshot, sent: list[str], alerts: list[str]) -> None:
     """Cancel the entry orders that this program created. Foreign orders are named, never touched."""
     known = store.all_client_ids()
     for order in snap.orders:
@@ -1619,7 +1549,7 @@ def _clear_own_orders(store: Store, venue: Venue, snap: Snapshot, sent: list[str
 
 def _safe_stop(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     sent: list[str],
@@ -1729,13 +1659,9 @@ def _unresolved_protections(store: Store, snap: Snapshot) -> list[str]:
     ]
 
 
-def _stop_settled(store: Store, book: Book, snap: Snapshot, alerts: list[str]) -> bool:
-    return not _stop_remaining(store, book, snap, alerts)
-
-
 def _stop_until_safe(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     book: Book,
     cfg: AccountConfig,
     environment: str,
@@ -1764,16 +1690,15 @@ def _stop_until_safe(
                 if _owned_now(store, book, latest, alerts, for_exit=True):
                     _flatten(store, venue, latest, book, environment, prod_enabled, sent, [], alerts, False, now_ms)
             snap = venue.snapshot()
-        if _stop_settled(store, book, snap, alerts):
+        if not _stop_remaining(store, book, snap, alerts):
             return True
     return False
 
 
 def _flatten_until_done(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     book: Book,
-    cfg: AccountConfig,
     environment: str,
     prod_enabled: bool,
     sent: list[str],
@@ -1781,7 +1706,6 @@ def _flatten_until_done(
     now_ms: int,
 ) -> tuple[bool, list[str]]:
     """Reduce to flat and clean our own orders, in a bounded loop. The leftovers are named, not hidden."""
-    _ = cfg
     remaining: list[str] = []
     blocked = reducing_block_reason(environment, prod_enabled=prod_enabled)
     for _round in range(FLATTEN_ROUNDS):
@@ -1813,7 +1737,7 @@ def _flatten_until_done(
 
 def _flatten(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     snap: Snapshot,
     book: Book,
     environment: str,
@@ -1862,7 +1786,7 @@ def _describe_protection(snap: Snapshot, book: Book, cfg: AccountConfig, would: 
 
 def _queue_market(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     book: Book,
     environment: str,
     action: str,
@@ -1902,7 +1826,7 @@ def _queue_market(
 
 def _queue_algo(
     store: Store,
-    venue: Venue,
+    venue: UsdMClient,
     book: Book,
     environment: str,
     command: Command,
@@ -1924,8 +1848,8 @@ def _queue_algo(
         action="stop" if command.order_type == "STOP_MARKET" else "take",
         phase="sent",
         side=command.side,
-        qty=command.qty,
-        reduce_only=command.reduce_only,
+        qty="",
+        reduce_only=False,
         close_position=True,
         trigger_price=command.trigger_price,
         environment=environment,
@@ -1936,7 +1860,7 @@ def _queue_algo(
     _transmit(store, venue, intent, sent, alerts)
 
 
-def _transmit(store: Store, venue: Venue, intent: Intent, sent: list[str], alerts: list[str]) -> None:
+def _transmit(store: Store, venue: UsdMClient, intent: Intent, sent: list[str], alerts: list[str]) -> None:
     started = time.perf_counter()
     try:
         if _is_algo(intent):
@@ -2007,7 +1931,7 @@ def _transmit_journal(store: Store, intent: Intent, phase: str, started: float) 
     )
 
 
-def _cancel(store: Store, venue: Venue, command: Command, sent: list[str], alerts: list[str]) -> None:
+def _cancel(store: Store, venue: UsdMClient, command: Command, sent: list[str], alerts: list[str]) -> None:
     """Cancel one of our own orders.
 
     The answer is recorded as it came. A target that is not found is not a

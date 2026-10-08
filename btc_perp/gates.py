@@ -20,29 +20,24 @@ DEMO = "demo"
 PROD = "prod"
 DEMO_REST = "https://demo-fapi.binance.com"
 PROD_REST = "https://fapi.binance.com"
-# Host only. Private streams use /private/ws?listenKey=...&events=... (see user_stream.py).
-DEMO_WS = "wss://demo-fstream.binance.com"
-PROD_WS = "wss://fstream.binance.com"
 PROD_ORDER_ENV = "STARQUANT_ALLOW_PROD_ORDERS"
 
 
-def hosts(environment: str) -> tuple[str, str]:
+def rest_host(environment: str) -> str:
     if environment == DEMO:
-        return DEMO_REST, DEMO_WS
+        return DEMO_REST
     if environment == PROD:
-        return PROD_REST, PROD_WS
+        return PROD_REST
     raise ValueError(f"environment must be {DEMO} or {PROD}")
 
 
 def assert_host_matches(environment: str, base_url: str) -> None:
     """Refuse a client that would send one environment's orders to the other."""
-    demo, _ws_demo = hosts(DEMO)
-    prod, _ws_prod = hosts(PROD)
-    if environment == DEMO and base_url.rstrip("/") == prod:
+    if environment == DEMO and base_url.rstrip("/") == PROD_REST:
         raise RuntimeError("demo 客户端不能使用生产域名")
-    if environment == PROD and base_url.rstrip("/") == demo:
+    if environment == PROD and base_url.rstrip("/") == DEMO_REST:
         raise RuntimeError("生产客户端不能使用 demo 域名")
-    official, _ws = hosts(environment)
+    official = rest_host(environment)
     if base_url.rstrip("/") == official:
         return
     parts = urlsplit(base_url)
