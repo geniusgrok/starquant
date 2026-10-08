@@ -12,6 +12,7 @@ import json
 import math
 import sqlite3
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
@@ -1188,15 +1189,43 @@ def _channel_table(
 ) -> dict[int, tuple[float, float, float, float]]:
     ordered = tuple((hour, float(high), float(low)) for hour, high, low in sorted(rows))
     table: dict[int, tuple[float, float, float, float]] = {}
-    # ponytail: bounded hourly windows; use a deque if the 1,400-hour cap grows.
+    scan = (
+        not isinstance(entry_hours, int)
+        or not isinstance(exit_hours, int)
+        or entry_hours <= 0
+        or exit_hours <= 0
+        or any(math.isnan(high) or math.isnan(low) for _, high, low in ordered)
+    )
+    windows: tuple[tuple[int, deque[int], deque[int]], ...] = (
+        (entry_hours, deque(), deque()),
+        (exit_hours, deque(), deque()),
+    )
     for i, (hour_open, _high, _low) in enumerate(ordered):
         levels: list[float] = []
-        for window in (entry_hours, exit_hours):
+        for window, highs, lows in windows:
+            # Preserve the original values/errors for unsupported direct inputs.
+            if scan:
+                if i + 1 < window:
+                    levels.extend((float("inf"), float("-inf")))
+                else:
+                    recent = ordered[i + 1 - window : i + 1]
+                    levels.extend((max(row[1] for row in recent), min(row[2] for row in recent)))
+                continue
+            while highs and highs[0] <= i - window:
+                highs.popleft()
+            while lows and lows[0] <= i - window:
+                lows.popleft()
+            # Strict comparisons retain the first equal value, as max/min do.
+            while highs and ordered[highs[-1]][1] < _high:
+                highs.pop()
+            while lows and ordered[lows[-1]][2] > _low:
+                lows.pop()
+            highs.append(i)
+            lows.append(i)
             if i + 1 < window:
                 levels.extend((float("inf"), float("-inf")))
             else:
-                recent = ordered[i + 1 - window : i + 1]
-                levels.extend((max(row[1] for row in recent), min(row[2] for row in recent)))
+                levels.extend((ordered[highs[0]][1], ordered[lows[0]][2]))
         table[hour_open + 3_600_000] = (levels[0], levels[1], levels[2], levels[3])
     return table
 
