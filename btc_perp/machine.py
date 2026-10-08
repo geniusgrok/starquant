@@ -1,4 +1,4 @@
-"""Order identity, protection replacement, and reverse sequencing.
+"""Order identity, position attribution, and protection replacement.
 
 Sending is the caller's job. This module only decides which command is safe
 and how a snapshot changes a stored intent. A timeout keeps the original
@@ -14,7 +14,6 @@ from btc_perp.model import AlgoOrder, Book, Command, Intent, Snapshot
 
 _OPEN = {"NEW", "PARTIALLY_FILLED"}
 _ALGO_LIVE = {"NEW"}
-_TERMINAL = {"filled", "rejected", "canceled", "expired"}
 
 
 def new_client_id(action: str) -> str:
@@ -198,22 +197,18 @@ def _executed_qty(intent: Intent) -> float | None:
 
 
 def foreign_trades(
-    snapshot: Snapshot, intents: list[Intent], own_orders: frozenset[str] | set[str], cursor: int
+    snapshot: Snapshot, own_orders: frozenset[str] | set[str], cursor: int
 ) -> list[int]:
     """Fills after the cursor whose native order id is not one of ours.
 
-    Same side, a compatible time, or an old protection are not proof. ``intents``
-    is unused on purpose: ownership is the stored order id and nothing else.
+    Same side, a compatible time, or an old protection are not proof.
+    Ownership is the stored order id and nothing else.
     """
-    _ = intents
-    found: list[int] = []
-    for trade in snapshot.trades:
-        if trade.trade_id <= cursor:
-            continue
-        if trade.order_id and trade.order_id in own_orders:
-            continue
-        found.append(trade.trade_id)
-    return found
+    return [
+        trade.trade_id
+        for trade in snapshot.trades
+        if trade.trade_id > cursor and not (trade.order_id and trade.order_id in own_orders)
+    ]
 
 
 def freeze_for_manual(
@@ -233,7 +228,7 @@ def freeze_for_manual(
         return "账户快照未知"
     if book.manual:
         return ""
-    stray = foreign_trades(snapshot, intents, own_orders, trade_cursor)
+    stray = foreign_trades(snapshot, own_orders, trade_cursor)
     if stray:
         return f"存在不是本程序订单的成交（{len(stray)} 笔），已冻结，等待 takeover"
     delta = snapshot.position_qty - book.side * book.qty
@@ -293,7 +288,7 @@ def plan_protection(
             updates[f"{kind}_id"] = live[0].client_algo_id
             updates.pop(f"{kind}_next", None)
             continue
-        nxt = updates.get(f"{kind}_next") or new_client_id("stop" if kind == "stop" else "take")
+        nxt = updates.get(f"{kind}_next") or new_client_id(kind)
         updates[f"{kind}_next"] = nxt
         already = any(algo.client_algo_id == nxt and algo.status in _ALGO_LIVE for algo in snapshot.algos)
         if not already:
@@ -302,7 +297,6 @@ def plan_protection(
                     "place_algo",
                     nxt,
                     side=closing,
-                    close_position=True,
                     trigger_price=f"{price:.8f}",
                     order_type=order_type,
                 )

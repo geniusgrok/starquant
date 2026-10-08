@@ -11,24 +11,18 @@ import hmac
 import json
 import time
 import urllib.parse
-from collections.abc import Mapping
-from typing import Protocol
+from btc_perp.binance_client import UrllibTransport
 
 _SPOT = "https://api.binance.com"
 _PATH = "/sapi/v1/account/apiRestrictions"
 _ACCOUNT_PATH = "/api/v3/account"
 
 
-class Transport(Protocol):
-    def request(self, method: str, url: str, headers: Mapping[str, str], timeout: float) -> tuple[int, bytes]:
-        """Return the status code and the body."""
-
-
 def prod_permission_block(
     environment: str,
     api_key: str,
     api_secret: str,
-    transport: Transport,
+    transport: UrllibTransport,
     *,
     now_ms: int | None = None,
 ) -> str:
@@ -57,7 +51,7 @@ def prod_permission_block(
 def prod_uid_block(
     api_key: str,
     api_secret: str,
-    transport: Transport,
+    transport: UrllibTransport,
     expected_uid: str,
     *,
     now_ms: int | None = None,

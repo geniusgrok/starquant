@@ -1,25 +1,6 @@
 #!/bin/bash
-# 推送前密钥扫描
-#
-# 这个 hook 补的是一个具体的洞，写清楚它是什么，免得下次有人觉得它和 pre-commit 重复：
-#
-#   **GitHub 的 push protection 认不出 Binance 的密钥。**  2026-09-19 核实：Binance 不在
-#   GitHub secret scanning 的 partner pattern 列表里，而能自己加模式的 custom patterns
-#   要求仓库属于**组织**并启用付费的 Secret Protection（$19/月/committer）。本仓库是个人
-#   账户下的公开仓库，两条都不满足。
-#
-#   于是服务端那一层对本仓库**最关键的那个密钥**是无效的——它拦得住 GitHub token、AWS、
-#   OpenAI 这些 partner pattern，拦不住 Binance 的 key/secret。而 CI 的 Secrets 门是
-#   **事后**的：它在推送之后才跑，那时密钥已经躺在公开仓库里了。
-#
-#   所以 Binance 密钥在「进入公开仓库之前」的拦截，只剩本机这两个 hook。
-#
-# 与 pre-commit 的分工：pre-commit 只看这一次的暂存区，pre-push 看**将要进入远端的全部
-# commit**。两者不重复——用 `--no-verify` 提交过、或者从别处 cherry-pick 进来的东西，
-# pre-commit 没见过，这里是最后一次机会。
-#
-# 这一层同样能被 `git push --no-verify` 绕过。没有办法让它不能——本机的东西都归使用者管。
-# 它挡的是手滑。
+# 扫描本次将进入远端的提交，补充 pre-commit 的暂存区扫描。
+# 本地 hook 可被绕过，CI 在推送后才扫描。凭据约定见 SECURITY.md。
 
 set -uo pipefail
 
@@ -38,15 +19,12 @@ while read -r _local_ref local_sha _remote_ref remote_sha; do
     [ "$local_sha" = "$z40" ] && continue
 
     if [ "$remote_sha" = "$z40" ]; then
-        # 新分支。扫「本地有、任何远端分支都没有」的 commit，而不是扫整个历史——
-        # 整个历史归 CI 的 Secrets 门和 `gitleaks detect` 手动审计。
+        # 新分支扫描尚未进入远端的提交。
         range="$local_sha --not --remotes"
     else
         range="$remote_sha..$local_sha"
     fi
 
-    # 这个范围可能是空的（例如重推一个已经在远端的 commit）。空范围下 gitleaks
-    # 会正常返回 0，不需要特别处理。
     if ! gitleaks detect \
             --source "$repo_root" \
             --config "$repo_root/.gitleaks.toml" \

@@ -130,12 +130,8 @@ class Command:
     op: str
     client_id: str
     side: str = ""
-    qty: str = ""
-    reduce_only: bool = False
-    close_position: bool = False
     trigger_price: str = ""
     order_type: str = ""
-    working_type: str = "CONTRACT_PRICE"
 
 
 @dataclass
@@ -178,6 +174,5 @@ class Action:
     side: int = 0
     qty: float = 0.0
     stop: float = 0.0
-    disaster_take: float = 0.0
     reason: str = ""
     scale: float = 1.0

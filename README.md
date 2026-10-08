@@ -1,73 +1,44 @@
-# Starquant：BTCUSDT 账户研究
+# Starquant
 
-完整交付补充：首次 signal／订单差异及四项实际90日单因素诊断已保存于
-[差异报告](docs/complete_delivery.md)。有限账户最早2020-02-11多头，旧连续
-kernel最早2020-03-08空头；預热及会话时钟不同，收益差额不能直接归因alpha。
-不改变Star策略、不迁移旧117.31%到手动会话，Star仍是研究项目，原生NO_GO。
+版本 **0.1.0**。版权人本人的 BTCUSDT U 本位永续账户程序，使用单向持仓、逐仓和 20 倍保证金设置。20 倍不是账户恒定敞口。使用权见 [LICENSE](LICENSE)。
 
+生产新增风险默认关闭；**DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO**。原生前向执行尚未通过本人 Demo 账户的开仓、保护实际触发、故障恢复和连续 30 天验证。离线测试不能代替远端验收。
 
-第三轮完成共同历史模型下795次有限会话：默认−3.68% CAGR / 51.75% MDD，
-半风险−1.27% / 38.21%；Coin默认119.23% / 44.11%。完整现金核账通过，
-保留Coin合约、Spot现货为日常开发方向，Star仅作研究对照；没有原生晋升
-或正式退休。方法、输入/源码身份及简化snapshot的限制见
-[第三轮说明](docs/third_round.md)。原连续因果账户的117.31%不属于这个场景。
+## 安装
 
-2026-10-01 首轮：`python -m scripts.restore_btc` 按原始 SHA 恢复 BTC 输入；
-`python -m btc_perp first-round` 复现风险、加仓和空头的 25 个因果对照。
-候选未通过登记的晋升门槛，默认配置保留，详见 [首轮结果](reports/first_round.md)。
-
-私人研究，使用范围见 [LICENSE](LICENSE)。生产新增仓位默认关闭。历史研究账户从人民币 10,000 元起，单向逐仓、可多可空，20 倍是保证金设置，不等于账户恒定 20 倍敞口。冻结窗口为 2020-01-01 00:00 至 2026-09-20 00:00 UTC（右端不含）。
-
-## 当前结果
-
-| 可复现命令 | 成交假设 | 期末人民币 | 年化 | 最低权益/峰值 | 多 / 空 / 止损 |
-| --- | --- | ---: | ---: | ---: | ---: |
-| `python -m btc_perp measure` | 同根收盘；连续衔接的 300 秒手动会话 | 1,830,998 | 117.16% | 0.526 | 57 / 35 / 80 |
-| `python -m btc_perp causal` | 收盘获知信号，下一分钟开盘成交 | 1,839,663 | 117.31% | 0.528 | 57 / 35 / 80 |
-
-两种回放都让本分钟内**此前已挂的止损**生效；用这分钟高低价收紧的移动止损从下一分钟起生效。旧模型允许新止损在同一分钟触发，其 2026-09-28 数字不能与本版混用。代码中的 `passed` 是年化至少 100% 且最低比值高于 0.5 等诊断门槛；150% 经济目标（期末约 4,716,653 元）**未达到**。报告中的 `path_complete` 只表示走完回放数组，`execution_closed=false`，不表示交易所撮合已验证。
-
-[正式测量](reports/btc_account_measure.json)、[因果对照](reports/btc_account_causal.json)和[稳健性](reports/btc_account_robustness.json)已由当前代码及冻结输入重跑并通过各自的数据与路径校验。止损额外不利滑点 0.1% 会触发回撤锁，54 个邻近参数中 14 个跌破一半峰值或以锁结束。[泛化校验](reports/btc_account_generalization.unverified.json)因 2018-02-08 00:29 UTC 起的早期 BTC 现货源行情连续缺失 2,011 分钟而失败，旧 ETH/SOL/现货收益及候选网格结果均不再作为本版结论。详细口径见 [docs/btc_account.md](docs/btc_account.md) 与 [docs/measure_protocol.md](docs/measure_protocol.md)。
-
-资金费 7,362 个槽位中 7,305 个来自官方文件、56 个是溢价指数估算、2026-09-01 00:00 UTC 的 1 个缺失并按零计。USDT 按 USD 平价，用前一已公布的 Frankfurter USD/CNY 中间价估值并计假设兑换费；成交价代理标记价，分钟内四点路径和保证金档位均属研究假设。回放不等于 Demo 或实盘收益。
-
-## 复现
-
-使用 Python 3.12 和 [requirements.lock](requirements.lock)。`data/` 不入库；下载与校验范围、源文件和哈希见 [数据说明](docs/btc_account.md#数据)。仓库根目录运行：
+当前验证环境为 Linux、Python 3.12，依赖按 [requirements.lock](requirements.lock) 安装。在仓库根目录运行：
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock
 pip install -e . --no-deps
-python -m btc_perp measure
-python -m btc_perp causal
-python -m btc_perp robustness
-python scripts/assets.py
-python -m btc_perp generalization
+git config core.hooksPath .githooks
+python -m btc_perp --help
 ```
 
-当前官方归档尚有上述现货缺口，`scripts/assets.py` 检出长缺口时返回 2；`generalization` 返回未验证并写 `.unverified.json`，不能用旧报告充当成功复现。运行 `python -m btc_perp` 只打印帮助，不启动会话、不下单。研究参数在 [config/btc_account.yaml](config/btc_account.yaml)；已冻结的起始资金、杠杆和成本必须与 `btc_perp/costs.py` 一致，不一致直接拒绝运行。
+## 使用与配置
 
-## 前向账户
-
-只有本人账户，先核对后运行。前向 `run` 是连续真实时钟循环；历史测量中的 300 秒切片没有停机保护的现实含义。`check` 是只读；`run --once` 会在一轮后尝试安全收尾。Demo 与生产密钥从各自环境变量读取，生产还需要账户 UID、显式开关和填好的资金限额。状态默认固定在 `~/.local/state/starquant/<环境>/`；切换源码目录不会新建账本。详见 [操作与恢复](docs/forward.md) 和 [当前门槛](docs/forward_audit.md)。
+每个账户命令必须显式选择 `--environment demo` 或 `prod`。密钥只从环境变量读取，设置方式与权限要求见 [SECURITY.md](SECURITY.md)。先核对账户：
 
 ```bash
 python -m btc_perp check --environment demo
-python -m btc_perp run --environment demo --max-notional-usdt 200 --once
-python -m btc_perp stop --environment demo
+python -m btc_perp run --environment demo --max-notional-usdt 200 --dry-run --once
 ```
 
-没有本人的 Demo 远端回读、实际保护触发和连续 30 天记录。当前 **DEMO_GO = NO_GO，SMALL_LIVE_GO = NO_GO**，见 [PROJECT_STATE.md](PROJECT_STATE.md)。同一账户不要由 Starquant 和其他项目同时管理；本地账户锁只保护本程序在同一机器、同一系统用户的实例。
+`check` 和 `--dry-run` 不向交易所写入，但会读取真实账户并维护本地状态。**没有 `--dry-run` 的 `run --once` 会执行一轮真实前向操作，再尝试安全停机；它不是模拟。** `run` 默认持续轮询，`config/btc_account.yaml` 的 `session_seconds` 不会让它在 300 秒后结束。
 
-## 检查与许可
+策略配置在 [config/btc_account.yaml](config/btc_account.yaml)，资金与裸露时间限额在 [config/limits.yaml](config/limits.yaml)。当前限额为空，生产不能新增风险。生产还要求已核验的账户 UID、`STARQUANT_ALLOW_PROD_ORDERS=yes`、正的命令行名义上限及明确的密钥权限。默认开仓通道须预热 **1008 个完整连续小时（42 天）**；不足时没有对应通道信号，但存量保护、减仓及梯度加仓仍可能执行。`check` 不验证行情预热。
+
+默认状态为 `~/.local/state/starquant/<demo|prod>/`，切换源码目录不会新建账本。一个账户只能由一个项目管理；本地锁只覆盖同机同系统用户。不要删除状态、重置峰值或接管来跳过未知历史。
+
+`stop`、`flatten`、`takeover`、`rearm`、`resolve`、`resume` 的操作、退出状态和恢复步骤见 [docs/forward.md](docs/forward.md)。停止进程后，本地移动止损、通道与权益出场不再运行，只剩最后确认的交易所保护。入场与保护建立不是原子操作，日损及资金上限不保证最大累计亏损。
+
+## 本地检查
 
 ```bash
-python -m ruff format --check . && python -m ruff check . && python -m mypy && python -m pytest -m "not network"
+python -m compileall -q btc_perp tests
+python -m pytest -m "not network"
 ```
 
-CI 和密钥检查见 [SECURITY.md](SECURITY.md)。专有软件，第三方没有复制、修改、二次创作或交易权利；网页可见不构成许可。
-第二轮：[统一合约比较门槛与本机验收](docs/second_round.md)。
-七类故障案例通过并保存于 `reports/local-execution-20261001.json`；与
-Coinquant 的九项口径差异尚待消除，默认及半风险继续作为固定研究对照。
+历史研究和改造记录保存在 [archive/pre-slim-20261008](https://github.com/geniusgrok/starquant/tree/archive/pre-slim-20261008)。

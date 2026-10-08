@@ -1,33 +1,25 @@
 # 安全约定
 
-许可见仓库根目录的 [`LICENSE`](LICENSE)：仅版权人本人可以使用。版权人可以先接自己的币安 USDⓈ-M Demo，再在本人写明的资金上限内做小资金验证。第三方没有复制、修改、二次创作或交易的权利。公开可见不构成使用许可。生产增仓默认关闭。
+使用权见 [LICENSE](LICENSE)。仅供版权人本人账户，生产新增风险默认关闭，当前 Demo 与小资金实盘均为 **NO_GO**。账户操作与恢复见 [docs/forward.md](docs/forward.md)。
 
-**密钥。** Demo 用 `STARQUANT_DEMO_API_KEY` / `STARQUANT_DEMO_API_SECRET`。生产用 `STARQUANT_PROD_API_KEY` / `STARQUANT_PROD_API_SECRET`。只从环境变量读取。不要写进仓库、SQLite、日志或异常文本。密钥不得开通提币和划转。本仓库没有提币或划转调用。Demo 失败不会改去生产域名。生产下单还要 `STARQUANT_ALLOW_PROD_ORDERS=yes`，并且 `config/limits.yaml` 里的资金、名义、单日损失和裸露时间都是正数。
+## 凭据与权限
 
-研究回放不读密钥。旧的 `btc_perp.exchange.BinanceExchange` 不会发送订单。前向订单只走 `btc_perp.binance_client`。
+Demo 使用 `STARQUANT_DEMO_API_KEY` / `STARQUANT_DEMO_API_SECRET`；生产使用 `STARQUANT_PROD_API_KEY` / `STARQUANT_PROD_API_SECRET`。密钥只从环境变量读取。不得把密钥、token、密码、SSH 私钥、`.pem`、`.env` 或带凭据的脚本放进仓库、测试、SQLite、日志或异常文本。
 
-## 不进仓库的东西
+密钥不得开通提币或划转。本程序没有提币或划转调用，Demo 失败不会转用生产域名。生产要求 `STARQUANT_ACCOUNT_UID` 与远端回读一致；新增风险还要求 `STARQUANT_ALLOW_PROD_ORDERS=yes`、完整的正数限额，以及权限元数据明确允许合约、禁止提币和划转。权限字段缺失或含糊时拒绝新增风险。不要用新的状态目录规避账户绑定、冻结或未决订单。
 
-凭据一条都不行，测试里也不行，注释掉也不行。
+## 密钥扫描
 
-- 交易所 API key / secret
-- 任何云服务或模型服务的 key、token、密码
-- SSH 私钥、`.pem`、`.env`、`env.sh`
+安装 gitleaks 后启用仓库 hooks：
 
-研究回放不读密钥。不要在仓库里放一份“先跑通再换掉”的 key。写进过文件的密钥就当作废，去交易所重发。
+```bash
+git config core.hooksPath .githooks
+```
 
-## 怎么挡
+`.githooks/pre-commit` 扫暂存区，`.githooks/pre-push` 扫将进入远端的提交，CI 使用固定版本 gitleaks 扫完整历史。本地缺少 gitleaks 时 hook 只提示并放行；`--no-verify` 也能绕过本地检查。CI 在推送后运行，不能依靠服务端保护识别所有交易所密钥。
 
-1. 提交前：`.githooks/pre-commit` 用 `gitleaks` 扫暂存区。安装：`git config core.hooksPath .githooks`。
-2. 推送前：`.githooks/pre-push` 扫将要进入远端的提交。
-3. CI：`.github/workflows/ci.yml` 用钉死的 gitleaks 8.30.1 扫全部历史。密钥进了历史，删掉文件不会让它消失。
+`tests/test_secret_scanning.py` 用运行时生成的假密钥检查自定义规则，本机缺少 gitleaks 时跳过。误报 allowlist 必须限定具体值或形态，说明为什么不可能是密钥，不按整个目录放行。
 
-这三层都能被绕过或只能事后发现。`--no-verify` 不是日常开关。GitHub 自带的 push protection 认不出币安密钥：币安不在它的 partner pattern 列表里。不要指望那一层。
+## 泄漏处理
 
-`tests/test_secret_scanning.py` 检查这份 `.gitleaks.toml` 仍然抓得住一个当场生成的假密钥。本机没装 gitleaks 时这条测试会跳过；CI 的 Secrets 门每次都会扫。
-
-误报加进 `.gitleaks.toml` 的 allowlist 时，按“它是什么”写，不要按目录整片放行，并写一句它为什么不可能是密钥。
-
-## 真漏了
-
-先到交易所作废那个 key，再看调用记录。清理 git 历史不能代替作废：别人可能已经克隆过。不要开公开 issue 讨论密钥，走 GitHub 的私有漏洞报告。
+先在服务提供方作废并重发凭据，核对账户调用记录，再清理文件和 Git 历史。删除文件或改写历史不能撤回已有克隆与备份。不要在公开 issue 贴凭据，使用 GitHub 私有漏洞报告。

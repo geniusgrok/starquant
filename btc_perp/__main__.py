@@ -1,4 +1,4 @@
-"""Research measurement, causal replay, and the forward account loop.
+"""The forward account loop and its controls.
 
 With no subcommand this process does not start a session and does not send an
 order. Production entries stay closed unless the environment variable and
@@ -26,14 +26,9 @@ from btc_perp.model import Limits
 from btc_perp.permissions import prod_permission_block, prod_uid_block
 from btc_perp.runner import CycleReport, resolve_intent, run_cycle
 from btc_perp.store import Store
-from btc_perp.user_stream import UserStream
 
 _EXAMPLES = """
 examples:
-  python -m btc_perp measure
-  python -m btc_perp causal
-  python -m btc_perp robustness
-  python -m btc_perp generalization
   python -m btc_perp check --environment demo
   python -m btc_perp run --environment demo --max-notional-usdt 200 --once
   python -m btc_perp run --environment demo --max-notional-usdt 200 --dry-run --once
@@ -53,53 +48,14 @@ def main(argv: list[str] | None = None) -> int:
     if not args:
         print(
             "这个入口不会下单，也不会启动会话。生产增仓默认关闭。\n"
-            "历史同根收盘测量：python -m btc_perp measure\n"
-            "收盘后下一根开盘的经济对照：python -m btc_perp causal\n"
             "只读核对：python -m btc_perp check --environment demo\n"
             "Demo 前向一轮：python -m btc_perp run --environment demo --max-notional-usdt 200 --once"
         )
         return 0
-    if args[0] == "--measure":
-        args = ["measure", *args[1:]]
     parser = argparse.ArgumentParser(
         prog="btc_perp", epilog=_EXAMPLES, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = parser.add_subparsers(dest="command")
-
-    measure = sub.add_parser(
-        "measure",
-        help="同根收盘的历史测量",
-        epilog="python -m btc_perp measure",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    measure.add_argument("--no-write", action="store_true")
-
-    causal = sub.add_parser(
-        "causal",
-        help="收盘后下一根开盘成交的经济对照",
-        epilog="python -m btc_perp causal",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    causal.add_argument("--no-write", action="store_true")
-
-    robust = sub.add_parser(
-        "robustness",
-        help="止损更差成交、手续费和参数邻域下的稳健性",
-        epilog="python -m btc_perp robustness",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    robust.add_argument("--no-write", action="store_true")
-
-    first_round = sub.add_parser("first-round", help="BTC 风险、加仓与空头的已登记候选对照")
-    first_round.add_argument("--no-write", action="store_true")
-
-    general = sub.add_parser(
-        "generalization",
-        help="其他币种、早期 BTC、前进验证和自助法下的泛化检查（研究用，不改任何设置）",
-        epilog="python -m btc_perp generalization",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    general.add_argument("--no-write", action="store_true")
 
     for name, help_text, example in (
         ("check", "只读核对账户、过滤器和保护", "python -m btc_perp check --environment demo"),
@@ -131,62 +87,6 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--yes", action="store_true", help="rearm 和 resolve 使用：确认这次操作")
 
     found = parser.parse_args(args)
-    if found.command == "first-round":
-        from btc_perp.first_round import run_first_round
-
-        result = run_first_round(write_report=not found.no_write)
-        print(json.dumps(result.get("decision", result.get("problems")), ensure_ascii=False))
-        return 0 if result.get("verified") else 2
-    if found.command == "measure":
-        from btc_perp.measure import run_official
-
-        report = run_official(write_report=not found.no_write)
-        if not report.get("verified"):
-            print(f"verified=False reason={report.get('reason')}")
-            return 2
-        print(
-            f"passed={report['passed']} cagr={report['cagr']:.3f} "
-            f"end={report['end_cny']:,.0f} ratio={report['min_equity_over_peak']:.3f} "
-            f"long={report['n_long']} short={report['n_short']} "
-            f"meets_150={bool(report['cagr'] >= 1.5 and report['min_equity_over_peak'] > 0.5)}"
-        )
-        return 0
-    if found.command == "causal":
-        from btc_perp.causal import run_causal
-
-        report = run_causal(write_report=not found.no_write)
-        print(
-            f"verified={report.get('verified')} meets_150={report.get('meets_150')} "
-            f"meets_100={report.get('meets_100')} end={report.get('end_cny')} cagr={report.get('cagr')}"
-        )
-        return 0 if report.get("verified") else 2
-    if found.command == "robustness":
-        from btc_perp.robustness import run_robustness
-
-        result = run_robustness(write_report=not found.no_write)
-        if not result.get("verified"):
-            print(f"verified=False reason={result.get('reason')}")
-            return 2
-        summary = result["summary"]
-        print(
-            f"neighbour_runs={summary['neighbour_runs']} "
-            f"failing={summary['neighbours_breaching_half_peak_or_locked']} "
-            f"smallest_stop_extra_that_breaches={summary['smallest_stop_extra_that_breaches']}"
-        )
-        return 0
-    if found.command == "generalization":
-        from btc_perp.generalization import run_generalization
-
-        outcome = run_generalization(write_report=not found.no_write)
-        if not outcome.get("verified"):
-            print(f"verified=False reason={outcome.get('reason')}")
-            return 2
-        info = outcome["summary"]
-        print(
-            f"baseline_positive_tapes={info['tapes_with_positive_cagr_baseline_zero_tune']}/{info['tapes']} "
-            f"candidate_positive_tapes={info['tapes_with_positive_cagr_candidate']}/{info['tapes']}"
-        )
-        return 0
     if found.command is None:
         parser.print_help()
         return 2
@@ -371,9 +271,6 @@ def _forward(found: argparse.Namespace) -> int:
         for name in ("stop.request", "flatten.request"):
             if (state / name).exists():
                 print(f"存在 {name}，这一轮会按停机处理；确认后用 resume 清除")
-    # REST is the source of account/order truth. Stream keepalive/reconnect
-    # before a stop could delay the only path that reduces risk.
-    stream: UserStream | None = None
     previous_term = signal.signal(signal.SIGTERM, _raise_interrupt)
     previous_int = signal.signal(signal.SIGINT, _raise_interrupt)
     report: CycleReport | None = None
@@ -385,7 +282,7 @@ def _forward(found: argparse.Namespace) -> int:
             _write_run_state(state, phase="running", command=command, wind_down="pending", config=digest)
         while True:
             now_ms = int(time.time() * 1000)
-            report = _one_cycle(found, store, client, stream, cfg, limits, mode, now_ms)
+            report = _one_cycle(found, store, client, cfg, limits, mode, now_ms)
             print(
                 f"mode={report.mode} frozen={str(report.frozen).lower()} reason={report.reason} "
                 f"position={report.position_qty} covered={str(report.covered).lower()} "
@@ -425,11 +322,6 @@ def _forward(found: argparse.Namespace) -> int:
                     wind = None
             if interrupted:
                 print(_interrupt_line(wind))
-            if stream is not None:
-                try:
-                    stream.stop()
-                except Exception as exc:
-                    failure = failure or f"用户流关闭失败：{type(exc).__name__}: {exc}"[:300]
             status = _exit_status(command, report, wind, interrupted, failure, bool(found.dry_run))
             if writes:
                 _write_run_state(
@@ -527,7 +419,6 @@ def _one_cycle(
     found: argparse.Namespace,
     store: Store,
     client: UsdMClient,
-    stream: UserStream | None,
     cfg: AccountConfig,
     limits: Limits,
     mode: str,
@@ -540,21 +431,6 @@ def _one_cycle(
             mode = "flatten"
         elif _request_pending(store.directory, "stop.request", str(found.environment)):
             mode = "stop"
-    stream_expired = False
-    if stream is not None:
-        stream.keepalive(now_ms)
-        stream.reconnect_if_due(now_ms)
-        hints, stream_expired = stream.poll()
-        for hint in hints:
-            store.append_journal(
-                {
-                    "ts_ms": now_ms,
-                    "kind": "stream",
-                    "event": hint.kind,
-                    "client_id": hint.client_id,
-                    "status": hint.status,
-                }
-            )
     minute: list[object] = []
     hourly: list[object] = []
     if mode == "run":
@@ -588,7 +464,6 @@ def _one_cycle(
         mode=mode,
         prod_enabled=prod_orders_allowed(),
         dry_run=bool(found.dry_run),
-        stream_expired=stream_expired,
     )
 
 
@@ -604,7 +479,7 @@ def _wind_down(
     if last is not None and last.mode in {"stop", "flatten"} and last.settled:
         return last
     try:
-        report = _one_cycle(found, store, client, None, cfg, limits, "stop", int(time.time() * 1000))
+        report = _one_cycle(found, store, client, cfg, limits, "stop", int(time.time() * 1000))
     except Exception as exc:
         print(f"收尾没有完成，交易所上只剩最后确认的状态，收尾未验证：{exc}"[:300])
         return None
