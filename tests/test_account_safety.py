@@ -253,6 +253,27 @@ def test_levels_never_include_the_forming_hour() -> None:
     assert two[hour + 2 * 3_600_000][:4] == (101.0, 89.0, 101.0, 89.0)
 
 
+def test_hourly_windows_expire_old_extremes_after_sorting() -> None:
+    hour = 3_600_000
+    rows = (
+        (4 * hour, 120.0, 60.0), (0, 200.0, 10.0), (2 * hour, 170.0, 30.0),
+        (hour, 180.0, 20.0), (3 * hour, 150.0, 40.0),
+    )
+    table = _channel_table(rows, 3, 2)
+    assert table[hour] == (float("inf"), float("-inf"), float("inf"), float("-inf"))
+    assert table[2 * hour] == (float("inf"), float("-inf"), 200.0, 10.0)
+    assert table[3 * hour] == (200.0, 10.0, 180.0, 20.0)
+    assert table[4 * hour] == (180.0, 20.0, 170.0, 30.0)
+    assert table[5 * hour] == (170.0, 30.0, 150.0, 40.0)
+
+
+def test_hourly_table_preserves_nan_scan_behavior() -> None:
+    hour = 3_600_000
+    rows = ((0, 1.0, 1.0), (hour, float("nan"), 1.0), (2 * hour, 2.0, 1.0))
+    table = _channel_table(rows, 3, 3)
+    assert table[3 * hour] == (2.0, 1.0, 2.0, 1.0)
+
+
 def test_host_check_uses_real_url_parsing() -> None:
     for environment, other in (("demo", "prod"), ("prod", "demo")):
         assert_host_matches(environment, rest_host(environment))
