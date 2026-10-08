@@ -23,9 +23,11 @@ jobs:
         run: |
           curl -sSfL -o /tmp/gitleaks.tar.gz \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
-          /tmp/gitleaks version
-          /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+          mkdir -p "$RUNNER_TEMP/starquant-tools"
+          tar -xzf /tmp/gitleaks.tar.gz -C "$RUNNER_TEMP/starquant-tools" gitleaks
+          echo "$RUNNER_TEMP/starquant-tools" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/starquant-tools/gitleaks" version
+          "$RUNNER_TEMP/starquant-tools/gitleaks" detect --source . --config .gitleaks.toml --redact --no-banner
 
       - uses: actions/setup-python@v7
         with:
@@ -47,4 +49,6 @@ jobs:
 
       - name: Tests (offline)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: python -m pytest -m "not network"
+        run: |
+          command -v gitleaks
+          python -m pytest -m "not network"
